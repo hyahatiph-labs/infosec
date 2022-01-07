@@ -6,4 +6,4 @@ over i2p from a proxy server.
 * export env variable for API_KEY (cryptocompare.com)
 * export env variable for server PORT (defaults to 7777)
 * `node price-server.js`
-* `node price-client.js`
+* `node example.js`
