@@ -2,7 +2,7 @@ const express = require('express')
 const helmet = require('helmet')
 const axios = require('axios')
 const APP = express()
-const PORT = process.env.PORT || 7777
+const PORT = process.env.SERVER_PORT || 7777
 // set API_KEY env variable first
 const API_KEY = process.env.PRICE_PROXY_API_KEY
 const URL = `https://min-api.cryptocompare.com/data/price?fsym=XMR&tsyms=BTC&api_key=${API_KEY}`
