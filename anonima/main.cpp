@@ -1,12 +1,17 @@
 #include "crow.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 int main()
 {
     crow::SimpleApp app;
 
     CROW_ROUTE(app, "/")([](){
-        return "Hello world";
+        // sample json use
+        json j = "{\"test\":\"value\"}";
+        return j;
     });
 
-    app.port(18080).run();
+    app.port(4321).run();
 }
