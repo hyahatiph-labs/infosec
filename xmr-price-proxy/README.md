@@ -9,7 +9,7 @@ over i2p from a proxy server.
     * `XMR_PRICE_PROXY_API_KEY` - api key (cryptocompare.com), required
     * `SERVER_PORT` - price-proxy server port, defaults to 7777
     * `XMR_RPC_PORT` - wallet-rpc port, defaults 18081
-    * `XMR_RPC_HOST` - wallet-rpc port, defaults to 127.0.0.1
+    * `XMR_RPC_HOST` - wallet-rpc host, defaults to 127.0.0.1
     * `PAY_PROTECT_MODE` - protect server with TPAT (transaction proof authentication token), 
         defaults to true
     * `XMR_PRICE_PROXY_CACHE_INTERVAL` - milliseconds for refreshing price, defaults to 600000
