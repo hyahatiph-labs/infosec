@@ -4,6 +4,8 @@ over i2p from a proxy server.
 ## Setup
 
 * `npm i`
+* download [i2p](https://geti2p.net/en/download)
+* setup tunnel at http://localhost:7657/i2ptunnelmgr
 * export environment variables:
     * `XMR_ADDRESS` - address for payments of server, required
     * `XMR_PRICE_PROXY_API_KEY` - api key (cryptocompare.com), required
