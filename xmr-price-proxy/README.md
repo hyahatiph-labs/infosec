@@ -16,7 +16,11 @@ over i2p from a proxy server.
     * `XMR_PRICE_PROXY_TTL` - confirmations for minimum payment, defaults to 30 or ~ 1 hour
     * `XMR_PRICE_PROXY_MIN_AMOUNT` - minimum payment for TTL. (i.e. - min_amt - 0.01XMR and TTL of 
         30 confirmation would give TTL of 2 hours with 0.02XMR payment), default is 1000000 PICONERO
-    * `I2P_HOST` and `I2P_HTTP_PROXY_PORT` - i2p (defaults to 4444) * client only
+    * client:
+        * `I2P_HOST` (something.b32.i2p), required
+        * `I2P_HTTP_PROXY_PORT` - i2p port, defaults to 4444 * client only
+        * `TX_ID` - hash for TPAT header
+        * `SIGNATURE` - tx proof signature for TPAT header
 * `node price-server.js`
 * `node example.js`
 
