@@ -5,6 +5,7 @@ over i2p from a proxy server.
 
 * `npm i`
 * download [i2p](https://geti2p.net/en/download)
+* start i2p with `/path/to/i2p/i2prouter start`
 * setup tunnel at http://localhost:7657/i2ptunnelmgr
 * export environment variables:
     * `XMR_ADDRESS` - address for payments of server, required
