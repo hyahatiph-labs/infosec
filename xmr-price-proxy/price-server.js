@@ -19,7 +19,9 @@ APP.use(helmet({
       defaultSrc: ["'self'"],
     }
   },
-  dnsPrefetchControl: false
+  dnsPrefetchControl: {
+    allow: false
+  }
 }));
 
 APP.get('/price/xmr', (req, res) => {
