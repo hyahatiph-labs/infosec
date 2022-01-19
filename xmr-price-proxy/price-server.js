@@ -57,16 +57,20 @@ APP.use(helmet({
  * @returns 
  */
 const parseHeader = (tpat) => {
-  const hash = tpat ? tpat.split(/hash="(.*)"/g)[1].split('"')[0] : ""
-  const signature = tpat ? tpat.split(/signature="(.*)"/g)[1].split('"')[0] : ""
-  const isValid = tpat !== undefined && tpat !== null 
-    && hash !== undefined && hash !== null && hash !== ""
-    && signature !== undefined && signature !== null && signature !== ""
-    && tpat.indexOf("TPAT") > -1
-  if (isValid) {
-    return { hash, signature }
+  try {
+    const hash = tpat ? tpat.split(/hash="(.*)"/g)[1].split('"')[0] : ""
+    const signature = tpat ? tpat.split(/signature="(.*)"/g)[1].split('"')[0] : ""
+    const isValid = tpat !== undefined && tpat !== null 
+      && hash !== undefined && hash !== null && hash !== ""
+      && signature !== undefined && signature !== null && signature !== ""
+      && tpat.indexOf("TPAT") > -1
+    if (isValid) {
+      return { hash, signature }
+    }
+    return null
+  } catch {
+    return null
   }
-  return null
 }
 
 /**
