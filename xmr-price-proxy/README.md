@@ -42,7 +42,7 @@ Example:
 curl -ivk http://localhost:7777/price/xmr -H 'www-authenticate: TPAT hash="17c2d5252...", signature="OutProofV2..."'
 ```
 
-invalid response: response is HTTP Status 402 with www-authenticate header set with payment address
+invalid request: response is HTTP Status 402 with www-authenticate header set with payment address
 
 ```bash
 < HTTP/1.1 402 Payment Required
