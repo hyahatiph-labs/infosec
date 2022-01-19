@@ -18,7 +18,7 @@ over i2p from a proxy server.
         30 confirmation would give TTL of 2 hours with 0.02XMR payment), default is 1000000 PICONERO
     * client:
         * `I2P_HOST` (something.b32.i2p), required
-        * `I2P_HTTP_PROXY_PORT` - i2p port, defaults to 4444 * client only
+        * `I2P_HTTP_PROXY_PORT` - i2p port, defaults to 4444
         * `TX_ID` - hash for TPAT header
         * `SIGNATURE` - tx proof signature for TPAT header
 * `node price-server.js`
