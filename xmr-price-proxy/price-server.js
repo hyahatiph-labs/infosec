@@ -125,7 +125,7 @@ const isValidProof = (tpat, res) => {
                  the transaction proof can be used like a ticket until that threshold. The MIN_AMOUNT
                  get one hour, doubling get two hours time-to-live etc.
           */
-        const isValidTTL = Math.floor(p.received / MIN_AMOUNT) * CONFIRMATION_THRESHOLD > p.confirmations
+        const isValidTTL = Math.floor(p.received / MIN_AMOUNT) * CONFIRMATION_THRESHOLD < p.confirmations
         if (p.good === false || p.in_pool === true || !isValidTTL) {
           returnHeader(values, res)
         } else {
