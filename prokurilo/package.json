@@ -1,0 +1,49 @@
+{
+  "name": "prokurilo",
+  "version": "0.1.0",
+  "description": "xmr transaction proof reverse authentication proxy server",
+  "main": "prokurilo.js",
+  "scripts": {
+    "clean": "rm -rf dist/",
+    "prebuild": "eslint src/**",
+    "build": "tsc",
+    "test": "jest"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hyahatiph-labs/infosec/prokurilo"
+  },
+  "keywords": [
+    "xmr",
+    "proxy"
+  ],
+  "author": "hyahatiph-labs",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.25.0",
+    "express": "^4.17.2",
+    "helmet": "^5.0.2",
+    "ts-node": "^9.1.1",
+    "yargs": "^16.2.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.11",
+    "@types/jest": "^26.0.22",
+    "@types/node": "^14.18.9",
+    "@types/prompt": "^1.1.0",
+    "@types/yargs": "^16.0.1",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
+    "eslint": "^7.24.0",
+    "husky": "^6.0.0",
+    "jest": "^26.6.3",
+    "pretty-quick": "^3.1.0",
+    "ts-jest": "^26.5.4",
+    "typescript": "^4.2.4"
+  }
+}
