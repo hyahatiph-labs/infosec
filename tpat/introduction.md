@@ -20,7 +20,7 @@ At this point, curious users may be wondering: How would such a scheme work? Are
 
 An TPAT is essentially a ticket obtained over Monero for a particular service or resource. The ticket itself _encodes_ what resource it's able to access. It can be copied, or given to a friend so they can access that same resources. On the other end, services can mint special tickets for particular users, rotate, upgrade, and even revoke the tickets.
 
-The tickets themselves are actually transactions. sThe TPAT protocol allows a user to _atomically_ purchase one of these tickets for piconeros over the Monero Network. Partial TPATs are served over HTTP \(or HTTP/2\) when a user attempts to access a resource that requires payment \(`402 Payment Required`\) along with a subaddress. This _partial_ TPAT can then be converted into a _complete_ TPAT by paying the subaddress, and obtaining the transaction proof.
+The tickets themselves are actually transactions. The TPAT protocol allows a user to _atomically_ purchase one of these tickets for piconeros over the Monero Network. Partial TPATs are served over HTTP \(or HTTP/2\) when a user attempts to access a resource that requires payment \(`402 Payment Required`\) along with a subaddress. This _partial_ TPAT can then be converted into a _complete_ TPAT by paying the subaddress, and obtaining the transaction proof.
 
 With proper integration at end clients, Monero wallets, mobile application, browsers \(and extensions\), the above flow has potential to be even more seamless than the credit card flow users are accustomed to today. It's also more _private_ as the server doesn't need to know _who_ paid for the ticket, only that it was successfully paid for.
 
