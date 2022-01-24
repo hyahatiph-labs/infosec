@@ -54,6 +54,7 @@ export default interface ConfigFile {
 
 export enum Config {
     WWW_AUTHENTICATE = "www-authenticate",
+    AUTHORIZATION = "authorization",
     RPC_ID = "0",
     RPC_VERSION = "2.0",
     RPC_CHECK_TX_PROOF = "check_tx_proof",

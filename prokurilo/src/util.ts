@@ -29,8 +29,8 @@ const validateAsset = (uri: string): Asset => {
  const parseHeader = (tpat: string) : TPAT | null => {
    log(`tpat: ${tpat}`, LogLevel.DEBUG, true);
     try {
-      const hash = tpat ? tpat.split(/hash="(.*)"/g)[1].split('"')[0] : ""
-      const signature = tpat ? tpat.split(/signature="(.*)"/g)[1].split('"')[0] : ""
+      const hash = tpat ? tpat.split("TPAT ")[1].split(":")[0] : ""
+      const signature = tpat ? tpat.split("TPAT ")[1].split(":")[1] : ""
       const isValid = tpat !== undefined && tpat !== null 
         && hash !== undefined && hash !== null && hash !== ""
         && signature !== undefined && signature !== null && signature !== ""
@@ -72,7 +72,7 @@ const validateAsset = (uri: string): Asset => {
    */
   const isValidProof = (req: any, res: any): void => {
     // check the proof
-    const values = parseHeader(req.headers[Config.WWW_AUTHENTICATE])
+    const values = parseHeader(req.headers[Config.AUTHORIZATION])
     if (values === null) {
       returnHeader(values, req, res);
     } else {
