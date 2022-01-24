@@ -28,7 +28,7 @@ APP.get('/*', (req: any, res: any) => {
   isValidProof(req, res);
 })
 
-APP.post('/*', (req: any, res: any): void => {
+APP.post('/*', (req: any, res: any) => {
   isValidProof(req, res);
 })
 
