@@ -39,7 +39,7 @@ over i2p from a proxy server.
 Example:
 
 ```bash
-curl -ivk http://localhost:7777/price/xmr -H 'www-authenticate: TPAT hash="17c2d5252...", signature="OutProofV2..."'
+curl -ivk http://localhost:7777/price/xmr -H 'authroization: TPAT 17c2d5252...:OutProofV2...'
 ```
 
 invalid request: response is HTTP Status 402 with www-authenticate header set with payment address

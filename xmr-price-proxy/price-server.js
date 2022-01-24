@@ -58,8 +58,8 @@ APP.use(helmet({
  */
 const parseHeader = (tpat) => {
   try {
-    const hash = tpat ? tpat.split(/hash="(.*)"/g)[1].split('"')[0] : ""
-    const signature = tpat ? tpat.split(/signature="(.*)"/g)[1].split('"')[0] : ""
+    const hash = tpat ? tpat.split("TPAT ")[1].split(":")[0] : ""
+    const signature = tpat ? tpat.split("TPAT ")[1].split(":")[1] : ""
     const isValid = tpat !== undefined && tpat !== null 
       && hash !== undefined && hash !== null && hash !== ""
       && signature !== undefined && signature !== null && signature !== ""
@@ -142,7 +142,7 @@ const isValidProof = (tpat, res) => {
  */
 APP.get('/price/xmr', (req, res) => {
   if (PAY_PROTECT_MODE === 'true' || NODE_ENV !== 'test') {
-    isValidProof(req.headers['www-authenticate'], res)
+    isValidProof(req.headers['authorization'], res)
   } else {
     res.status(HTTP.OK).json(cachedPrice)
   }
