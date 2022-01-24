@@ -2,10 +2,11 @@ import * as yargs from "yargs";
 import os from "os";
 
 // asset interface
-interface Asset {
+export interface Asset {
     amt: number
     ttl: number
     uri: string
+    static: boolean
     subaddress: string
 }
 
@@ -20,10 +21,10 @@ export default interface ConfigFile {
  * User input for the prokurilo
  */
  const ARGS = yargs
- .option("asset", {
+ .option("asset-host", {
    string: true,
    alias: "a",
-   description: "Host and port of asset, e.g. http://localhost:1234",
+   description: "Host and port of asset, e.g. localhost:1234",
    demand: true,
  })
  .option("allowed-uris", {
@@ -42,7 +43,7 @@ export default interface ConfigFile {
    string: true,
    alias: "r",
    description: "Host and port of monero-wallet-rpc",
-   demand: false,
+   demand: true,
  })
  .option("log-level", {
    string: true,
@@ -55,7 +56,8 @@ export enum Config {
     WWW_AUTHENTICATE = "www-authenticate",
     RPC_ID = "0",
     RPC_VERSION = "2.0",
-    RPC_METHOD = "check_tx_proof",
+    RPC_CHECK_TX_PROOF = "check_tx_proof",
+    RPC_GET_VERSION = "get_version",
     EXIT_ERROR = 1
 }
 
@@ -66,7 +68,7 @@ export enum Http {
     SERVER_FAILURE = 503
 }
 
-export interface Data {
+export interface TPAT {
     hash: string
     min_amt: number
     signature: string
@@ -105,6 +107,6 @@ export const INDENT = 2;
 
 // set cmd line args
 export const PORT: number = ARGS["port"];
-export const ASSET: string = ARGS["asset"];
+export const ASSET_HOST: string = ARGS["asset-host"];
 export const XMR_RPC_HOST: string = ARGS["rpc-host"];
 export const ALLOWED_URIS: string[] = ARGS["allowed-uris"].split(",")

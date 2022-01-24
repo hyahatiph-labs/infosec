@@ -3,6 +3,7 @@ import helmet from "helmet";
 import { PORT } from "./config";
 import isValidProof from "./util";
 import os from "os";
+import setup from "./setup";
 
 const APP = express();
 // disable x-powered-by headers
@@ -23,21 +24,24 @@ APP.use(helmet({
 }));
 
 // entry
-APP.get('/', (req: any, res: any) => {
+APP.get('/*', (req: any, res: any) => {
   isValidProof(req, res);
 })
 
-APP.post('/', (req: any, res: any) => {
+APP.post('/*', (req: any, res: any): void => {
   isValidProof(req, res);
 })
 
-APP.delete('/', (req: any, res: any) => {
+APP.delete('/*', (req: any, res: any) => {
   isValidProof(req, res);
 })
 
-APP.patch('/', (req: any, res: any) => {
+APP.patch('/*', (req: any, res: any) => {
   isValidProof(req, res);
 })
+
+// initialize the config
+setup();
 
 // start the server
 APP.listen(PORT,  () => {
