@@ -1,3 +1,3 @@
-# anonima
+# Anonima - anonymous messaging board
 
 [ WIP ]

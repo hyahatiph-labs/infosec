@@ -1,0 +1,26 @@
+<!-- don't show swap page if not enabled at runtime -->
+{{#has_error}}
+    <h4>{{error_msg}}</h4>
+{{/has_error}}
+{{^has_error}}
+<h3>COMIT-NETWORK BTC -> XMR Swap</h3>
+<!-- Input to start the swap -->
+<div class="center">
+    <form action="/swap/status" method="get" style="width:100%; margin-top:5px" class="style-1">
+        <input type="text" name="btc_address" size="100" placeholder="bitcoin change address" required>
+        <br />
+        <input type="text" name="xmr_address" size="100" placeholder="monero receive address" required>
+        <br />
+        <label for="sellers">Choose a seller:</label>
+        <select name="sellers" id="sellers">
+          {{#sellers}}
+            <option value="{{id}}">id: {{id}} | price: {{price}} | min:{{min}} | max: {{max}}</option>
+          {{/sellers}}
+        </select> 
+        <br />
+        <input type="submit" value="Get Started">
+    </form>
+    <h3>FARCASTER BTC - XMR Swap</h3>
+    <h4>coming soon!</h4>
+</div>
+{{/has_error}}

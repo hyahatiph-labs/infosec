@@ -1,0 +1,20 @@
+{{#has_error}}
+    <h4>{{error_msg}}</h4>
+{{/has_error}}
+{{^has_error}}
+    <h3>Client Id: {{client_id}}</h3>
+    <h3>Please Send Bitcoin deposit to: {{ deposit_address }}</h3>
+    <h4>Status: {{message}}</h4>
+
+    {{#refresh}}
+        <h4>Please wait for swap-id to be generated...</h4>
+    {{/refresh}}
+    {{^refresh}}
+        <h4>
+            <a href="/swap/client/update/{{client_id}}">
+                -> Double-Click to Enable Client Status Auto-Refresh ->
+            </a>
+        </h4>
+    {{/refresh}}
+    <h4>Once 'swap-id' is generated, use it for history, resume cancel etc.</h4>
+{{/has_error}}
