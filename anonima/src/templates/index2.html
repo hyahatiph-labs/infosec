@@ -3,6 +3,9 @@
      <h3 style="font-size: 12px; margin-top: 20px">
 
         Server time: {{server_timestamp}}  | <a href="/txpool">Transaction pool</a>
+            | Subaddress: {{subaddress}}
+            | Amount: 1
+            | Confirmations: 720
          {{#enable_pusher}}
             | <a href="/rawtx">Transaction pusher </a>
          {{/enable_pusher}}
@@ -60,6 +63,62 @@
             Monero emission (fees) is {{amount}} ({{fee_amount}}) as of {{blk_no}} block
         </h3>
     {{/emission}}
+</div>
+
+<div id='submitNewThread'>
+   <h3>Submit a new thread:</h3>
+   <form id="newThread" method="post" action="/api/">
+       <textarea rows="8" cols="120" type='text' placeholder='Thread text...' name='text' required=''></textarea><br>
+       <input type='text' placeholder='tx_hash' name='tx_hash' required=''><br>
+       <input type='password' placeholder='tx_proof' name='tx_proof' required=''><br>
+       <input type='password' placeholder='thread_subaddress' name='thread_subaddress' required=''><br>
+       <input type="submit" value="Submit">
+   </form>
+</div>
+
+<div id='boardDisplay'></div>
+
+<hr style='margin: 50px; margin-top: 200px'>
 
 
+<div class="thread">
+   <div class="main">
+       <p class="id">id: {{id}} {{created_on}}</p>
+       <form id="reportThread"><input type="hidden" name="report_id" value="{{id}}"><input type="submit"
+               value="Report"></form>
+        <br />
+       <form id="deleteThread"><input type="hidden" value="{{id}}" name="thread_id" required="">
+        <input type="text" placeholder="tx_hash" name="delete_password" required="">
+        <input type="password" placeholder="tx_proof" name="delete_password" required="">
+        <input type="submit" value="Delete"></form>
+       <h3>{{text}}</h3>
+   </div>
+   <div class="replies">
+       <h5>({{reply_count}} replies total {{hidden_count}} hidden) - <a href="{{pathname}}/{{id}}">See the full thread
+               here</a>.</h5>
+       <div class="reply">
+           <p class="id">id: {{reply_id}} {{reply_created_on}}</p>
+           <form id="reportReply"><input type="hidden" name="thread_id" value="{{id}}"><input type="hidden"
+                   name="reply_id" value="{{reply_id}}"><input type="submit" value="Report"></form>
+            <br />
+           <form id="deleteReply">
+               <input type="hidden" value="{{id}}" name="thread_id" required="">
+                <input type="hidden" value="{{reply_id}}" name="reply_id" required="">
+                <input type="text" placeholder="tx_hash" name="delete_password" required="">
+                <input type="password" placeholder="tx_proof" name="delete_password" required="">
+                <input type="submit" value="Delete">
+            </form>
+           <p>{{reply_text}}</p>
+       </div>
+       <div class="newReply">
+           <form action="/api/replies/{{pathname}}" method="post" id="newReply">
+               <input type="hidden" name="thread_id" value="{{id}}">
+               <textarea rows="5" cols="80" type="text" placeholder="Quick reply..." name="text"
+                   required=""></textarea><br>
+                   <input type="text" placeholder="tx_hash" name="tx_hash" required="">
+                   <input type="password" placeholder="tx_proof" name="tx_proof" required="">
+               <input style="margin-left: 5px" type="submit" value="Submit">
+           </form>
+       </div>
+   </div>
 </div>
