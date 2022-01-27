@@ -1,0 +1,51 @@
+<!-- .html for thread with all replies -->
+
+<hr style='margin: 50px; margin-top: 200px'>
+<div class="thread">
+    <div class="main">
+        <p class="id">id: {{id}} {{created_on}}</p>
+        <form id="reportThread">
+            <input type="hidden" name="report_id" value="{{id}}">
+            <input type="submit" value="Report">
+        </form>
+        <form id="deleteThread">
+            <input type="hidden" value="{{id}}" name="thread_id" required="">
+            <input type="text" placeholder="tx_hash" name="tx_hash" required="">
+            <input type="password" placeholder="tx_proof" name="tx_proof" required="">
+            <input type="submit" value="Delete">
+        </form>
+        <h3>{{text}}</h3>
+    </div>
+    <div class="replies">
+        <!-- start mapping replies array here -->
+        <div class="reply">
+            <p class="id">id: {{reply_id}} {{reply_created_on}}</p>
+            <form id="reportReply">
+                <input type="hidden" name="thread_id" value="{{id}}">
+                <input type="hidden" name="reply_id" value="{{reply_id}}">
+                <input type="submit" value="Report">
+            </form>
+            <form id="deleteReply">
+                <input type="hidden" value="{{id}}" name="thread_id" required="">
+                <input type="hidden" value="{{reply_id}}" name="reply_id" required="">
+                <input type="text" placeholder="tx_hash" name="tx_hash" required="">
+                <input type="password" placeholder="tx_proof" name="tx_proof" required="">
+                <input type="submit" value="Delete">
+            </form>
+            <p>{{reply_text}}</p>
+        </div>
+        <div class="newReply">
+            <form action="/api/replies/{{thread_id}}" method="post" id="newReply">
+                <input type="hidden" name="thread_id" value="{{id}}">
+                <textarea rows="5" cols="80" type="text" placeholder="Quick reply..." name="text"
+                    required="">
+                </textarea><br>
+                <input type="text" placeholder="tx_hash" name="tx_hash" required="">
+                <input type="password" placeholder="tx_proof" name="tx_proof" required="">
+                <input style="margin-left: 5px" type="submit" value="Submit">
+            </form>
+        </div>
+    </div>
+</div>
+
+</html>
