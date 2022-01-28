@@ -73,6 +73,16 @@ namespace xmreg
                  "path to crt file for ssl (https) functionality")
                 ("ssl-key-file", value<string>(),
                  "path to key file for ssl (https) functionality")
+                 ("postgres-username", value<string>(),
+                 "Specify username for postgresql")
+                 ("postgres-password", value<string>(),
+                 "Specify password for postgresql")
+                 ("postgres-host", value<string>(),
+                 "Specify host for postgresql")
+                 ("postgres-port", value<string>(),
+                 "Specify port for postgresql")
+                 ("postgres-dbname", value<string>(),
+                 "Specify dbname for postgresql")
                 ("daemon-login", value<string>(),
                  "Specify username[:password] for daemon RPC client")
                 ("daemon-url,d", value<string>()->default_value("http:://127.0.0.1:18081"),

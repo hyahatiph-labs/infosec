@@ -6,12 +6,17 @@ set(PROJECT_NAME
 
 project(${PROJECT_NAME})
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 if (WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wa,-mbig-obj -O3")
 endif()
 
+# postgresql dependency
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lpqxx -lpq")
+set(PQXX /usr/local/include/pqxx)
+find_library(PQXX_LIB pqxx)
+find_library(PQ_LIB pq)
 
 if (NOT MONERO_DIR)
     set(MONERO_DIR ~/monero)
@@ -202,4 +207,4 @@ endif()
 find_package(HIDAPI)
 set(LIBRARIES ${LIBRARIES} ${HIDAPI_LIBRARIES})
 
-target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${LIBRARIES} ${PQXX_LIB} ${PQ_LIB})

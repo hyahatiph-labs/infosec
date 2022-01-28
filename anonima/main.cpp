@@ -10,10 +10,13 @@
 #include <fstream>
 #include <regex>
 
+#include <pqxx/pqxx>
+
 using boost::filesystem::path;
 using xmreg::remove_bad_chars;
 
 using namespace std;
+using namespace pqxx;
 
 namespace myxmr
 {
@@ -41,7 +44,6 @@ struct jsonresponse: public crow::response
 int
 main(int ac, const char* av[])
 {
-
     // get command line options
     xmreg::CmdLineOptions opts {ac, av};
 
@@ -80,7 +82,11 @@ main(int ac, const char* av[])
     auto enable_as_hex_opt             = opts.get_option<bool>("enable-as-hex");
     auto concurrency_opt               = opts.get_option<size_t>("concurrency");
     auto enable_emission_monitor_opt   = opts.get_option<bool>("enable-emission-monitor");
-
+    auto postgres_username             = opts.get_option<string>("postgres-username");
+    auto postgres_password             = opts.get_option<string>("postgres-password");
+    auto postgres_host                 = opts.get_option<string>("postgres-host");
+    auto postgres_port                 = opts.get_option<string>("postgres-port");
+    auto postgres_dbname               = opts.get_option<string>("postgres-dbname");
 
     bool testnet                      {*testnet_opt};
     bool stagenet                     {*stagenet_opt};
@@ -128,6 +134,58 @@ main(int ac, const char* av[])
 
     xmreg::rpccalls::login_opt daemon_rpc_login {};
 
+    // connect to db
+    char * thread_sql;
+    char * reply_sql;
+    string pg_dbname {*postgres_dbname};
+    string pg_username {*postgres_username};
+    string pg_password {*postgres_password};
+    string pg_host {*postgres_host};
+    string pg_port {*postgres_port};
+
+    try {
+        string conn_str = fmt::format("dbname = {} user = {} password = {} hostaddr = {} port = {}", 
+            pg_dbname, pg_username, pg_password, pg_host, pg_port);
+        connection C(conn_str);
+        if (C.is_open()) {
+            cout << "Opened database successfully: " << C.dbname() << endl;
+        } else {
+            cout << "Can't open database" << endl;
+            return EXIT_FAILURE;
+        }
+
+        /* Create thread SQL statement */
+        thread_sql = "CREATE TABLE THREAD("  \
+        "ID INT PRIMARY KEY     NOT NULL," \
+        "TEXT           TEXT    NOT NULL," \
+        "CREATED_ON     INT     NOT NULL," \
+        "BUMPED_ON      INT     NOT NULL," \
+        "DELETE_KEY     CHAR(256)," \
+        "REPORTED       BOOLEAN );";
+
+        /* Create Replies SQL statement */
+        reply_sql = "CREATE TABLE REPLY("  \
+        "ID             INT     PRIMARY KEY NOT NULL," \
+        "THREAD_ID      INT                 NOT NULL," \
+        "TEXT           TEXT                NOT NULL," \
+        "CREATED_ON     INT                 NOT NULL," \
+        "DELETE_KEY     CHAR(256)," \
+        "REPORTED       BOOLEAN," \
+        "CONSTRAINT FK_REPLY FOREIGN KEY(THREAD_ID)" \
+        "REFERENCES THREAD(ID));";
+
+        /* Create a transactional object. */
+        work W{C};
+      
+        /* Execute SQL query */
+        W.exec0( thread_sql );
+        W.exec0( reply_sql );
+        W.commit();
+        cout << "Tables created successfully" << endl;
+        } catch (const std::exception &e) {
+            cerr << e.what() << std::endl;
+        }
+    // end db connection
 
     if (daemon_login_opt)
     {
