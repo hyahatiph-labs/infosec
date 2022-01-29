@@ -4,12 +4,14 @@ project(myxrm)
 
 set(SOURCE_HEADERS
         MicroCore.h
+		PostgresDB.h
 		tools.h
 		monero_headers.h
 		CurrentBlockchainStatus.h)
 
 set(SOURCE_FILES
 		MicroCore.cpp
+		PostgresDB.cpp
 		tools.cpp
 		CmdLineOptions.cpp
 		page.h

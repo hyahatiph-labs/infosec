@@ -6,7 +6,7 @@
 #define CROWXMR_PAGE_H
 
 
-
+#include <pqxx/pqxx>
 #include "mstch/mstch.hpp"
 
 #include "monero_headers.h"
@@ -455,6 +455,8 @@ class page
 static const bool FULL_AGE_FORMAT {true};
 
 MicroCore* mcore;
+pqxx::connection* C;
+pqxx::work* W;
 Blockchain* core_storage;
 rpccalls rpc;
 
@@ -501,6 +503,8 @@ map<string, string> template_file;
 public:
 
 page(MicroCore* _mcore,
+     pqxx::connection* _C,
+     pqxx::work* _W,
      Blockchain* _core_storage,
      string _daemon_url,
      cryptonote::network_type _nettype,
@@ -520,6 +524,8 @@ page(MicroCore* _mcore,
      string _mainnet_url,
      rpccalls::login_opt _daemon_rpc_login)
         : mcore {_mcore},
+          C {_C},
+          W {_W},
           core_storage {_core_storage},
           rpc {_daemon_url, _daemon_rpc_login},
           server_timestamp {std::time(nullptr)},
@@ -575,6 +581,10 @@ page(MicroCore* _mcore,
     template_file["tx_table_header"] = xmreg::read(string(TMPL_PARIALS_DIR) + "/tx_table_header.html");
     template_file["tx_table_row"]    = xmreg::read(string(TMPL_PARIALS_DIR) + "/tx_table_row.html");
 }
+
+
+// TODO: create parameterized SQL statements
+
 
 /**
  * @brief show recent transactions and mempool
@@ -854,6 +864,12 @@ index2(uint64_t page_no = 0, bool refresh_page = false)
     context["mempool_info"] = mempool_html;
 
     add_css_style(context);
+
+    // TODO: debug db connection
+    pqxx::result R = W->exec_prepared("find_all_threads");
+    pqxx::row row = R[0];
+    cout << "DEBUG TEXT: " << row["text"] << endl;
+    // TODO: debug db connection
 
     // render the page
     return mstch::render(template_file["index2"], context);

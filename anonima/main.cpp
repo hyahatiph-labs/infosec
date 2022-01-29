@@ -4,19 +4,18 @@
 #include "src/page.h"
 
 #include "ext/crow/crow.h"
+#include "ext/fmt/format.h"
 #include "src/CmdLineOptions.h"
 #include "src/MicroCore.h"
-
+#include "src/PostgresDB.h"
+#include <pqxx/pqxx>
 #include <fstream>
 #include <regex>
-
-#include <pqxx/pqxx>
 
 using boost::filesystem::path;
 using xmreg::remove_bad_chars;
 
 using namespace std;
-using namespace pqxx;
 
 namespace myxmr
 {
@@ -82,6 +81,7 @@ main(int ac, const char* av[])
     auto enable_as_hex_opt             = opts.get_option<bool>("enable-as-hex");
     auto concurrency_opt               = opts.get_option<size_t>("concurrency");
     auto enable_emission_monitor_opt   = opts.get_option<bool>("enable-emission-monitor");
+    // postgresql cmd line options
     auto postgres_username             = opts.get_option<string>("postgres-username");
     auto postgres_password             = opts.get_option<string>("postgres-password");
     auto postgres_host                 = opts.get_option<string>("postgres-host");
@@ -135,57 +135,21 @@ main(int ac, const char* av[])
     xmreg::rpccalls::login_opt daemon_rpc_login {};
 
     // connect to db
-    char * thread_sql;
-    char * reply_sql;
     string pg_dbname {*postgres_dbname};
     string pg_username {*postgres_username};
     string pg_password {*postgres_password};
     string pg_host {*postgres_host};
     string pg_port {*postgres_port};
-
-    try {
-        string conn_str = fmt::format("dbname = {} user = {} password = {} hostaddr = {} port = {}", 
-            pg_dbname, pg_username, pg_password, pg_host, pg_port);
-        connection C(conn_str);
-        if (C.is_open()) {
-            cout << "Opened database successfully: " << C.dbname() << endl;
-        } else {
-            cout << "Can't open database" << endl;
-            return EXIT_FAILURE;
-        }
-
-        /* Create thread SQL statement */
-        thread_sql = "CREATE TABLE THREAD("  \
-        "ID INT PRIMARY KEY     NOT NULL," \
-        "TEXT           TEXT    NOT NULL," \
-        "CREATED_ON     INT     NOT NULL," \
-        "BUMPED_ON      INT     NOT NULL," \
-        "DELETE_KEY     CHAR(256)," \
-        "REPORTED       BOOLEAN );";
-
-        /* Create Replies SQL statement */
-        reply_sql = "CREATE TABLE REPLY("  \
-        "ID             INT     PRIMARY KEY NOT NULL," \
-        "THREAD_ID      INT                 NOT NULL," \
-        "TEXT           TEXT                NOT NULL," \
-        "CREATED_ON     INT                 NOT NULL," \
-        "DELETE_KEY     CHAR(256)," \
-        "REPORTED       BOOLEAN," \
-        "CONSTRAINT FK_REPLY FOREIGN KEY(THREAD_ID)" \
-        "REFERENCES THREAD(ID));";
-
-        /* Create a transactional object. */
-        work W{C};
-      
-        /* Execute SQL query */
-        W.exec0( thread_sql );
-        W.exec0( reply_sql );
-        W.commit();
-        cout << "Tables created successfully" << endl;
-        } catch (const std::exception &e) {
-            cerr << e.what() << std::endl;
-        }
-    // end db connection
+    // create tables if not there
+    xmreg::PostgresDB pgdb(pg_dbname, pg_username, pg_password, pg_host, pg_port);
+    string conn_str = pgdb.get_connection_string();
+    pqxx::connection C_CONFIG(conn_str);
+    pqxx::work W_CONFIG{C_CONFIG};
+    pgdb.configure_db(&C_CONFIG, &W_CONFIG);
+    // create work for db calls
+    pqxx::connection C(conn_str);
+    pgdb.prepare_all(&C);
+    pqxx::work W{C};
 
     if (daemon_login_opt)
     {
@@ -359,6 +323,8 @@ main(int ac, const char* av[])
     // create instance of page class which
     // contains logic for the website
     xmreg::page anonima(&mcore,
+                          &C,
+                          &W,
                           core_storage,
                           daemon_url,
                           nettype,
@@ -741,6 +707,8 @@ main(int ac, const char* av[])
                       "Disallow: ";
         return text;
     });
+
+    // TODO: create message board routes
 
     if (enable_json_api)
     {
