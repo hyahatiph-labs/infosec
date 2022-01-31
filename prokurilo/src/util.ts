@@ -40,7 +40,7 @@ const validateAsset = (uri: string): Asset => {
       const signature = tpat ? tpat.split("TPAT ")[1].split(":")[1] : ""
       const subaddress_override = tpat ? tpat.split("TPAT ")[1].split(":")[2] : ""
       const isSubAddressOverride = subaddress_override !== null
-        && subaddress_override !== undefined && subaddress_override !==""
+        && subaddress_override !== undefined && subaddress_override !== ""
       const isValid = tpat !== undefined && tpat !== null 
         && hash !== undefined && hash !== null && hash !== ""
         && signature !== undefined && signature !== null && signature !== ""
@@ -94,15 +94,17 @@ const validateAsset = (uri: string): Asset => {
 
     const values = parseHeader(req.headers[Config.AUTHORIZATION])
     if (values === null) {
-      returnHeader(values, req, res);
+      returnHeader(values, req, res)
     } else {
-      const h = validateAsset(req.url);
+      const h = validateAsset(req.url)
+      const oa = req.body.prokurilo_subaddress_ovverride
+      const ioa = oa !== null && oa !== undefined && oa !== "" && h.override
       const body = {
         jsonrpc: Config.RPC_VERSION,
         id: Config.RPC_ID,
         method: Config.RPC_CHECK_TX_PROOF,
         params: {
-          address: h.subaddress, 
+          address: ioa ? oa : h.subaddress, 
           txid: values.hash, 
           signature: values.signature
         }

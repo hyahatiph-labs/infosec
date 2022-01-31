@@ -66,3 +66,17 @@ If a client wishes to send the hash `"hash123..."` and the transaction proof `"O
 ```text
 Authorization: TPAT hash123:OutProofV123
 ```
+
+### Subaddress-Override
+
+This is a new concept that will allow a sort of royalty-based payment system. Say you host
+a platform for content creators. They pay you, the owner of the board, but how can the TPAT system stay
+in place in such a way that creators are paid via the same concept? By adding an optional third
+segment to the token, APIs that "belong" to creators can override the platform's subaddress in a
+system like the `prokurilo` proxy server. This allows the proxy server to verify payments dynamically
+without major modifications to an existing service. For instance, a `username` and `password`
+form could be replaced by `hash`, `proof`, `subaddress` when creating content. Users only interacting with content but not creating could then pay to the creator subaddress using `hash` and `proof` only.
+
+```text
+Authorization: TPAT hash123:OutProofV123:SubAddressOverride
+```

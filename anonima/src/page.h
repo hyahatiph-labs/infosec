@@ -861,11 +861,10 @@ index2(uint64_t page_no = 0, bool refresh_page = false)
 
     add_css_style(context);
   
+    // iterate through threads and set context
     pqxx::result R = W->exec_prepared("find_all_threads");
     context.emplace("threads" , mstch::array());
-    // get reference to blocks template map to be field below
     mstch::array& threads = boost::get<mstch::array>(context["threads"]);
-    // iterate through threads and set context
     for (auto const &row: R)
     {
         string id = row["id"].c_str();

@@ -69,8 +69,8 @@
 <div id='submitNewThread'>
    <h3>Submit a new thread:</h3>
    <form id="newThread" method="post" action="/api/">
-       <textarea rows="8" cols="120" type='text' placeholder='Thread text...' name='text' required=''></textarea><br>
-       <input type='text' placeholder='tx_hash' name='tx_hash' required=''><br>
+       <textarea rows="4" cols="128" type='text' placeholder='Thread text...' name='text' required=''></textarea><br>
+       <input type='username' placeholder='tx_hash' name='tx_hash' required=''><br>
        <input type='password' placeholder='tx_proof' name='tx_proof' required=''><br>
        <input type='password' placeholder='thread_subaddress' name='thread_subaddress' required=''><br>
        <input type="submit" value="Submit">
@@ -93,7 +93,7 @@
         </form>
         <br />
        <form id="deleteThread"><input type="hidden" value="{{id}}" name="thread_id" required="">
-        <input type="text" placeholder="tx_hash" name="delete_password" required="">
+        <input type="username" placeholder="tx_hash" name="delete_password" required="">
         <input type="password" placeholder="tx_proof" name="delete_password" required="">
         <input type="submit" value="Delete">
     </form>
@@ -114,7 +114,7 @@
            <form id="deleteReply">
                <input type="hidden" value="{{id}}" name="thread_id" required="">
                 <input type="hidden" value="{{reply_id}}" name="reply_id" required="">
-                <input type="text" placeholder="tx_hash" name="delete_password" required="">
+                <input type="username" placeholder="tx_hash" name="delete_password" required="">
                 <input type="password" placeholder="tx_proof" name="delete_password" required="">
                 <input type="submit" value="Delete">
             </form>
@@ -123,9 +123,9 @@
        <div class="newReply">
            <form action="/api/replies" method="post" id="newReply">
                <input type="hidden" name="thread_id" value="{{id}}">
-                <textarea rows="5" cols="80" type="text" placeholder="Quick reply..." name="text" required=""></textarea>
+                <textarea rows="2" cols="128" type="text" placeholder="Quick reply..." name="text" required=""></textarea>
                 <br>
-                <input type="text" placeholder="tx_hash" name="tx_hash" required="">
+                <input type="username" placeholder="tx_hash" name="tx_hash" required="">
                 <input type="password" placeholder="tx_proof" name="tx_proof" required="">
                 <input style="margin-left: 5px" type="submit" value="Submit">
            </form>

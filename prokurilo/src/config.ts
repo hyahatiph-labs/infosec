@@ -8,6 +8,7 @@ export interface Asset {
     uri: string
     static: boolean
     subaddress: string
+    override: boolean
 }
 
 // interface for the config file
