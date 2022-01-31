@@ -83,6 +83,8 @@ namespace xmreg
                  "Specify port for postgresql")
                  ("postgres-dbname", value<string>(),
                  "Specify dbname for postgresql")
+                 ("payment-address", value<string>(),
+                 "Specify payment subaddress for this board")
                 ("daemon-login", value<string>(),
                  "Specify username[:password] for daemon RPC client")
                 ("daemon-url,d", value<string>()->default_value("http:://127.0.0.1:18081"),

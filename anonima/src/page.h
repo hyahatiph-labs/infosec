@@ -485,6 +485,7 @@ uint64_t no_of_mempool_tx_of_frontpage;
 uint64_t no_blocks_on_index;
 uint64_t mempool_info_timeout;
 
+string payment_address;
 string rendezvous_point;
 string testnet_url;
 string stagenet_url;
@@ -518,6 +519,7 @@ page(MicroCore* _mcore,
      bool _enable_mixins_details,
      uint64_t _no_blocks_on_index,
      uint64_t _mempool_info_timeout,
+     string _payment_address,
      string _rendezvous_point,
      string _testnet_url,
      string _stagenet_url,
@@ -540,6 +542,7 @@ page(MicroCore* _mcore,
           enable_mixins_details {_enable_mixins_details},
           no_blocks_on_index {_no_blocks_on_index},
           mempool_info_timeout {_mempool_info_timeout},
+          payment_address {_payment_address},
           rendezvous_point {_rendezvous_point},
           testnet_url {_testnet_url},
           stagenet_url {_stagenet_url},
@@ -581,10 +584,6 @@ page(MicroCore* _mcore,
     template_file["tx_table_header"] = xmreg::read(string(TMPL_PARIALS_DIR) + "/tx_table_header.html");
     template_file["tx_table_row"]    = xmreg::read(string(TMPL_PARIALS_DIR) + "/tx_table_row.html");
 }
-
-
-// TODO: create parameterized SQL statements
-
 
 /**
  * @brief show recent transactions and mempool
@@ -649,7 +648,8 @@ index2(uint64_t page_no = 0, bool refresh_page = false)
             {"enable_swaps"             , enable_swaps},
             {"enable_key_image_checker" , enable_key_image_checker},
             {"enable_output_key_checker", enable_output_key_checker},
-            {"enable_autorefresh_option", enable_autorefresh_option}
+            {"enable_autorefresh_option", enable_autorefresh_option},
+            {"board_subaddress"         , payment_address}
     };
 
     context.emplace("txs", mstch::array()); // will keep tx to show
@@ -856,20 +856,29 @@ index2(uint64_t page_no = 0, bool refresh_page = false)
         cerr  << "emission thread not running, skipping." << endl;
     }
 
-
-    // get memory pool rendered template
-    //string mempool_html = mempool(false, no_of_mempool_tx_of_frontpage);
-
     // append mempool_html to the index context map
     context["mempool_info"] = mempool_html;
 
     add_css_style(context);
-
-    // TODO: debug db connection
+  
     pqxx::result R = W->exec_prepared("find_all_threads");
-    pqxx::row row = R[0];
-    cout << "DEBUG TEXT: " << row["text"] << endl;
-    // TODO: debug db connection
+    context.emplace("threads" , mstch::array());
+    // get reference to blocks template map to be field below
+    mstch::array& threads = boost::get<mstch::array>(context["threads"]);
+    // iterate through threads and set context
+    for (auto const &row: R)
+    {
+        string id = row["id"].c_str();
+        string text = row["text"].c_str();
+        string created = row["created_on"].c_str();
+        string subaddress = row["subaddress"].c_str();
+            threads.push_back(mstch::map {
+            {"id"                  , id},
+            {"thread_subaddress"   , subaddress},
+            {"text"                , text},
+            {"created_on"          , created}
+        });
+    }
 
     // render the page
     return mstch::render(template_file["index2"], context);

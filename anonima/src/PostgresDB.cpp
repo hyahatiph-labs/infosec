@@ -31,11 +31,12 @@ namespace xmreg
 
             /* Create thread SQL statement */
             thread_sql = "CREATE TABLE THREADS("
-                         "ID INT PRIMARY KEY     NOT NULL,"
-                         "TEXT           TEXT    NOT NULL,"
-                         "CREATED_ON     INT     NOT NULL,"
-                         "BUMPED_ON      INT     NOT NULL,"
-                         "DELETE_KEY     CHAR(256),"
+                         "ID             INT       PRIMARY KEY     NOT NULL,"
+                         "SUBADDRESS     CHAR(128)                 NOT NULL,"
+                         "TEXT           TEXT                      NOT NULL,"
+                         "CREATED_ON     INT                       NOT NULL,"
+                         "BUMPED_ON      INT                       NOT NULL,"
+                         "DELETE_KEY     CHAR(256)                 NOT NULL,"
                          "REPORTED       BOOLEAN);";
 
             /* Create Replies SQL statement */
@@ -50,8 +51,8 @@ namespace xmreg
                         "REFERENCES THREADS(ID));";
 
             /* Execute SQL queries */
-            W->exec0(thread_sql);
-            W->exec0(reply_sql);
+            W->exec(thread_sql);
+            W->exec(reply_sql);
             W->commit();
             cout << "Tables created successfully" << endl;
         }

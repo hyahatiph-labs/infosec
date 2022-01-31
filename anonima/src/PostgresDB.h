@@ -14,8 +14,6 @@ using namespace pqxx;
 
 namespace xmreg
 {
-    // TODO: thread / reply structs (models)
-
     /**
      * @brief Postgresql database operations class.
      * 

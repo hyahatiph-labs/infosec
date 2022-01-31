@@ -15,6 +15,7 @@ export default interface ConfigFile {
     port: number
     host: string
     assets: Asset[]
+    bypass: string[]
 }
 
 /**
@@ -102,7 +103,8 @@ export const CONFIG_PATH = `${os.homedir()}/.prokurilo/config.json`;
 export const DEFAULT_CONFIG: ConfigFile = {
     port: 8989,
     host: "http://localhost",
-    assets: []
+    assets: [],
+    bypass: []
   };
 export const INDENT = 2;
 

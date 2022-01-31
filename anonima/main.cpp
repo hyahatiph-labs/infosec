@@ -87,6 +87,8 @@ main(int ac, const char* av[])
     auto postgres_host                 = opts.get_option<string>("postgres-host");
     auto postgres_port                 = opts.get_option<string>("postgres-port");
     auto postgres_dbname               = opts.get_option<string>("postgres-dbname");
+    // payment address
+    auto payment_address               = opts.get_option<string>("payment-address");
 
     bool testnet                      {*testnet_opt};
     bool stagenet                     {*stagenet_opt};
@@ -338,6 +340,7 @@ main(int ac, const char* av[])
                           enable_mixin_details,
                           no_blocks_on_index,
                           mempool_info_timeout,
+                          *payment_address,
                           *rendezvous_point,
                           *testnet_url,
                           *stagenet_url,

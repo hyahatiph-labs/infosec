@@ -3,6 +3,13 @@ import { Asset, ASSET_HOST, Config, Http, TPAT, XMR_RPC_HOST } from './config'
 import log, { LogLevel } from './logging'
 import { getConfigs } from './setup'
 
+// TODO: Anti-Spam Algorithm
+//  Bin payments into default one-hour windows
+//  keep short-term cache of proofs
+//  array of {timestamp, proof} is fine
+//  reject requests from jailed proofs
+//  create janitor interval to sweep cache and reset tokens
+
 /**
  * Validate uri requested against documented assets
  * @param uri - uri of asset
@@ -31,12 +38,18 @@ const validateAsset = (uri: string): Asset => {
     try {
       const hash = tpat ? tpat.split("TPAT ")[1].split(":")[0] : ""
       const signature = tpat ? tpat.split("TPAT ")[1].split(":")[1] : ""
+      const subaddress_override = tpat ? tpat.split("TPAT ")[1].split(":")[2] : ""
+      const isSubAddressOverride = subaddress_override !== null
+        && subaddress_override !== undefined && subaddress_override !==""
       const isValid = tpat !== undefined && tpat !== null 
         && hash !== undefined && hash !== null && hash !== ""
         && signature !== undefined && signature !== null && signature !== ""
         && tpat.indexOf("TPAT") > -1
       if (isValid) {
-        return { hash, min_amt: 0, signature, ttl: 0, subaddress: "" }
+        return { 
+          hash, min_amt: 0, signature, ttl: 0, 
+          subaddress: isSubAddressOverride ? subaddress_override : "" 
+        }
       }
       return null
     } catch {
@@ -72,6 +85,13 @@ const validateAsset = (uri: string): Asset => {
    */
   const isValidProof = (req: any, res: any): void => {
     // check the proof
+
+    // TODO: add support for an optional SUBADDRESS-OVERRIDE
+    // This will support dynamic subaddress for payments.
+    // Add check for static api first, parse values from HTML
+    // form request. If static construct TPAT and re-use the
+    // parseHeader() function.
+
     const values = parseHeader(req.headers[Config.AUTHORIZATION])
     if (values === null) {
       returnHeader(values, req, res);
