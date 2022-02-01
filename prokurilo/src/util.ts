@@ -1,14 +1,44 @@
 import axios from 'axios'
-import { Asset, ASSET_HOST, Config, Http, TPAT, XMR_RPC_HOST } from './config'
+import { 
+  ANTI_SPAM_THRESHOLD,
+  Asset, ASSET_HOST, Config, Http,
+  JailedToken, TPAT, XMR_RPC_HOST 
+} from './config'
 import log, { LogLevel } from './logging'
 import { getConfigs } from './setup'
+import crypto from 'crypto'
 
-// TODO: Anti-Spam Algorithm
-//  Bin payments into default one-hour windows
-//  keep short-term cache of proofs
-//  array of {timestamp, proof} is fine
-//  reject requests from jailed proofs
-//  create janitor interval to sweep cache and reset tokens
+export const jail: JailedToken[] = [];
+
+/**
+ * Hash the signature and store hash temporarily
+ * for anti-spam measures.
+ * @param proof - signature from reserve proof
+ */
+const jailToken = (proof: string): void => {
+  const timestamp = Date.now()
+  const hash = crypto.createHash('sha256')
+  hash.update(proof);
+  const signature = hash.copy().digest('hex')
+  jail.push({ timestamp, signature })
+}
+
+/**
+ * Check jail (cache) for a signature hash
+ * @param proof - reserve proof signature
+ * @returns - boolean
+ */
+const isJailed = (proof: string): boolean => {
+  const hash = crypto.createHash('sha256')
+  hash.update(proof);
+  const h_signature = hash.copy().digest('hex')
+  jail.forEach(j => {
+    if (j.signature === h_signature) {
+      return true;
+    }
+  })
+  return false;
+}
 
 /**
  * Validate uri requested against documented assets
@@ -59,17 +89,16 @@ const validateAsset = (uri: string): Asset => {
   
   /**
    * Helper function for return header in the response 
-   * TODO: login page for static content
    */
   const returnHeader = (parsedHeader: TPAT, req: any, res: any): void => {
     const h = validateAsset(req.url);
     if (parsedHeader === null) {
       res.status(Http.PAYMENT_REQUIRED).header('www-authenticate', `TPAT address="${h.subaddress}", ` +
-        `min_amt="${h.amt}", ttl="${h.ttl}", hash="", signature=""`).send()
+        `min_amt="${h.amt}", ttl="${h.ttl}", hash="", signature="", ast="${ANTI_SPAM_THRESHOLD}"`).send()
     } else {
       res.status(Http.PAYMENT_REQUIRED).header('www-authenticate', `TPAT address="${h.subaddress}", ` + 
-        `min_amt="${h.amt}", ttl="${h.ttl}", ` + 
-        `hash="${parsedHeader.hash}", signature="${parsedHeader.signature}"`).send()
+        `min_amt="${h.amt}", ttl="${h.ttl}", hash="${parsedHeader.hash}",` +
+        `signature="${parsedHeader.signature}", ast="${ANTI_SPAM_THRESHOLD}"`).send()
     }
   }
   
@@ -80,18 +109,11 @@ const validateAsset = (uri: string): Asset => {
    * Object parsed from the www-authenticate header.
    * Format is 'www-authenticate: TPAT address="<recipient_address>"", 
    *  min_amount="<minimum_amount_piconero>", ttl="<confirmations>",
-   *  hash="<transaction_hash>", signature="<transaction_proof>"'
+   *  hash="<transaction_hash>", signature="<transaction_proof>", ast="<60>"'
    * @returns 
    */
   const isValidProof = (req: any, res: any): void => {
     // check the proof
-
-    // TODO: add support for an optional SUBADDRESS-OVERRIDE
-    // This will support dynamic subaddress for payments.
-    // Add check for static api first, parse values from HTML
-    // form request. If static construct TPAT and re-use the
-    // parseHeader() function.
-
     const values = parseHeader(req.headers[Config.AUTHORIZATION])
     if (values === null) {
       returnHeader(values, req, res)
@@ -123,10 +145,13 @@ const validateAsset = (uri: string): Asset => {
                    get one hour, doubling get two hours time-to-live etc.
             */
           const isValidTTL = Math.floor(p.received / h.amt) * h.ttl > p.confirmations
+          const isFree = isJailed(values.signature)
           log(`ttl value: ${Math.floor(p.received / h.amt) * h.ttl}`, LogLevel.DEBUG, true);
-          if (p.good === false || p.in_pool === true || !isValidTTL) {
+          if (p.good === false || p.in_pool === true || !isValidTTL || !isFree) {
             returnHeader(values, req, res)
           } else {
+            // jail token
+            jailToken(values.signature)
             // check the uri
             if (req.method === 'GET') {
               axios.get(`http://${ASSET_HOST}${req.url}`, req.body)

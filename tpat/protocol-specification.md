@@ -48,7 +48,7 @@ For instance:
 
 Date: Mon, 04 Feb 2014 16:50:53 GMT
 
-www-authenticate: TPAT address="54gqcJZAtgz...", min_amt="1000000", ttl="30", hash="hash123...", signature="OutProofV123..."
+www-authenticate: TPAT address="54gqcJZAtgz...", min_amt="1000000", ttl="30", hash="hash123...", signature="OutProofV123...", ast="60"
 ```
 
 where `"hash123"` is the hash that the client must include for each of its authorized requests and `"OutProofV123..."` is the transaction proof that must be included for each of its authorized requests.

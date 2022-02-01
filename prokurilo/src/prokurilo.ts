@@ -1,9 +1,10 @@
 import express from "express";
 import helmet from "helmet";
-import { PORT } from "./config";
-import isValidProof from "./util";
+import { ANTI_SPAM_THRESHOLD, JAIL_JANITOR_INTERVAL, PORT } from "./config";
+import isValidProof, { jail } from "./util";
 import os from "os";
 import setup from "./setup";
+import log, { LogLevel } from "./logging";
 
 const APP = express();
 // disable x-powered-by headers
@@ -42,6 +43,22 @@ APP.patch('/*', (req: any, res: any) => {
 
 // initialize the config
 setup();
+
+/* Anti-Spam Algorithm
+ * Bin payments into default one-hour windows
+ * keep short-term cache of proofs
+ * array of {timestamp, proof} is fine
+ * reject requests from jailed proofs
+ * create janitor interval to sweep cache and reset tokens
+ */
+setInterval(() => {
+  log('checking jail to free tokens...', LogLevel.INFO, true)
+  jail.forEach((j,i) => {
+    if ((j.timestamp - Date.now()) > ANTI_SPAM_THRESHOLD) {
+      delete jail[i]
+    }
+  })
+}, JAIL_JANITOR_INTERVAL)
 
 // start the server
 APP.listen(PORT,  () => {

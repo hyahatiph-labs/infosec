@@ -1,6 +1,12 @@
 import * as yargs from "yargs";
 import os from "os";
 
+// jailed token interface
+export interface JailedToken {
+    timestamp: number
+    signature: string
+}
+
 // asset interface
 export interface Asset {
     amt: number
@@ -29,12 +35,20 @@ export default interface ConfigFile {
    description: "Host and port of asset, e.g. localhost:1234",
    demand: true,
  })
- .option("allowed-uris", {
-   string: true,
-   alias: "au",
-   description: "Comma separated list of URIs",
-   demand: true,
+ .option("anti-spam-threshold", {
+   number: true,
+   default: 60,
+   alias: "ast",
+   description: "Number of minutes for anti-spam binning (default: 60 min.)",
+   demand: false,
  })
+ .option("jail-janitor-interval", {
+  number: true,
+  default: 10,
+  alias: "jji",
+  description: "Interval for clearing jailed tokens (default: 10 min.)",
+  demand: false,
+  })
  .option("port", {
    number: true,
    alias: "p",
@@ -113,4 +127,5 @@ export const INDENT = 2;
 export const PORT: number = ARGS["port"];
 export const ASSET_HOST: string = ARGS["asset-host"];
 export const XMR_RPC_HOST: string = ARGS["rpc-host"];
-export const ALLOWED_URIS: string[] = ARGS["allowed-uris"].split(",")
+export const ANTI_SPAM_THRESHOLD: number = ARGS["anti-spam-threshold"] * 60000
+export const JAIL_JANITOR_INTERVAL: number = ARGS["jail-janitor-interval"] * 60000
