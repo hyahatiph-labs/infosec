@@ -12,6 +12,7 @@ import {
 import log, { LogLevel } from "./logging";
 import { getConfigs } from "./setup";
 import crypto from "crypto";
+import path from 'path';
 
 export const jail: JailedToken[] = [];
 
@@ -37,12 +38,13 @@ const isJailed = (proof: string): boolean => {
   const hash = crypto.createHash("sha256");
   hash.update(proof);
   const h_signature = hash.copy().digest("hex");
+  if (jail.length === 0) return true;
   jail.forEach((j) => {
     if (j.signature === h_signature) {
-      return true;
+      return false;
     }
   });
-  return false;
+  return true;
 };
 
 /**
@@ -54,7 +56,7 @@ const validateAsset = (uri: string): Asset => {
   log(`validate asset for uri: ${uri}`, LogLevel.DEBUG, true);
   const sConfig: string = getConfigs().toString();
   const assets: Asset[] = JSON.parse(sConfig).assets;
-  let vAsset;
+  let vAsset = null;
   assets.forEach((a) => {
     if (a.uri === uri) {
       vAsset = a;
@@ -68,11 +70,11 @@ const validateAsset = (uri: string): Asset => {
  * @param uri - uri of asset
  * @returns Asset
  */
-const bypassAsset = (uri: string): boolean => {
-  log(`checking bypass asset for uri: ${uri}`, LogLevel.DEBUG, true);
+const bypassAsset = (url: string): boolean => {
+  log(`checking bypass asset for uri: ${url}`, LogLevel.DEBUG, true);
   const sConfig: string = getConfigs().toString();
   const uris: string[] = JSON.parse(sConfig).bypass;
-  return uris.indexOf(uri) > -1;
+  return uris.indexOf(url) > -1;
 };
 
 /**
@@ -125,7 +127,7 @@ const parseHeader = (tpat: string): TPAT | null => {
  */
 const returnHeader = (parsedHeader: TPAT, req: any, res: any): void => {
   const h = validateAsset(req.url);
-  if (parsedHeader === null) {
+  if (parsedHeader === null && h !== null) {
     res
       .status(Http.PAYMENT_REQUIRED)
       .header(
@@ -134,6 +136,8 @@ const returnHeader = (parsedHeader: TPAT, req: any, res: any): void => {
           `min_amt="${h.amt}", ttl="${h.ttl}", hash="", signature="", ast="${ANTI_SPAM_THRESHOLD}"`
       )
       .send();
+  } else if (h === null) {
+    res.status(Http.FORBIDDEN).send();
   } else {
     res
       .status(Http.PAYMENT_REQUIRED)
@@ -152,27 +156,34 @@ const returnHeader = (parsedHeader: TPAT, req: any, res: any): void => {
  * @param req
  * @param res
  */
-const passThrough = (req: any, res: any) => {
-  if (req.method === "GET") {
-    axios
-      .get(`http://${ASSET_HOST}${req.url}`, req.body)
-      .then((v) => res.json(v.data))
-      .catch((v) => res.json(v));
-  } else if (req.method === "POST") {
-    axios
-      .post(`http://${ASSET_HOST}${req.url}`, req.body)
-      .then((v) => res.json(v.data))
-      .catch((v) => res.json(v));
-  } else if (req.method === "PATCH") {
-    axios
-      .patch(`http://${ASSET_HOST}${req.url}`, req.body)
-      .then((v) => res.json(v.data))
-      .catch((v) => res.json(v));
-  } else if (req.method === "DELETE") {
-    axios
-      .delete(`http://${ASSET_HOST}${req.url}`, req.body)
-      .then((v) => res.json(v.data))
-      .catch((v) => res.json(v));
+const passThrough = (req: any, res: any, h: Asset) => {
+  if (h && req.url !== "/") {
+    res.sendFile(path.join(__dirname, '../examples/static', h.file))
+  } else if (req.url === "/") { 
+    res.sendFile(path.join(__dirname, '../examples/static', 'login.html'));
+  }
+  else {
+    if (req.method === "GET") {
+      axios
+        .get(`http://${ASSET_HOST}${req.url}`, req.body)
+        .then((v) => res.json(v.data))
+        .catch((v) => res.json(v));
+    } else if (req.method === "POST") {
+      axios
+        .post(`http://${ASSET_HOST}${req.url}`, req.body)
+        .then((v) => res.json(v.data))
+        .catch((v) => res.json(v));
+    } else if (req.method === "PATCH") {
+      axios
+        .patch(`http://${ASSET_HOST}${req.url}`, req.body)
+        .then((v) => res.json(v.data))
+        .catch((v) => res.json(v));
+    } else if (req.method === "DELETE") {
+      axios
+        .delete(`http://${ASSET_HOST}${req.url}`, req.body)
+        .then((v) => res.json(v.data))
+        .catch((v) => res.json(v));
+    }
   }
 };
 
@@ -187,26 +198,33 @@ const passThrough = (req: any, res: any) => {
  * @returns
  */
 const isValidProof = (req: any, res: any): void => {
-  // check for bypass
-  if (bypassAsset(req.url)) {
-    passThrough(req, res);
+  log(`request body: ${JSON.stringify(req.body)}`, LogLevel.DEBUG, false);
+  // check for bypass, always bypass home (login?) page
+  if (bypassAsset(req.url || req.url === "/")) {
+    passThrough(req, res, null);
   } else {
     // check the proof
+    const h = validateAsset(req.url);
     const values = parseHeader(req.headers[Config.AUTHORIZATION]);
-    if (values === null) {
+    if (values === null && !h) {
       returnHeader(values, req, res);
     } else {
-      const h = validateAsset(req.url);
-      const oa = req.body.prokurilo_subaddress_ovverride;
+      let oa;
+      try {
+        oa = req.body.tpat_subaddress_override;
+      } catch {
+        oa = null;
+      }
       const ioa = oa !== null && oa !== undefined && oa !== "" && h.override;
+      const sig = h.static ? req.body.tpat_tx_proof : values.signature;
       const body = {
         jsonrpc: Config.RPC_VERSION,
         id: Config.RPC_ID,
         method: Config.RPC_CHECK_TX_PROOF,
         params: {
           address: ioa ? oa : h.subaddress,
-          txid: values.hash,
-          signature: values.signature,
+          txid: h.static ? req.body.tpat_tx_hash : values.hash,
+          signature: sig,
         },
       };
       axios
@@ -224,9 +242,10 @@ const isValidProof = (req: any, res: any): void => {
         */
           const isValidTTL =
             Math.floor(p.received / h.amt) * h.ttl > p.confirmations;
-          const isFree = isJailed(values.signature);
+          const isFree = isJailed(sig);
           log(
-            `ttl value: ${Math.floor(p.received / h.amt) * h.ttl}`,
+            `ttl value: ${Math.floor(p.received / h.amt) * h.ttl}, ` +
+            `isValid: ${isValidTTL}, isFree: ${isFree}`,
             LogLevel.DEBUG,
             true
           );
@@ -239,9 +258,9 @@ const isValidProof = (req: any, res: any): void => {
             returnHeader(values, req, res);
           } else {
             // jail token
-            jailToken(values.signature);
+            jailToken(sig);
             // pass response
-            passThrough(req, res);
+            passThrough(req, res, h);
           }
         })
         .catch(() =>

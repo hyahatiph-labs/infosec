@@ -7,6 +7,8 @@ import setup from "./setup";
 import log, { LogLevel } from "./logging";
 
 const APP = express();
+APP.use(express.json());
+APP.use(express.urlencoded({ extended: true }));
 // disable x-powered-by headers
 APP.disable('x-powered-by');
 // add helmet for hardening

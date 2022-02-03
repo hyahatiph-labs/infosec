@@ -13,6 +13,7 @@ export interface Asset {
     ttl: number
     uri: string
     static: boolean
+    file: string | null
     subaddress: string
     override: boolean
 }
@@ -32,7 +33,7 @@ export default interface ConfigFile {
  .option("asset-host", {
    string: true,
    alias: "a",
-   description: "Host and port of asset, e.g. localhost:1234",
+   description: "Host and port of assets, e.g. localhost:1234",
    demand: true,
  })
  .option("anti-spam-threshold", {
@@ -45,7 +46,7 @@ export default interface ConfigFile {
  .option("jail-janitor-interval", {
   number: true,
   default: 10,
-  alias: "jji",
+  alias: "j",
   description: "Interval for clearing jailed tokens (default: 10 min.)",
   demand: false,
   })
@@ -63,7 +64,7 @@ export default interface ConfigFile {
  })
  .option("log-level", {
    string: true,
-   alias: "ll",
+   alias: "l",
    description: "comma separated list of log levels to maintain",
    demand: false,
  }).argv;
@@ -81,6 +82,7 @@ export enum Config {
 export enum Http {
     HTTP_OK = 200,
     PAYMENT_REQUIRED = 402,
+    FORBIDDEN = 403,
     BAD_REQUEST = 404,
     SERVER_FAILURE = 503
 }
