@@ -15,6 +15,7 @@ import crypto from "crypto";
 import path from 'path';
 
 export const jail: JailedToken[] = [];
+const NODE_ENV = process.env.NODE_ENV || "";
 
 /**
  * Hash the signature and store hash temporarily
@@ -157,16 +158,48 @@ const returnHeader = (parsedHeader: TPAT, req: any, res: any): void => {
  * @param res
  */
 const passThrough = (req: any, res: any, h: Asset) => {
-  if (h && req.url !== "/") {
+  if (h && h.static && NODE_ENV === 'test') { // demo examples
     res.sendFile(path.join(__dirname, '../examples/static', h.file))
-  } else if (req.url === "/") { 
-    res.sendFile(path.join(__dirname, '../examples/static', 'login.html'));
-  }
-  else {
+  } else if (!h || h.static) { // static or redirects
     if (req.method === "GET") {
       axios
         .get(`http://${ASSET_HOST}${req.url}`, req.body)
-        .then((v) => res.json(v.data))
+        .then((v) => {
+          const html = v.data.replace("\n", "");
+          res.send(html);
+        })
+        .catch((v) => res.json(v));
+    } else if (req.method === "POST") {
+      axios
+        .post(`http://${ASSET_HOST}${req.url}`, req.body)
+        .then((v) => {
+          const html = v.data.replace("\n", "");
+          res.send(html);
+        })
+        .catch((v) => res.json(v));
+    } else if (req.method === "PATCH") {
+      axios
+        .patch(`http://${ASSET_HOST}${req.url}`, req.body)
+        .then((v) => {
+          const html = v.data.replace("\n", "");
+          res.send(html);
+        })
+        .catch((v) => res.json(v));
+    } else if (req.method === "DELETE") {
+      axios
+        .delete(`http://${ASSET_HOST}${req.url}`, req.body)
+        .then((v) => {
+          const html = v.data.replace("\n", "");
+          res.send(html);
+        })
+        .catch((v) => res.json(v));
+    }
+  }
+  else { // return json from protected API handlers
+    if (req.method === "GET") {
+      axios
+        .get(`http://${ASSET_HOST}${req.url}`, req.body)
+        .then((v) => res.json(v))
         .catch((v) => res.json(v));
     } else if (req.method === "POST") {
       axios
