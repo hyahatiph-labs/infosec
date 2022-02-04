@@ -1,6 +1,6 @@
 # Introduction
 
-In this document we aim to specify a protocol standard of what we call an `TPAT`. `TPAT` stands for Transaction Proof Authentication Token. TPATs are a new standard protocol for authentication and paid APIs developed by Hyahatiph Labs. TPATs can serve both as authentication, as well as a payment mechanism \(one can view it as a ticket\) for paid APIs. By leveraging the TPATs, a service or business is able to offer a new tier of paid APIs that sit between free, and subscription: pay as you go.
+In this document we aim to specify a protocol standard of what we call a `TPAT`. `TPAT` stands for Transaction Proof Authentication Token. TPATs are a new standard protocol for authentication and paid APIs developed by Hyahatiph Labs. TPATs can serve both as authentication, as well as a payment mechanism \(one can view it as a ticket\) for paid APIs. By leveraging the TPATs, a service or business is able to offer a new tier of paid APIs that sit between free, and subscription: pay as you go.
 
 One can view TPATs as a fancy authentication token or cookie. They differ from regular cookies in that they're a cryptographically verifiable bearer credential. The TPAT specification uses a combination of `HTTP` as well as the Monero Network to create a seamless end-to-end payment+authentication flow for the next-generation of anonymous payments for APIs.
 
