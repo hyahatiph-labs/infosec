@@ -1,10 +1,14 @@
 <div class="test">
-    <h3>Prokurilo: Test Login Page</h3>
-    <p>This is a sample ui for protecting asset TPAT style</p>
+    <h3>Prokurilo: XMR (stagenet) Test Login Page</h3>
+    <p>This is a sample ui for protecting an asset TPAT style</p>
+    <p>Subaddress: 7BvXjs5AuYi5YXxe4HvHtjEqDndJKVLvXgUmfpVDX9kr7Y4oCnCrVPUNWyopi4YAsXgP6epapXuinWH94n89bLsmEcPxTNW</p>
+    <p>Send at least 2000000 piconeros to the subaddress above, then generate a transaction proof</p>
+    <p>This amount will give access for 60 xmr blocks</p>
+    <p>Send more xmr for longer access (e.g. 4000000 for 120 blocks)</p>
     <form id="test" action="/test" method="post">
         <input type="username" placeholder="transaction hash" name="tpat_tx_hash" required>
         <br />
-        <input type="password" placeholder="signature" name="tpat_tx_proof" required>
+        <input type="password" placeholder="OutProofV..." name="tpat_tx_proof" required>
         <br />
         <input type="submit" value="Do something fun!">
     </form>

@@ -20,6 +20,7 @@ const NODE_ENV = process.env.NODE_ENV || "";
 /**
  * Hash the signature and store hash temporarily
  * for anti-spam measures.
+ * TODO: this won't scale. Implement MongoDB
  * @param proof - signature from reserve proof
  */
 const jailToken = (proof: string): void => {
@@ -158,9 +159,11 @@ const returnHeader = (parsedHeader: TPAT, req: any, res: any): void => {
  * @param res
  */
 const passThrough = (req: any, res: any, h: Asset) => {
-  if (h && h.static && NODE_ENV === 'test') { // demo examples
-    res.sendFile(path.join(__dirname, '../examples/static', h.file))
-  } else if (!h || h.static) { // static or redirects
+  if (h && h.static && NODE_ENV === "test") { // demo examples
+    res.sendFile(path.join(__dirname, "../examples/static", h.file));
+  } else if (NODE_ENV === "test" && req.url === "/") {
+    res.sendFile(path.join(__dirname, "../examples/static", "login.html"));
+  } else if ((!h || h.static) || (h && h.static)) { // static or redirects
     if (req.method === "GET") {
       axios
         .get(`http://${ASSET_HOST}${req.url}`, req.body)
