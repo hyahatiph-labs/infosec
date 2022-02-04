@@ -1,20 +1,11 @@
 import axios from "axios";
-import {
-  ANTI_SPAM_THRESHOLD,
-  Asset,
-  ASSET_HOST,
-  Config,
-  Http,
-  JailedToken,
-  TPAT,
-  XMR_RPC_HOST,
-} from "./config";
+import * as CONFIG from "./config";
 import log, { LogLevel } from "./logging";
-import { getConfigs } from "./setup";
+import { getConfigs, getDemoStaticFiles } from "./setup";
 import crypto from "crypto";
 import path from 'path';
 
-export const jail: JailedToken[] = [];
+export const jail: CONFIG.JailedToken[] = [];
 const NODE_ENV = process.env.NODE_ENV || "";
 
 /**
@@ -54,10 +45,10 @@ const isJailed = (proof: string): boolean => {
  * @param uri - uri of asset
  * @returns Asset
  */
-const validateAsset = (uri: string): Asset => {
+const validateAsset = (uri: string): CONFIG.Asset => {
   log(`validate asset for uri: ${uri}`, LogLevel.DEBUG, true);
   const sConfig: string = getConfigs().toString();
-  const assets: Asset[] = JSON.parse(sConfig).assets;
+  const assets: CONFIG.Asset[] = JSON.parse(sConfig).assets;
   let vAsset = null;
   assets.forEach((a) => {
     if (a.uri === uri) {
@@ -72,11 +63,18 @@ const validateAsset = (uri: string): Asset => {
  * @param uri - uri of asset
  * @returns Asset
  */
-const bypassAsset = (url: string): boolean => {
-  log(`checking bypass asset for uri: ${url}`, LogLevel.DEBUG, true);
+const bypassAsset = (req: any): boolean => {
+  log(`checking bypass asset for uri: ${req.url}`, LogLevel.DEBUG, true);
   const sConfig: string = getConfigs().toString();
   const uris: string[] = JSON.parse(sConfig).bypass;
-  return uris.indexOf(url) > -1;
+  /* In the demo static content is getting injected from the examples
+     This should be ok in order to serve but normally things like images
+     won't be on this server.
+  */
+  const d = getDemoStaticFiles();
+  const isDemoContent = (req.ip === CONFIG.LOCAL_HOST || req.ip === CONFIG.LOCAL_HOST_IPV6)
+    && d.indexOf(req.url.replace("/", "")) > -1 && NODE_ENV === 'test';
+  return uris.indexOf(req.url) > -1 || isDemoContent;
 };
 
 /**
@@ -84,7 +82,7 @@ const bypassAsset = (url: string): boolean => {
  * @param {String} tpat - transaction proof authentication token
  * @returns {Object} data with hash and signature
  */
-const parseHeader = (tpat: string): TPAT | null => {
+const parseHeader = (tpat: string): CONFIG.TPAT | null => {
   log(`tpat: ${tpat}`, LogLevel.DEBUG, true);
   try {
     const hash = tpat ? tpat.split("TPAT ")[1].split(":")[0] : "";
@@ -127,27 +125,27 @@ const parseHeader = (tpat: string): TPAT | null => {
  * @param req
  * @param res
  */
-const returnHeader = (parsedHeader: TPAT, req: any, res: any): void => {
+const returnHeader = (parsedHeader: CONFIG.TPAT, req: any, res: any): void => {
   const h = validateAsset(req.url);
   if (parsedHeader === null && h !== null) {
     res
-      .status(Http.PAYMENT_REQUIRED)
+      .status(CONFIG.Http.PAYMENT_REQUIRED)
       .header(
         "www-authenticate",
         `TPAT address="${h.subaddress}", ` +
-          `min_amt="${h.amt}", ttl="${h.ttl}", hash="", signature="", ast="${ANTI_SPAM_THRESHOLD}"`
+          `min_amt="${h.amt}", ttl="${h.ttl}", hash="", signature="", ast="${CONFIG.ANTI_SPAM_THRESHOLD}"`
       )
       .send();
   } else if (h === null) {
-    res.status(Http.FORBIDDEN).send();
+    res.status(CONFIG.Http.FORBIDDEN).send();
   } else {
     res
-      .status(Http.PAYMENT_REQUIRED)
+      .status(CONFIG.Http.PAYMENT_REQUIRED)
       .header(
         "www-authenticate",
         `TPAT address="${h.subaddress}", ` +
           `min_amt="${h.amt}", ttl="${h.ttl}", hash="${parsedHeader.hash}",` +
-          `signature="${parsedHeader.signature}", ast="${ANTI_SPAM_THRESHOLD}"`
+          `signature="${parsedHeader.signature}", ast="${CONFIG.ANTI_SPAM_THRESHOLD}"`
       )
       .send();
   }
@@ -158,15 +156,17 @@ const returnHeader = (parsedHeader: TPAT, req: any, res: any): void => {
  * @param req
  * @param res
  */
-const passThrough = (req: any, res: any, h: Asset) => {
+const passThrough = (req: any, res: any, h: CONFIG.Asset) => {
   if (h && h.static && NODE_ENV === "test") { // demo examples
     res.sendFile(path.join(__dirname, "../examples/static", h.file));
   } else if (NODE_ENV === "test" && req.url === "/") {
     res.sendFile(path.join(__dirname, "../examples/static", "login.html"));
+  } else if (NODE_ENV === "test" && req.url !== "/") {
+    res.sendFile(path.join(__dirname, "../examples/static", req.url.replace("/", "")));
   } else if ((!h || h.static) || (h && h.static)) { // static or redirects
     if (req.method === "GET") {
       axios
-        .get(`http://${ASSET_HOST}${req.url}`, req.body)
+        .get(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
         .then((v) => {
           const html = v.data.replace("\n", "");
           res.send(html);
@@ -174,7 +174,7 @@ const passThrough = (req: any, res: any, h: Asset) => {
         .catch((v) => res.json(v));
     } else if (req.method === "POST") {
       axios
-        .post(`http://${ASSET_HOST}${req.url}`, req.body)
+        .post(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
         .then((v) => {
           const html = v.data.replace("\n", "");
           res.send(html);
@@ -182,7 +182,7 @@ const passThrough = (req: any, res: any, h: Asset) => {
         .catch((v) => res.json(v));
     } else if (req.method === "PATCH") {
       axios
-        .patch(`http://${ASSET_HOST}${req.url}`, req.body)
+        .patch(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
         .then((v) => {
           const html = v.data.replace("\n", "");
           res.send(html);
@@ -190,7 +190,7 @@ const passThrough = (req: any, res: any, h: Asset) => {
         .catch((v) => res.json(v));
     } else if (req.method === "DELETE") {
       axios
-        .delete(`http://${ASSET_HOST}${req.url}`, req.body)
+        .delete(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
         .then((v) => {
           const html = v.data.replace("\n", "");
           res.send(html);
@@ -201,22 +201,22 @@ const passThrough = (req: any, res: any, h: Asset) => {
   else { // return json from protected API handlers
     if (req.method === "GET") {
       axios
-        .get(`http://${ASSET_HOST}${req.url}`, req.body)
+        .get(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
         .then((v) => res.json(v))
         .catch((v) => res.json(v));
     } else if (req.method === "POST") {
       axios
-        .post(`http://${ASSET_HOST}${req.url}`, req.body)
+        .post(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
         .then((v) => res.json(v.data))
         .catch((v) => res.json(v));
     } else if (req.method === "PATCH") {
       axios
-        .patch(`http://${ASSET_HOST}${req.url}`, req.body)
+        .patch(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
         .then((v) => res.json(v.data))
         .catch((v) => res.json(v));
     } else if (req.method === "DELETE") {
       axios
-        .delete(`http://${ASSET_HOST}${req.url}`, req.body)
+        .delete(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
         .then((v) => res.json(v.data))
         .catch((v) => res.json(v));
     }
@@ -236,12 +236,12 @@ const passThrough = (req: any, res: any, h: Asset) => {
 const isValidProof = (req: any, res: any): void => {
   log(`request body: ${JSON.stringify(req.body)}`, LogLevel.DEBUG, false);
   // check for bypass, always bypass home (login?) page
-  if (bypassAsset(req.url || req.url === "/")) {
+  if (bypassAsset(req) || req.url === "/") {
     passThrough(req, res, null);
   } else {
     // check the proof
     const h = validateAsset(req.url);
-    const values = parseHeader(req.headers[Config.AUTHORIZATION]);
+    const values = parseHeader(req.headers[CONFIG.Header.AUTHORIZATION]);
     if (values === null && !h) {
       returnHeader(values, req, res);
     } else {
@@ -254,9 +254,9 @@ const isValidProof = (req: any, res: any): void => {
       const ioa = oa !== null && oa !== undefined && oa !== "" && h.override;
       const sig = h.static ? req.body.tpat_tx_proof : values.signature;
       const body = {
-        jsonrpc: Config.RPC_VERSION,
-        id: Config.RPC_ID,
-        method: Config.RPC_CHECK_TX_PROOF,
+        jsonrpc: CONFIG.RPC.VERSION,
+        id: CONFIG.RPC.ID,
+        method: CONFIG.RPC.CHECK_TX_PROOF,
         params: {
           address: ioa ? oa : h.subaddress,
           txid: h.static ? req.body.tpat_tx_hash : values.hash,
@@ -264,7 +264,7 @@ const isValidProof = (req: any, res: any): void => {
         },
       };
       axios
-        .post(`http://${XMR_RPC_HOST}/json_rpc`, body)
+        .post(`http://${CONFIG.XMR_RPC_HOST}/json_rpc`, body)
         .then((rp) => {
           const p = rp.data.result;
           log(`rpc response: ${JSON.stringify(p)}`, LogLevel.DEBUG, false);
@@ -301,7 +301,7 @@ const isValidProof = (req: any, res: any): void => {
         })
         .catch(() =>
           res
-            .status(Http.SERVER_FAILURE)
+            .status(CONFIG.Http.SERVER_FAILURE)
             .json({ message: "Proof generation failure" })
         );
     }

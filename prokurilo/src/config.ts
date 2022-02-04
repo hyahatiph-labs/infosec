@@ -19,7 +19,7 @@ export interface Asset {
 }
 
 // interface for the config file
-export default interface ConfigFile {
+export interface ConfigFile {
     port: number
     host: string
     assets: Asset[]
@@ -69,18 +69,22 @@ export default interface ConfigFile {
    demand: false,
  }).argv;
 
-export enum Config {
+export enum Header {
     WWW_AUTHENTICATE = "www-authenticate",
     AUTHORIZATION = "authorization",
-    RPC_ID = "0",
-    RPC_VERSION = "2.0",
-    RPC_CHECK_TX_PROOF = "check_tx_proof",
-    RPC_GET_VERSION = "get_version",
-    EXIT_ERROR = 1
 }
 
+export enum RPC {
+  ID = "0",
+  VERSION = "2.0",
+  CHECK_TX_PROOF = "check_tx_proof",
+  GET_VERSION = "get_version",
+}
+
+export const EXIT_ERROR = 1
+
 export enum Http {
-    HTTP_OK = 200,
+    OK = 200,
     PAYMENT_REQUIRED = 402,
     FORBIDDEN = 403,
     BAD_REQUEST = 404,
@@ -124,6 +128,8 @@ export const DEFAULT_CONFIG: ConfigFile = {
     bypass: []
   };
 export const INDENT = 2;
+export const LOCAL_HOST = "127.0.0.1";
+export const LOCAL_HOST_IPV6 = "::1";
 
 // set cmd line args
 export const PORT: number = ARGS["port"];
