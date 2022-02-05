@@ -30,16 +30,16 @@ export const getDemoStaticFiles = (): string[] => {
     try {
       config = await fsp.readFile(CONFIG.CONFIG_PATH);
     } catch {
-      log("no config file found", LogLevel.ERROR, true);
+      log("no config file found", LogLevel.ERROR, false);
       await fsp
         .mkdir(`${os.homedir()}/.prokurilo/`)
-        .catch(() => log(`path for config already exists`, LogLevel.INFO, true));
+        .catch(() => log(`path for config already exists`, LogLevel.INFO, false));
       await fsp
         .writeFile(CONFIG.CONFIG_PATH, JSON.stringify(CONFIG.DEFAULT_CONFIG, null, CONFIG.INDENT))
-        .catch(() => log("failed to write config file", LogLevel.INFO, true));
+        .catch(() => log("failed to write config file", LogLevel.INFO, false));
       config = await fsp.readFile(CONFIG.CONFIG_PATH);
       if (!config) {
-        await log("failed to write config", LogLevel.ERROR, true);
+        await log("failed to write config", LogLevel.ERROR, false);
       }
     }
     // verify RPC connection
