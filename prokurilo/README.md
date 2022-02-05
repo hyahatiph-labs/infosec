@@ -23,8 +23,10 @@ prokurilo/
 
 ## Development
 
-1. Run `node dist/prokurilo.js` to run server *--help for help 
+1. Run `node dist/prokurilo.js` to run server *--help for help
+2. Set environment variable `NODE_ENV=test` to use example static content 
 3. Verify configuration files at `~/.prokurilo/config.json`
+
 <br/>
 
 ```bash
@@ -51,16 +53,18 @@ Missing required arguments: asset-host, allowed-uris, port, rpc-host
 
 ```json 
 {
-  "port": 8989,
+  "port": 8081,
   "host": "http://localhost",
   "assets": [
-    {
-      "amt": 2000000 ,
+    { "amt": 2000000 ,
       "ttl": 60,
-      "uri": "/price/xmr",
-      "static": false,
-      "subaddress": "7BvXjs5AuYi5..."
-    },
-    {} // asset 2
-  ]
+      "uri": "/test",
+      "file": "protected.html",
+      "static": true,
+      "subaddress": "7BvXjs5AuYi5YXxe4HvHtjEqDndJKVLvXgUmfpVDX9kr7Y4oCnCrVPUNWyopi4YAsXgP6epapXuinWH94n89bLsmEcPxTNW",
+      "override": false
+    }
+  ],
+  "bypass": ["/"]
+}
 ```

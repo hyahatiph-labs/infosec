@@ -124,8 +124,18 @@ export const CONFIG_PATH = `${os.homedir()}/.prokurilo/config.json`;
 export const DEFAULT_CONFIG: ConfigFile = {
     port: 8989,
     host: "http://localhost",
-    assets: [],
-    bypass: []
+    assets: [
+      { 
+        "amt": 2000000 ,
+        "ttl": 60,
+        "uri": "/test",
+        "file": "protected.html",
+        "static": true,
+        "subaddress": "7BvXjs5AuYi5YXxe4HvHtjEqDndJKVLvXgUmfpVDX9kr7Y4oCnCrVPUNWyopi4YAsXgP6epapXuinWH94n89bLsmEcPxTNW",
+        "override": false
+      }
+    ],
+    bypass: ["/"]
   };
 export const INDENT = 2;
 export const LOCAL_HOST = "127.0.0.1";
