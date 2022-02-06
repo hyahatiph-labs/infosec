@@ -85,11 +85,20 @@ const bypassAsset = (req: any): boolean => {
 const parseHeader = (tpat: string): CONFIG.TPAT | null => {
   log(`tpat: ${tpat}`, LogLevel.DEBUG, true);
   try {
-    const hash = tpat ? tpat.split("TPAT ")[1].split(":")[0] : "";
-    const signature = tpat ? tpat.split("TPAT ")[1].split(":")[1] : "";
-    const subaddress_override = tpat
-      ? tpat.split("TPAT ")[1].split(":")[2]
-      : "";
+    let hash;
+    let signature;
+    let sao;
+    if (tpat && tpat.indexOf("tpat ") > -1) {
+      hash = tpat.split("tpat ")[1].split(":")[0];
+      signature = tpat.split("tpat ")[1].split(":")[1];
+      sao = tpat.split("tpat ")[1].split(":")[2];
+    }
+    if (tpat && tpat.indexOf("TPAT ") > -1) {
+      hash = tpat.split("TPAT ")[1].split(":")[0];
+      signature = tpat.split("TPAT ")[1].split(":")[1];
+      sao = tpat.split("TPAT ")[1].split(":")[2];
+    }
+    const subaddress_override = sao;
     const isSubAddressOverride =
       subaddress_override !== null &&
       subaddress_override !== undefined &&
@@ -103,7 +112,7 @@ const parseHeader = (tpat: string): CONFIG.TPAT | null => {
       signature !== undefined &&
       signature !== null &&
       signature !== "" &&
-      tpat.indexOf("TPAT") > -1;
+      tpat.indexOf("TPAT") > -1 || tpat.indexOf("tpat ") > -1;
     if (isValid) {
       return {
         hash,
