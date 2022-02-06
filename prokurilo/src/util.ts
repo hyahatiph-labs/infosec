@@ -28,16 +28,18 @@ const jailToken = (proof: string): void => {
  * @returns - boolean
  */
 const isJailed = (proof: string): boolean => {
+  let match = false;
   const hash = crypto.createHash("sha256");
   hash.update(proof);
   const h_signature = hash.copy().digest("hex");
-  if (jail.length === 0) return true;
+  if (jail.length === 0) return false;
   jail.forEach((j) => {
     if (j.signature === h_signature) {
-      return false;
+      log(`token in jail since ${j.timestamp}`, LogLevel.DEBUG, true);
+      match = true;
     }
   });
-  return true;
+  return match;
 };
 
 /**
@@ -287,10 +289,10 @@ const isValidProof = (req: any, res: any): void => {
         */
           const isValidTTL =
             Math.floor(p.received / h.amt) * h.ttl > p.confirmations;
-          const isFree = isJailed(sig);
+          const isNotFree = isJailed(sig);
           log(
             `ttl value: ${Math.floor(p.received / h.amt) * h.ttl}, ` +
-            `isValid: ${isValidTTL}, isFree: ${isFree}`,
+            `isValid: ${isValidTTL}, isJailed: ${isNotFree}`,
             LogLevel.DEBUG,
             true
           );
@@ -298,7 +300,7 @@ const isValidProof = (req: any, res: any): void => {
             p.good === false ||
             p.in_pool === true ||
             !isValidTTL ||
-            !isFree
+            isNotFree
           ) {
             returnHeader(values, req, res);
           } else {

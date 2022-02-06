@@ -58,9 +58,10 @@ setup();
  * create janitor interval to sweep cache and reset tokens
  */
 setInterval(() => {
-  log('checking jail to free tokens...', LogLevel.INFO, true)
+  log('checking jail to free tokens...', LogLevel.INFO, true);
   jail.forEach((j,i) => {
-    if ((j.timestamp - Date.now()) > ANTI_SPAM_THRESHOLD) {
+    if ((Date.now() - j.timestamp) > ANTI_SPAM_THRESHOLD) {
+      log(`free token at index: ${i}`, LogLevel.DEBUG, true);
       delete jail[i]
     }
   })

@@ -67,6 +67,15 @@ If a client wishes to send the hash `"hash123..."` and the transaction proof `"O
 Authorization: TPAT hash123:OutProofV123
 ```
 
+#### Additional Notes
+
+* `address` - xmr address / subaddress to pay
+* `min_amount` - lowest payment per time-to-live
+* `ttl` - monero blocks for time to live (~2 min. blocks)
+* `hash` - transaction hash
+* `signature` - transaction proof signature
+* `ast` - anti-spam threshold, minutes that token is restricted until next use
+
 ### Subaddress-Override
 
 This is a new concept that will allow a sort of royalty-based payment system. Say you host

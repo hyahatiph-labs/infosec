@@ -76,3 +76,16 @@ Missing required arguments: asset-host, port, rpc-host
   "bypass": ["/"]
 }
 ```
+
+### www-authenticate header
+
+```bash
+www-authenticate: TPAT address="74gqcJZAtgz...", min_amt="1000000", ttl="30", hash="hash123...", signature="OutProofV123...", ast="60"
+```
+
+* `address` - xmr address / subaddress to pay
+* `min_amount` - lowest payment per time-to-live
+* `ttl` - monero blocks for time to live (~2 min. blocks)
+* `hash` - transaction hash
+* `signature` - transaction proof signature
+* `ast` - anti-spam threshold, minutes that token is restricted until next use
