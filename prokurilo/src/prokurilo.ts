@@ -1,10 +1,14 @@
 import express from "express";
 import helmet from "helmet";
-import { ANTI_SPAM_THRESHOLD, JAIL_JANITOR_INTERVAL, PORT } from "./config";
+import { ANTI_SPAM_THRESHOLD, CERT_PATH, JAIL_JANITOR_INTERVAL, KEY_PATH, PORT } from "./config";
 import isValidProof, { jail } from "./util";
 import os from "os";
 import setup from "./setup";
 import log, { LogLevel } from "./logging";
+import https from 'https';
+import fs from 'fs';
+
+const NODE_ENV = process.env.NODE_ENV || "";
 
 const APP = express();
 APP.use(express.json());
@@ -63,6 +67,19 @@ setInterval(() => {
 }, JAIL_JANITOR_INTERVAL)
 
 // start the server
-APP.listen(PORT,  () => {
-  console.log(`Prokurilo running on ${os.hostname()}`);
-})
+if (NODE_ENV === 'test') {
+  APP.listen(PORT,  () => {
+    log(`Prokurilo DEV running on ${os.hostname()}`, LogLevel.INFO, true);
+  })
+} else {
+  try {
+    log(`Prokurilo PROD running on ${os.hostname()}`, LogLevel.INFO, true);
+    const HTTPS_SERVER = https.createServer({
+      key: fs.readFileSync(KEY_PATH),
+      cert: fs.readFileSync(CERT_PATH)
+    }, APP);
+    HTTPS_SERVER.listen(PORT, 'localhost'); 
+  } catch {
+    throw new Error('failed to set https');
+  }
+}

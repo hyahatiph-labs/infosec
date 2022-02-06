@@ -30,6 +30,18 @@ export interface ConfigFile {
  * User input for the prokurilo
  */
  const ARGS = yargs
+ .option("key-path", {
+  string: true,
+  alias: "kp",
+  description: "Path to SSL private key",
+  demand: false,
+})
+.option("cert-path", {
+  string: true,
+  alias: "cep",
+  description: "Path to the server certification",
+  demand: false,
+})
  .option("asset-host", {
    string: true,
    alias: "a",
@@ -138,11 +150,12 @@ export const DEFAULT_CONFIG: ConfigFile = {
     bypass: ["/"]
   };
 export const INDENT = 2;
-export const LOCAL_HOST = "127.0.0.1";
-export const LOCAL_HOST_IPV6 = "::1";
+export const LOCAL_HOSTS: string[] = ["::ffff:127.0.0.1", "127.0.0.1", "::1"]
 
 // set cmd line args
 export const PORT: number = ARGS["port"];
+export const KEY_PATH: string = ARGS["key-path"];
+export const CERT_PATH: string = ARGS["cert-path"];
 export const ASSET_HOST: string = ARGS["asset-host"];
 export const XMR_RPC_HOST: string = ARGS["rpc-host"];
 export const ANTI_SPAM_THRESHOLD: number = ARGS["anti-spam-threshold"] * 60000

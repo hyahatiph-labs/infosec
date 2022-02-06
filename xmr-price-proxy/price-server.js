@@ -13,7 +13,6 @@ const API_KEY = process.env.XMR_PRICE_PROXY_API_KEY || ""
 const URL = `https://min-api.cryptocompare.com/data/price?fsym=XMR&tsyms=BTC&api_key=${API_KEY}`
 const PORT = process.env.XMR_PRICE_PROXY_PORT || 7777
 const ADDRESS = process.env.XMR_ADDRESS || ""
-const PAY_PROTECT_MODE = process.env.PAY_PROTECT_MODE || true
 const XMR_RPC_PORT = process.env.XMR_RPC_PORT || 18083
 const XMR_RPC_HOST = process.env.XMR_RPC_HOST || '127.0.0.1'
 const DEBUG = process.env.XMR_PRICE_PROXY_DEBUG || false
@@ -141,7 +140,7 @@ const isValidProof = (tpat, res) => {
  * ACCESS: PUBLIC with TPAT
  */
 APP.get('/price/xmr', (req, res) => {
-  if (PAY_PROTECT_MODE === 'true' || NODE_ENV !== 'test') {
+  if (NODE_ENV !== 'test') {
     isValidProof(req.headers['authorization'], res)
   } else {
     res.status(HTTP.OK).json(cachedPrice)

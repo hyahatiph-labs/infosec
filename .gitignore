@@ -109,3 +109,8 @@ dist
 # c++ stuff
 a.out
 build/
+
+# http testing
+*.http
+server.crt
+server.key

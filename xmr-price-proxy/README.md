@@ -13,8 +13,6 @@ over i2p from a proxy server.
     * `SERVER_PORT` - price-proxy server port, defaults to 7777
     * `XMR_RPC_PORT` - wallet-rpc port, defaults 18081
     * `XMR_RPC_HOST` - wallet-rpc host, defaults to 127.0.0.1
-    * `PAY_PROTECT_MODE` - protect server with TPAT (transaction proof authentication token), 
-        defaults to true
     * `XMR_PRICE_PROXY_CACHE_INTERVAL` - milliseconds for refreshing price, defaults to 600000
     * `XMR_PRICE_PROXY_TTL` - confirmations for minimum payment, defaults to 30 or ~ 1 hour
     * `XMR_PRICE_PROXY_MIN_AMOUNT` - minimum payment for TTL. (i.e. - min_amt - 0.01XMR and TTL of 
@@ -39,7 +37,7 @@ over i2p from a proxy server.
 Example:
 
 ```bash
-curl -ivk http://localhost:7777/price/xmr -H 'authroization: TPAT 17c2d5252...:OutProofV2...'
+curl -ivk http://localhost:7777/price/xmr -H 'authorization: TPAT 17c2d5252...:OutProofV2...'
 ```
 
 invalid request: response is HTTP Status 402 with www-authenticate header set with payment address

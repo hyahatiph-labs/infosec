@@ -72,7 +72,7 @@ const bypassAsset = (req: any): boolean => {
      won't be on this server.
   */
   const d = getDemoStaticFiles();
-  const isDemoContent = (req.ip === CONFIG.LOCAL_HOST || req.ip === CONFIG.LOCAL_HOST_IPV6)
+  const isDemoContent = CONFIG.LOCAL_HOSTS.indexOf(req.ip) > -1
     && d.indexOf(req.url.replace("/", "")) > -1 && NODE_ENV === 'test';
   return uris.indexOf(req.url) > -1 || isDemoContent;
 };
@@ -161,7 +161,7 @@ const passThrough = (req: any, res: any, h: CONFIG.Asset) => {
     res.sendFile(path.join(__dirname, "../examples/static", h.file));
   } else if (NODE_ENV === "test" && req.url === "/") {
     res.sendFile(path.join(__dirname, "../examples/static", "login.html"));
-  } else if (NODE_ENV === "test" && req.url !== "/") {
+  } else if (NODE_ENV === "test" && req.url !== "/" && !h) {
     res.sendFile(path.join(__dirname, "../examples/static", req.url.replace("/", "")));
   } else if ((!h || h.static) || (h && h.static)) { // static or redirects
     if (req.method === "GET") {
@@ -202,7 +202,7 @@ const passThrough = (req: any, res: any, h: CONFIG.Asset) => {
     if (req.method === "GET") {
       axios
         .get(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
-        .then((v) => res.json(v))
+        .then((v) => res.json(v.data))
         .catch((v) => res.json(v));
     } else if (req.method === "POST") {
       axios
@@ -302,7 +302,7 @@ const isValidProof = (req: any, res: any): void => {
         .catch(() =>
           res
             .status(CONFIG.Http.SERVER_FAILURE)
-            .json({ message: "Proof generation failure" })
+            .json({ message: "Proof validation failure" })
         );
     }
   }

@@ -9,7 +9,7 @@ prokurilo/
 ├── src                # Directory of source code
    ├── test              # Test files
    ├── config.ts         # Configuration properties
-   ├── prokurilo.ts        # Entry point for the app
+   ├── prokurilo.ts      # Entry point for the app
    ├── setup.ts          # Creates configuration test RPC connections.
    ├── logging.ts        # In house logger, since TS hates console.log()
    ├── util.ts           # General purpose functions
@@ -31,18 +31,22 @@ prokurilo/
 
 ```bash
 Options:
-      --help                Show help                                  [boolean]
-      --version             Show version number                        [boolean]
-  -a, --asset-host          Host and port of asset, e.g. localhost:1234
+      --help                        Show help                          [boolean]
+      --version                     Show version number                [boolean]
+  -a, --asset-host                  Host and port of assets, e.g. localhost:1234
                                                              [string] [required]
-      --allowed-uris, --au  Comma separated list of URIs     [string] [required]
-  -p, --port                Port to run this server on       [number] [required]
-  -r, --rpc-host            Host and port of monero-wallet-rpc
+      --anti-spam-threshold, --ast  Number of minutes for anti-spam binning
+                                    (default: 60 min.)    [number] [default: 60]
+  -j, --jail-janitor-interval       Interval for clearing jailed tokens
+                                    (default: 10 min.)    [number] [default: 10]
+  -p, --port                        Port to run this server on
+                                                             [number] [required]
+  -r, --rpc-host                    Host and port of monero-wallet-rpc
                                                              [string] [required]
-      --log-level, --ll     comma separated list of log levels to maintain
-                                                                        [string]
+  -l, --log-level                   comma separated list of log levels to
+                                    maintain                            [string]
 
-Missing required arguments: asset-host, allowed-uris, port, rpc-host
+Missing required arguments: asset-host, port, rpc-host
 ```
 
 ## Notes
