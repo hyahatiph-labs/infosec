@@ -31,7 +31,7 @@ TPATs could be configured for use on a per-backend-service basis or for all Hyah
 
 If a client’s TPAT is intercepted by Mallory, which is possible if the transmission is not encrypted in some way such as TLS, the TPAT can be used by Mallory and the TPAT proxy would not be able to distinguish this usage as illicit.
 
-TPAT authentication is also vulnerable to spoofing by counterfeit servers. If a client slightly mistypes the URL of a desired backend service, they become vulnerable to spoofing attacks if connecting to a server that maliciously stores their TPAT and uses it for their own purposes. This attack could be addressed by requiring the user of the TPAT to have a specific IP address. However, there are downsides to this approach; for example, if a user switches WiFi networks, their token becomes unusable.
+TPAT authentication is also vulnerable to spoofing by counterfeit servers. If a client slightly mistypes the URL of a desired backend service, they become vulnerable to spoofing attacks if connecting to a server that maliciously stores their TPAT and uses it for their own purposes. This attack could be addressed by requiring the user of the TPAT to have a specific IP address (i2p host). However, there are downsides to this approach; for example, if a user switches WiFi networks, their token becomes unusable.
 
 ## HTTP Specification
 
@@ -74,7 +74,7 @@ Authorization: TPAT hash123:OutProofV123
 * `ttl` - monero blocks for time to live (~2 min. blocks)
 * `hash` - transaction hash
 * `signature` - transaction proof signature
-* `ast` - anti-spam threshold, minutes that token is restricted until next use
+* `ast` - anti-spam threshold, milliseconds that token is restricted until next use
 
 ### Subaddress-Override
 
