@@ -24,6 +24,8 @@ prokurilo/
 ## Development
 
 1. Run `node dist/prokurilo.js` to run server *--help for help
+    * PROD example => `node dist/prokurilo.js -a localhost:7777 -p 8888 -r 127.0.0.1:38083 -l INFO,DEBUG,ERROR --cert-path server.crt --key-path server.key` (demo static content is not servable)
+    * DEV example (set env variable `NODE_ENV=test`) => `node dist/prokurilo.js -a localhost:7777 -p 8888 -r 127.0.0.1:38083 -l INFO,DEBUG,ERROR` 
 2. Set environment variable `NODE_ENV=test` to use example static content 
 3. Verify configuration files at `~/.prokurilo/config.json`
 
@@ -33,6 +35,8 @@ prokurilo/
 Options:
       --help                        Show help                          [boolean]
       --version                     Show version number                [boolean]
+      --key-path, --kp              Path to SSL private key             [string]
+      --cert-path, --cep            Path to the server certification    [string]
   -a, --asset-host                  Host and port of assets, e.g. localhost:1234
                                                              [string] [required]
       --anti-spam-threshold, --ast  Number of minutes for anti-spam binning
