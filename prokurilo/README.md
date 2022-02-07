@@ -24,6 +24,8 @@ prokurilo/
 ## Development
 
 1. Run `node dist/prokurilo.js` to run server *--help for help
+    * run `monero-wallet-rpc` similar to below:
+      `./path/to/monero-wallet-rpc --stagenet --wallet-file /path/to/Monero/wallets/stagenet/stagenet --prompt-for-password --rpc-bind-port 38083 --disable-rpc-login`
     * PROD example => `node dist/prokurilo.js -a localhost:7777 -p 8888 -r 127.0.0.1:38083 -l INFO,DEBUG,ERROR --cert-path server.crt --key-path server.key` (demo static content is not servable)
     * DEV example (set env variable `NODE_ENV=test`) => `node dist/prokurilo.js -a localhost:7777 -p 8888 -r 127.0.0.1:38083 -l INFO,DEBUG,ERROR` 
 2. Set environment variable `NODE_ENV=test` to use example static content 
