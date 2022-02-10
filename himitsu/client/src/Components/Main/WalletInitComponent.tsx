@@ -13,7 +13,9 @@ import InputAdornment from '@material-ui/core/InputAdornment';
 import FormControl from '@material-ui/core/FormControl';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import { Visibility } from '@material-ui/icons';
-import { Button, CircularProgress } from '@material-ui/core';
+import {
+  Button, CircularProgress, styled, Switch, Typography,
+} from '@material-ui/core';
 import { setGlobalState, useGlobalState } from '../../state';
 import { HTTP_OK, PROXY } from '../../Config/constants';
 
@@ -45,11 +47,59 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
 }));
 
+const AntSwitch = styled(Switch)(({ theme }) => ({
+  width: 42,
+  height: 16,
+  padding: 0,
+  display: 'flex',
+  '&:active': {
+    '& .MuiSwitch-thumb': {
+      width: 15,
+    },
+    '& .MuiSwitch-switchBase.Mui-checked': {
+      transform: 'translateX(9px)',
+    },
+  },
+  '& .MuiSwitch-switchBase': {
+    padding: 2,
+    '&.Mui-checked': {
+      transform: 'translateX(12px)',
+      color: '#fff',
+      '& + .MuiSwitch-track': {
+        opacity: 1,
+        backgroundColor: '#FF5722',
+      },
+    },
+  },
+  '& .MuiSwitch-thumb': {
+    boxShadow: '0 2px 4px 0 rgb(0 35 11 / 20%)',
+    width: 26,
+    height: 12,
+    borderRadius: 6,
+    transition: theme.transitions.create(['width'], {
+      duration: 200,
+    }),
+  },
+  '& .MuiSwitch-track': {
+    borderRadius: 16 / 2,
+    opacity: 1,
+    backgroundColor: '#212D36',
+    boxSizing: 'border-box',
+  },
+}));
+
 interface State {
     url: string;
     password: string;
+    walletName: string;
     showPassword: boolean;
     isInitializing: boolean;
+    isAdvanced: boolean;
+    rpcUserName: string;
+    rpcPassword: string;
+    seed: string;
+    networkType: string;
+    mode: string;
   }
 
 /**
@@ -67,8 +117,15 @@ const WalletInitComponent: React.FC = (): ReactElement => {
   const [values, setValues] = React.useState<State>({
     url: '',
     password: '',
+    walletName: '',
     showPassword: false,
     isInitializing: false,
+    isAdvanced: false,
+    networkType: 'STAGENET',
+    rpcUserName: '',
+    rpcPassword: '',
+    seed: '',
+    mode: 'Normie',
   });
 
   const handleChange = (prop: keyof State) => (event:
@@ -80,47 +137,45 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     setValues({ ...values, showPassword: !values.showPassword });
   };
 
+  const handleWalletMode = (): void => {
+    setValues({
+      ...values,
+      isAdvanced: !values.isAdvanced,
+      mode: !values.isAdvanced ? 'Advanced' : 'Normie',
+    });
+  };
+
   const handleMouseDownPassword = (event:
     React.MouseEvent<HTMLButtonElement>): void => {
     event.preventDefault();
   };
 
-  // Create and open wallet
-  const createWalletBody = {
-    jsonrpc: '2.0',
-    id: '0',
-    method: 'create_wallet',
-    params: { filename: gInit.walletName, password: values.password, language: 'English' },
-  };
-  const openWalletBody = {
-    jsonrpc: '2.0',
-    id: '0',
-    method: 'open_wallet',
-    params: { filename: gInit.walletName, password: values.password },
-  };
+  /**
+   * Create and open a wallet (ez setup)
+   */
   const createAndOpenWallet = async (): Promise<void> => {
-    let isWalletCreated = false;
+    // let isWalletCreated = false;
     setValues({ ...values, isInitializing: true });
     await axios
-      .post(`${PROXY}/monero/wallet/create`, createWalletBody)
+      .post(`${PROXY}/monero/wallet/create`, values)
       .then((createRes) => {
         if (createRes.status === HTTP_OK) {
-          isWalletCreated = true;
+          setValues({ ...values, walletName: createRes.data.name });
         }
       }).catch(() => { /* TODO: and snackbar for error handling */ });
-    if (isWalletCreated) {
-      await axios
-        .post(`${PROXY}/monero/wallet/open`, openWalletBody)
-        .then((openRes) => {
-          if (openRes.status === HTTP_OK) {
-            setGlobalState('init', {
-              isWalletInitialized: true,
-              remoteNodeUrl: gInit.remoteNodeUrl,
-              walletName: gInit.walletName,
-            });
-          }
-        }).catch(() => { /* TODO: and snackbar for error handling */ });
-    }
+    // set wallet name in memory
+    setGlobalState('init', {
+      isWalletInitialized: true,
+      rpcUserName: values.rpcUserName,
+      rpcPassword: values.rpcPassword,
+      proxyUrl: values.url,
+      // TODO: wallet naming convention
+      walletName: values.walletName,
+      // TODO: password management and security
+      walletPassword: values.password,
+      seed: values.seed,
+      network: values.networkType,
+    });
   };
 
   return (
@@ -140,7 +195,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
           <div className={classes.paper}>
             <h2 id="transition-modal-title">Wallet Initialization</h2>
             <p id="transition-modal-description">
-              Welcome to the himtisu prototype wallet. If you have a remote
+              Welcome to the himitsu prototype wallet. If you have a remote
               node configure it below.
             </p>
             <p id="transition-modal-description">
@@ -154,21 +209,14 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               Be sure to keep it somewhere safe, it is the only way to recover
               your funds!
             </p>
-            <TextField
-              label="wallet rpc url"
-              id="standard-start-adornment"
-              className={clsx(classes.margin, classes.textField)}
-              InputProps={
-
-                  {
-                    startAdornment: <InputAdornment position="start">http://</InputAdornment>,
-                  }
-
-                }
+            <Typography>{values.mode}</Typography>
+            <AntSwitch
+              inputProps={{ 'aria-label': 'ant design' }}
+              onClick={handleWalletMode}
             />
             <FormControl className={clsx(classes.margin, classes.textField)}>
               <InputLabel htmlFor="standard-adornment-password">
-                Password
+                wallet password
               </InputLabel>
               <Input
                 id="standard-adornment-password"
@@ -188,6 +236,58 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             )}
               />
             </FormControl>
+            <br />
+            {
+              values.isAdvanced
+              && (
+              <TextField
+                label="rpc username"
+                id="standard-start-adornment"
+                className={clsx(classes.margin, classes.textField)}
+                onChange={handleChange('rpcUserName')}
+              />
+              )
+            }
+            {
+              values.isAdvanced
+              && (
+              <TextField
+                label="rpc password"
+                id="standard-start-adornment"
+                className={clsx(classes.margin, classes.textField)}
+                onChange={handleChange('rpcPassword')}
+              />
+              )
+            }
+            <br />
+            {
+              values.isAdvanced
+              && (
+              <TextField
+                label="seed (optional)"
+                id="standard-start-adornment"
+                className={clsx(classes.margin, classes.textField)}
+                onChange={handleChange('seed')}
+              />
+              )
+            }
+            {
+              values.isAdvanced
+              && (
+              <TextField
+                label="himitsu proxy url"
+                id="standard-start-adornment"
+                className={clsx(classes.margin, classes.textField)}
+                InputProps={
+
+                  {
+                    startAdornment: <InputAdornment position="start">http://</InputAdornment>,
+                  }
+
+                }
+              />
+              )
+            }
             <br />
             <Button
               disabled={values.isInitializing}

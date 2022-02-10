@@ -9,12 +9,14 @@ let loaded = false;
 
 const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [gBalance] = useGlobalState('balance');
+  const [gInit] = useGlobalState('init');
   const loadXmrBalance = async (): Promise<void> => {
+    const body = { name: gInit.walletName, key: gInit.walletPassword };
     await axios
-      .post(`${PROXY}/monero/balance`, {})
+      .post(`${PROXY}/monero/balance`, body)
       .then((res) => {
         setGlobalState('balance', {
-          primaryAddress: '',
+          primaryAddress: res.data.primaryAddress,
           walletBalance: res.data.balance,
           unlockTime: 0,
           unlockedBalance: res.data.balance,
@@ -35,6 +37,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       <h1 color="#FF5722">
         {`${((gBalance.walletBalance - pendingBalance) / PICO).toFixed(6)} XMR`}
       </h1>
+      <h2 color="#212D36">
+        {`${gBalance.primaryAddress.slice(0, 9)}...`}
+      </h2>
       <h4>{`*${(pendingBalance / PICO).toFixed(6)} (pending XMR)`}</h4>
       <h4>{`Time to unlock: ~${unlockTime} min.`}</h4>
       <div>

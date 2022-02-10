@@ -17,8 +17,13 @@ export const {
   },
   init: {
     isWalletInitialized: false,
-    remoteNodeUrl: 'http://localhost:18083',
+    rpcUserName: '',
+    rpcPassword: '',
+    proxyUrl: 'http://localhost:18083',
     // TODO: wallet naming convention
     walletName: '',
+    walletPassword: '',
+    seed: '',
+    network: '',
   },
 });

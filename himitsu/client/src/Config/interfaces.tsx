@@ -7,7 +7,3 @@ export interface Balance {
     unlockTime: number
     subAddresses: string[]
 }
-
-export default interface State {
-    balance: Balance
-};
