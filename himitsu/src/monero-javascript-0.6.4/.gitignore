@@ -1,0 +1,10 @@
+.DS_Store
+
+node_modules
+npm-debug.log
+
+test_products
+**/tests_config.js
+/test_wallets/
+/build
+/browser_build/
