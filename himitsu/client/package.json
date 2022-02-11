@@ -5,6 +5,7 @@
   "dependencies": {
     "@material-ui/core": "^4.12.3",
     "@material-ui/icons": "^4.11.2",
+    "@material-ui/lab": "^4.0.0-alpha.60",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^11.2.7",
     "@testing-library/user-event": "^12.8.3",
@@ -13,8 +14,9 @@
     "@types/react-dom": "^17.0.9",
     "axios": "^0.21.4",
     "clsx": "^1.1.1",
-    "monero-javascript": "^0.6.4",
+    "qrcode.react": "^1.0.1",
     "react": "^17.0.2",
+    "react-copy-to-clipboard": "^5.0.4",
     "react-dom": "^17.0.2",
     "react-hooks-global-state": "^1.0.2",
     "react-scripts": "4.0.3",
@@ -50,6 +52,8 @@
     ]
   },
   "devDependencies": {
+    "@types/qrcode.react": "^1.0.2",
+    "@types/react-copy-to-clipboard": "^5.0.2",
     "@typescript-eslint/eslint-plugin": "^4.31.1",
     "@typescript-eslint/parser": "^4.31.1",
     "eslint": "^7.32.0",

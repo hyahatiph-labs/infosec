@@ -1,6 +1,10 @@
-import React, { ReactElement, useEffect } from 'react';
+import React, { ReactElement, useState, useEffect } from 'react';
 import axios from 'axios';
-import Button from '@material-ui/core/Button';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
+import QRCode from 'qrcode.react';
+import Snackbar from '@material-ui/core/Snackbar';
+import Alert from '@material-ui/lab/Alert';
+import { Tooltip } from '@material-ui/core';
 import { setGlobalState, useGlobalState } from '../../state';
 import { PICO, PROXY } from '../../Config/constants';
 
@@ -10,6 +14,9 @@ let loaded = false;
 const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [gBalance] = useGlobalState('balance');
   const [gInit] = useGlobalState('init');
+  // snackbar  const [openError, setOpenError] = useState(false);
+  const [copy, setCopy] = useState(false);
+  const handleCopy = (): void => { setCopy(!copy); };
   const loadXmrBalance = async (): Promise<void> => {
     const body = { name: gInit.walletName, key: gInit.walletPassword };
     await axios
@@ -19,7 +26,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           primaryAddress: res.data.primaryAddress,
           walletBalance: res.data.balance,
           unlockTime: 0,
-          unlockedBalance: res.data.balance,
+          unlockedBalance: res.data.balance, // TODO: get unlocked vs locked
           subAddresses: [],
         });
         loaded = true;
@@ -37,15 +44,21 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       <h1 color="#FF5722">
         {`${((gBalance.walletBalance - pendingBalance) / PICO).toFixed(6)} XMR`}
       </h1>
-      <h2 color="#212D36">
-        {`${gBalance.primaryAddress.slice(0, 9)}...`}
-      </h2>
+      <Tooltip title="click to copy address">
+        <CopyToClipboard text={gBalance.primaryAddress}>
+          <QRCode
+            value={gBalance.primaryAddress}
+            onClick={handleCopy}
+          />
+        </CopyToClipboard>
+      </Tooltip>
       <h4>{`*${(pendingBalance / PICO).toFixed(6)} (pending XMR)`}</h4>
       <h4>{`Time to unlock: ~${unlockTime} min.`}</h4>
-      <div>
-        <Button variant="outlined" color="primary">Send</Button>
-        <Button variant="outlined" color="primary">Receive</Button>
-      </div>
+      <Snackbar open={copy} autoHideDuration={2000} onClose={handleCopy}>
+        <Alert onClose={handleCopy} severity="success">
+          Address copied to clipboard
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
