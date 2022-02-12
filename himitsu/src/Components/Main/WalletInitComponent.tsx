@@ -1,5 +1,4 @@
 import React, { ReactElement } from 'react';
-import axios from 'axios';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
@@ -17,7 +16,7 @@ import {
   Button, CircularProgress, styled, Switch, Typography,
 } from '@material-ui/core';
 import { setGlobalState, useGlobalState } from '../../state';
-import { HTTP_OK, PROXY } from '../../Config/constants';
+import * as xmrjs from '../../monero-javascript-0.6.4/index.js';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   modal: {
@@ -89,14 +88,14 @@ const AntSwitch = styled(Switch)(({ theme }) => ({
 }));
 
 interface State {
-    url: string;
-    password: string;
+    url: string | null;
+    walletPassword: string;
     walletName: string;
     showPassword: boolean;
     isInitializing: boolean;
     isAdvanced: boolean;
-    rpcUserName: string;
-    rpcPassword: string;
+    rpcUserName: string | null;
+    rpcPassword: string | null;
     seed: string;
     networkType: string;
     mode: string;
@@ -115,15 +114,15 @@ const WalletInitComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
   const [open] = React.useState(!gInit.isWalletInitialized);
   const [values, setValues] = React.useState<State>({
-    url: '',
-    password: '',
+    url: null,
+    walletPassword: '',
     walletName: '',
     showPassword: false,
     isInitializing: false,
     isAdvanced: false,
     networkType: 'STAGENET',
-    rpcUserName: '',
-    rpcPassword: '',
+    rpcUserName: null,
+    rpcPassword: null,
     seed: '',
     mode: 'Normie',
   });
@@ -151,28 +150,33 @@ const WalletInitComponent: React.FC = (): ReactElement => {
   };
 
   /**
-   * Create and open a wallet (ez setup)
+   * Create wallet with user input. If not advanced then
+   * provide defaults for everything except wallet password.
+   * Easy configure will connect to wallet-rpc over i2p.
+   * TODO: webworker
    */
   const createAndOpenWallet = async (): Promise<void> => {
     // let isWalletCreated = false;
     setValues({ ...values, isInitializing: true });
-    await axios
-      .post(`${PROXY}/monero/wallet/create`, values)
-      .then((createRes) => {
-        if (createRes.status === HTTP_OK) {
-          setValues({ ...values, walletName: createRes.data.name });
-        }
-      }).catch(() => { /* TODO: and snackbar for error handling */ });
+    // const walletRpc = await xmrjs.connectToWalletRpc('http://localhost:38083',
+    // 'himitsu', 'himitsu');
+    await xmrjs.createWalletFull({
+      password: values.walletPassword,
+      networkType: xmrjs.MoneroNetworkType.STAGENET,
+      serverUri: 'http://localhost:38083',
+      serverUsername: 'himitsu',
+      serverPassword: 'himitsu',
+    });
     // set wallet name in memory
     setGlobalState('init', {
       isWalletInitialized: true,
-      rpcUserName: values.rpcUserName,
-      rpcPassword: values.rpcPassword,
-      rpcHost: values.url,
+      rpcUserName: values.rpcUserName || gInit.rpcUserName,
+      rpcPassword: values.rpcPassword || gInit.rpcPassword,
+      rpcHost: values.url || gInit.rpcHost,
       // TODO: wallet naming convention
       walletName: values.walletName,
       // TODO: password management and security
-      walletPassword: values.password,
+      walletPassword: values.walletPassword,
       seed: values.seed,
       network: values.networkType,
     });
@@ -221,8 +225,8 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               <Input
                 id="standard-adornment-password"
                 type={values.showPassword ? 'text' : 'password'}
-                value={values.password}
-                onChange={handleChange('password')}
+                value={values.walletPassword}
+                onChange={handleChange('walletPassword')}
                 endAdornment={(
                   <InputAdornment position="end">
                     <IconButton
