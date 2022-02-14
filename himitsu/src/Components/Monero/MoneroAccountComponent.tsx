@@ -22,9 +22,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       wallet = await xmrjs.connectToWalletRpc('http://localhost:38083', 'himitsu', 'himitsu');
       await wallet.openWallet('himitsu', 'himitsu');
     } else {
-      wallet = await xmrjs.connectToWalletRpc(`${gInit.rpcHost}`,
-        gInit.rpcUserName, gInit.rpcPassword);
-      await wallet.openWallet(gInit.walletName, gInit.walletPassword);
+      wallet = await gInit.wallet;
     }
     const primaryAddress = await wallet.getPrimaryAddress();
     const balance = await wallet.getBalance();

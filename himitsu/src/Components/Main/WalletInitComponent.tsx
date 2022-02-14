@@ -15,6 +15,7 @@ import { Visibility } from '@material-ui/icons';
 import {
   Button, CircularProgress, styled, Switch, Typography,
 } from '@material-ui/core';
+import crypto from 'crypto';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as xmrjs from '../../monero-javascript-0.6.4/index.js';
 
@@ -116,7 +117,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
   const [values, setValues] = React.useState<State>({
     url: null,
     walletPassword: '',
-    walletName: '',
+    walletName: crypto.randomBytes(32).toString('hex'),
     showPassword: false,
     isInitializing: false,
     isAdvanced: false,
@@ -157,16 +158,14 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    */
   const createAndOpenWallet = async (): Promise<void> => {
     // let isWalletCreated = false;
-    setValues({ ...values, isInitializing: true });
-    // const walletRpc = await xmrjs.connectToWalletRpc('http://localhost:38083',
-    // 'himitsu', 'himitsu');
-    await xmrjs.createWalletFull({
+    const wallet = await xmrjs.createWalletFull({
       password: values.walletPassword,
       networkType: xmrjs.MoneroNetworkType.STAGENET,
       serverUri: 'http://localhost:38083',
       serverUsername: 'himitsu',
       serverPassword: 'himitsu',
     });
+    // synchronize with progress notifications
     // set wallet name in memory
     setGlobalState('init', {
       isWalletInitialized: true,
@@ -179,7 +178,11 @@ const WalletInitComponent: React.FC = (): ReactElement => {
       walletPassword: values.walletPassword,
       seed: values.seed,
       network: values.networkType,
+      wallet,
     });
+    // TODO: pass seed to modal for confirmation
+    const address = await wallet.getPrimaryAddress();
+    console.log(`Created wallet: ${address.slice(0, 9)}`);
   };
 
   return (

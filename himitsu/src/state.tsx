@@ -17,13 +17,14 @@ export const {
   },
   init: {
     isWalletInitialized: false,
-    rpcUserName: '',
-    rpcPassword: '',
+    rpcUserName: 'himitsu',
+    rpcPassword: 'himitsu',
     rpcHost: 'http://localhost:38083',
     // TODO: wallet naming convention
     walletName: '',
     walletPassword: '',
     seed: '',
-    network: '',
+    network: '', // TODO: add MAINNET, STAGENET enum / flags
+    wallet: {},
   },
 });
