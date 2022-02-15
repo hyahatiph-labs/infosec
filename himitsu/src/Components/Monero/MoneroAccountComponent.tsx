@@ -15,7 +15,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [gBalance] = useGlobalState('balance');
   const [gInit] = useGlobalState('init');
   const [copy, setCopy] = useState(false);
+
   const handleCopy = (): void => { setCopy(!copy); };
+
   const loadXmrBalance = async (): Promise<void> => {
     let wallet;
     if (isDev) {

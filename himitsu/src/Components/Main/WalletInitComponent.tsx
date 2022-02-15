@@ -154,10 +154,8 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    * Create wallet with user input. If not advanced then
    * provide defaults for everything except wallet password.
    * Easy configure will connect to wallet-rpc over i2p.
-   * TODO: webworker
    */
   const createAndOpenWallet = async (): Promise<void> => {
-    // let isWalletCreated = false;
     const wallet = await xmrjs.createWalletFull({
       password: values.walletPassword,
       networkType: xmrjs.MoneroNetworkType.STAGENET,
