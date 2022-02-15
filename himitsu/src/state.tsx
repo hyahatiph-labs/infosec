@@ -8,12 +8,13 @@ export const {
   setGlobalState,
   getGlobalState,
 } = createGlobalState({
-  balance: {
+  account: {
     primaryAddress: '',
     walletBalance: 0,
     unlockedBalance: 0,
     unlockTime: 0,
     subAddresses: [],
+    mnemonic: '',
   },
   init: {
     isWalletInitialized: false,

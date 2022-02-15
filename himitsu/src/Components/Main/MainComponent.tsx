@@ -9,7 +9,6 @@ import Typography from '@material-ui/core/Typography';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import SettingsIcon from '@material-ui/icons/Settings';
-import ExtensionIcon from '@material-ui/icons/Extension';
 import AccountBalanceWalletIcon from '@material-ui/icons/AccountBalanceWallet';
 import ListItemText from '@material-ui/core/ListItemText';
 import ImportExportIcon from '@material-ui/icons/ImportExport';
@@ -92,12 +91,6 @@ const MainComponent: React.FC = (): ReactElement => {
                 <ImportExportIcon />
               </ListItemIcon>
               <ListItemText primary="Transactions" />
-            </ListItem>
-            <ListItem button key="Swap">
-              <ListItemIcon>
-                <ExtensionIcon />
-              </ListItemIcon>
-              <ListItemText primary="Swap" />
             </ListItem>
             <ListItem button key="Settings">
               <ListItemIcon>

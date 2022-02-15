@@ -156,13 +156,26 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    * Easy configure will connect to wallet-rpc over i2p.
    */
   const createAndOpenWallet = async (): Promise<void> => {
-    const wallet = await xmrjs.createWalletFull({
-      password: values.walletPassword,
-      networkType: xmrjs.MoneroNetworkType.STAGENET,
-      serverUri: 'http://localhost:38083',
-      serverUsername: 'himitsu',
-      serverPassword: 'himitsu',
-    });
+    setValues({ ...values, isInitializing: true });
+    let wallet;
+    if (values.isAdvanced) {
+      wallet = await xmrjs.createWalletFull({
+        seed: values.seed,
+        password: values.walletPassword,
+        networkType: xmrjs.MoneroNetworkType.STAGENET, // TODO: add mainnet flag
+        serverUri: values.url,
+        serverUsername: values.rpcUserName,
+        serverPassword: values.rpcPassword,
+      });
+    } else {
+      wallet = await xmrjs.createWalletFull({
+        password: values.walletPassword,
+        networkType: xmrjs.MoneroNetworkType.STAGENET,
+        serverUri: 'http://localhost:38083',
+        serverUsername: 'himitsu',
+        serverPassword: 'himitsu',
+      });
+    }
     // synchronize with progress notifications
     // set wallet name in memory
     setGlobalState('init', {
@@ -178,9 +191,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
       network: values.networkType,
       wallet,
     });
-    // TODO: pass seed to modal for confirmation
-    const address = await wallet.getPrimaryAddress();
-    console.log(`Created wallet: ${address.slice(0, 9)}`);
   };
 
   return (
@@ -265,17 +275,12 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               )
             }
             <br />
-            {
-              values.isAdvanced
-              && (
-              <TextField
-                label="seed (optional)"
-                id="standard-start-adornment"
-                className={clsx(classes.margin, classes.textField)}
-                onChange={handleChange('seed')}
-              />
-              )
-            }
+            <TextField
+              label="seed (optional)"
+              id="standard-start-adornment"
+              className={clsx(classes.margin, classes.textField)}
+              onChange={handleChange('seed')}
+            />
             {
               values.isAdvanced
               && (
@@ -302,7 +307,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             >
               Initialize
             </Button>
-            {/* Add restore from seed functionality */}
             {values.isInitializing && <CircularProgress />}
           </div>
         </Fade>
