@@ -8,10 +8,11 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 
 ## Development
 
+* `git clone https://github.com/hyahatiph-labs/infosec.git
 * create a wallet name and password `himitsu` and mine / faucet some piconeros
 * export environment variable `export REACT_APP_HIMITSU_DEV=DEV`
 * start `monero-wallet-rpc` with: `./monero-gui-v0.17.3.0/extras/monero-wallet-rpc --stagenet --wallet-dir /path/to/Monero/wallets/ --rpc-bind-port 38083 --rpc-access-control-origins http://localhost:3000 --rpc-login himitsu:himitsu`
-* start the client with `cd ../himitsu && npm start`
+* start the client with `cd infosec/himitsu && npm start`
 * UI is located at localhost:3000 in your favorite browser
 
 ## Building
