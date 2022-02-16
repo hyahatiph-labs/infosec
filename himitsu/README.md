@@ -13,7 +13,7 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 * export environment variable `export REACT_APP_HIMITSU_DEV=DEV`
 * if working on wallet init component, seed confirmation modal etc. don't export `REACT_APP_HIMITSU_DEV`
 * start `monero-wallet-rpc` with: `./monero-gui-v0.17.3.0/extras/monero-wallet-rpc --stagenet --wallet-dir /path/to/Monero/wallets/ --rpc-bind-port 38083 --rpc-access-control-origins http://localhost:3000 --rpc-login himitsu:himitsu`
-* start the client with `cd infosec/himitsu && npm start`
+* start the client with `cd infosec/himitsu && npm start` (`npm i` to install modules before first run)
 * UI is located at localhost:3000 in your favorite browser
 
 ## Building
