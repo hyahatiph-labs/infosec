@@ -113,3 +113,6 @@ build/
 *.http
 server.crt
 server.key
+
+# build files
+dist/

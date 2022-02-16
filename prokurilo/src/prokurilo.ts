@@ -58,10 +58,10 @@ setup();
  * create janitor interval to sweep cache and reset tokens
  */
 setInterval(() => {
-  log('checking jail to free tokens...', LogLevel.INFO, true);
+  log('checking jail to free tokens...', LogLevel.INFO, false);
   jail.forEach((j,i) => {
     if ((Date.now() - j.timestamp) > ANTI_SPAM_THRESHOLD) {
-      log(`free token at index: ${i}`, LogLevel.DEBUG, true);
+      log(`free token at index: ${i}`, LogLevel.DEBUG, false);
       delete jail[i]
     }
   })
@@ -70,11 +70,11 @@ setInterval(() => {
 // start the server
 if (NODE_ENV === 'test') {
   APP.listen(PORT,  () => {
-    log(`Prokurilo DEV running on ${os.hostname()}`, LogLevel.INFO, true);
+    log(`Prokurilo DEV running on ${os.hostname()}`, LogLevel.INFO, false);
   })
 } else {
   try {
-    log(`Prokurilo PROD running on ${os.hostname()}`, LogLevel.INFO, true);
+    log(`Prokurilo PROD running on ${os.hostname()}`, LogLevel.INFO, false);
     const HTTPS_SERVER = https.createServer({
       key: fs.readFileSync(KEY_PATH),
       cert: fs.readFileSync(CERT_PATH)

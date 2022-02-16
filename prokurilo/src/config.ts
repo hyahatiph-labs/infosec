@@ -133,6 +133,7 @@ export const LOG_FILTERS: string[] | null = IS_MULTI_LOG_LEVEL
 
 // some defaults for linux
 export const CONFIG_PATH = `${os.homedir()}/.prokurilo/config.json`;
+export const LOG_FILE = `${os.homedir}/.prokurilo/app.log`;
 export const DEFAULT_CONFIG: ConfigFile = {
     port: 8989,
     host: "http://localhost",

@@ -30,9 +30,14 @@ export const getDemoStaticFiles = (): string[] => {
     try {
       config = await fsp.readFile(CONFIG.CONFIG_PATH);
     } catch {
-      log("no config file found", LogLevel.ERROR, false);
+      log("no config file found, creating...", LogLevel.ERROR, false);
       await fsp
         .mkdir(`${os.homedir()}/.prokurilo/`)
+        .then(async () => {
+          await fsp
+            .writeFile(CONFIG.LOG_FILE, "")
+            .catch(() => log("failed to write log file", LogLevel.INFO, false));
+        })
         .catch(() => log(`path for config already exists`, LogLevel.INFO, false));
       await fsp
         .writeFile(CONFIG.CONFIG_PATH, JSON.stringify(CONFIG.DEFAULT_CONFIG, null, CONFIG.INDENT))
@@ -50,7 +55,7 @@ export const getDemoStaticFiles = (): string[] => {
     }
     axios.post(`http://${CONFIG.XMR_RPC_HOST}/json_rpc`, body)
       .then(v => {
-        log(`Connected to monero-wallet-rpc version: ${v.data.result.version}`, LogLevel.INFO, true);
+        log(`Connected to monero-wallet-rpc version: ${v.data.result.version}`, LogLevel.INFO, false);
       })
       .catch(() => { throw new Error('failed to connect to monero-wallet-rpc') })
     // get demo files

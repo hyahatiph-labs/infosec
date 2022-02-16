@@ -1,7 +1,6 @@
 import { promises as fs } from "fs";
 import os from "os";
-import { LOG_FILTERS } from "./config";
-export const LOG_FILE = `${os.homedir}/.prokurilo/app.log`;
+import { LOG_FILE, LOG_FILTERS } from "./config";
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 let isFirstLog = true;
 
@@ -27,9 +26,7 @@ export default async function log(
   write: boolean
 ): Promise<void> {
   // existing logs are volatile
-  if (isFirstLog && write) {
-    await fs.writeFile(LOG_FILE, "");
-  }
+  if (isFirstLog && write) { await fs.writeFile(LOG_FILE, ""); }
   isFirstLog = false;
   LOG_FILTERS.forEach((filter: LogLevel) => {
     if (filter === level) {
