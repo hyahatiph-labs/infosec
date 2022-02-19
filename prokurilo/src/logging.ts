@@ -1,5 +1,4 @@
 import { promises as fs } from "fs";
-import os from "os";
 import { LOG_FILE, LOG_FILTERS } from "./config";
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 let isFirstLog = true;

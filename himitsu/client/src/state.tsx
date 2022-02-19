@@ -18,14 +18,8 @@ export const {
   },
   init: {
     isWalletInitialized: false,
-    rpcUserName: 'himitsu',
-    rpcPassword: 'himitsu',
-    rpcHost: 'http://localhost:38083',
-    // TODO: wallet naming convention
     walletName: '',
     walletPassword: '',
-    seed: '',
     network: '', // TODO: add MAINNET, STAGENET enum / flags
-    wallet: {},
   },
 });

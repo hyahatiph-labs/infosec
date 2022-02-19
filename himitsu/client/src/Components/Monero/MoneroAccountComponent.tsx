@@ -7,10 +7,10 @@ import {
   Fade, Tooltip, Button, Typography,
 } from '@material-ui/core';
 import Modal from '@material-ui/core/Modal';
+import axios from 'axios';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { setGlobalState, useGlobalState } from '../../state';
-import { PICO } from '../../Config/constants';
-import * as xmrjs from '../../monero-javascript-0.6.4/index.js';
+import * as Constants from '../../Config/constants';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   modal: {
@@ -61,25 +61,28 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   };
 
   const loadXmrBalance = async (): Promise<void> => {
-    let wallet;
+    let body;
     if (isDev) {
-      wallet = await xmrjs.connectToWalletRpc('http://localhost:38083', 'himitsu', 'himitsu');
-      await wallet.openWallet('himitsu', 'himitsu');
+      body = { walletName: 'himitsu', walletPassword: 'himitsu' };
     } else {
-      wallet = await gInit.wallet;
+      body = { walletName: gInit.walletName, walletPassword: gInit.walletPassword };
     }
-    const primaryAddress = await wallet.getPrimaryAddress();
-    const balance = await wallet.getBalance();
-    const mnemonic = await wallet.getMnemonic();
-    setGlobalState('account', {
-      primaryAddress,
-      walletBalance: balance,
-      unlockTime: 0,
-      unlockedBalance: balance, // TODO: get unlocked vs locked
-      subAddresses: [],
-      mnemonic,
-    });
-    loaded = true;
+    axios.post(`${Constants.PROXY}/monero/balance`, body)
+      .then(async (r) => {
+        const proxy = r.data;
+        const primaryAddress = await proxy.primaryAddress;
+        const balance = await proxy.balance;
+        const unlockedBalance = await proxy.unlockedBalance;
+        setGlobalState('account', {
+          primaryAddress,
+          walletBalance: balance,
+          unlockTime: proxy.unlockBlocks, // TODO: get unlock block time
+          unlockedBalance, // TODO: get unlocked vs locked
+          subAddresses: [],
+          mnemonic: gAccount.mnemonic,
+        });
+        loaded = true;
+      });
   };
 
   useEffect(() => {
@@ -118,7 +121,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
         </Fade>
       </Modal>
       <h1 color="#FF5722">
-        {`${((gAccount.walletBalance - pendingBalance) / PICO).toFixed(6)} XMR`}
+        {`${((gAccount.walletBalance - pendingBalance) / Constants.PICO).toFixed(6)} XMR`}
       </h1>
       <Tooltip title="click to copy address">
         <CopyToClipboard text={gAccount.primaryAddress}>
@@ -128,7 +131,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           />
         </CopyToClipboard>
       </Tooltip>
-      <h4>{`*${(pendingBalance / PICO).toFixed(6)} (pending XMR)`}</h4>
+      <h4>{`*${(pendingBalance / Constants.PICO).toFixed(6)} (pending XMR)`}</h4>
       <h4>{`Time to unlock: ~${unlockTime} min.`}</h4>
       <Snackbar open={copy} autoHideDuration={2000} onClose={handleCopy}>
         <Alert onClose={handleCopy} severity="success">

@@ -15,9 +15,9 @@ import { Visibility } from '@material-ui/icons';
 import {
   Button, CircularProgress, styled, Switch, Typography,
 } from '@material-ui/core';
-import crypto from 'crypto';
+import axios from 'axios';
 import { setGlobalState, useGlobalState } from '../../state';
-import * as xmrjs from '../../monero-javascript-0.6.4/index.js';
+import * as Constants from '../../Config/constants';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   modal: {
@@ -113,11 +113,12 @@ interface State {
 const WalletInitComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
   const [gInit] = useGlobalState('init');
+  const [gAccount] = useGlobalState('account');
   const [open] = React.useState(!gInit.isWalletInitialized);
   const [values, setValues] = React.useState<State>({
     url: null,
     walletPassword: '',
-    walletName: crypto.randomBytes(32).toString('hex'),
+    walletName: '',
     showPassword: false,
     isInitializing: false,
     isAdvanced: false,
@@ -157,40 +158,41 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    */
   const createAndOpenWallet = async (): Promise<void> => {
     setValues({ ...values, isInitializing: true });
-    let wallet;
+    let body;
     if (values.isAdvanced) {
-      wallet = await xmrjs.createWalletFull({
+      body = {
         seed: values.seed,
         password: values.walletPassword,
-        networkType: xmrjs.MoneroNetworkType.STAGENET, // TODO: add mainnet flag
+        networkType: 'STAGENET', // TODO: add mainnet flag
         serverUri: values.url,
         serverUsername: values.rpcUserName,
         serverPassword: values.rpcPassword,
-      });
+      };
     } else {
-      wallet = await xmrjs.createWalletFull({
+      body = {
         password: values.walletPassword,
-        networkType: xmrjs.MoneroNetworkType.STAGENET,
+        networkType: 'STAGENET',
         serverUri: 'http://localhost:38083',
         serverUsername: 'himitsu',
         serverPassword: 'himitsu',
-      });
+      };
     }
-    // synchronize with progress notifications
-    // set wallet name in memory
-    setGlobalState('init', {
-      isWalletInitialized: true,
-      rpcUserName: values.rpcUserName || gInit.rpcUserName,
-      rpcPassword: values.rpcPassword || gInit.rpcPassword,
-      rpcHost: values.url || gInit.rpcHost,
-      // TODO: wallet naming convention
-      walletName: values.walletName,
-      // TODO: password management and security
-      walletPassword: values.walletPassword,
-      seed: values.seed,
-      network: values.networkType,
-      wallet,
-    });
+    axios.post(`${Constants.PROXY}/monero/wallet/create`, body)
+      .then((r) => {
+        const proxy = r.data;
+        setGlobalState('init', {
+          ...gInit,
+          isWalletInitialized: true,
+          walletName: proxy.walletName,
+          // TODO: password management and security
+          walletPassword: values.walletPassword,
+          network: values.networkType,
+        }); // TODO: snackbar with error handling
+        setGlobalState('account', {
+          ...gAccount,
+          mnemonic: proxy.seed,
+        }); // TODO: snackbar with error handling
+      });
   };
 
   return (

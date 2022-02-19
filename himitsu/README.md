@@ -11,12 +11,14 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 * create a wallet name and password `himitsu` and mine / faucet some piconeros
 * export environment variable `export REACT_APP_HIMITSU_DEV=DEV`
 * if working on wallet init component, seed confirmation modal etc. don't export `REACT_APP_HIMITSU_DEV`
-* start `monero-wallet-rpc` with: `./monero-gui-v0.17.3.0/extras/monero-wallet-rpc --stagenet --wallet-dir /path/to/Monero/wallets/ --rpc-bind-port 38083 --rpc-access-control-origins http://localhost:3000 --rpc-login himitsu:himitsu`
+* start `monero-wallet-rpc` with: `./path/to/monero-wallet-rpc --stagenet --wallet-dir /full/path/to/wallets/dev/ --rpc-bind-port 38083 --rpc-login himitsu:himitsu`
 * initial setup
-    * `git clone https://github.com/hyahatiph-labs/infosec.git && cd infosec/himitsu/src/monero-javascript-0.6.4/bin/`
-    * `./build_web_worker.sh` (install webpack when prompted. run this command again)
-    * `cd ../../../`
-    * `npm i`
+    * start himitsu-proxy
+        * `git clone https://github.com/hyahatiph-labs/infosec.git && cd infosec/himitsu/proxy`
+        * `npm i` to install modules 
+        * build with `npm run clean && npm run dev`
+        * start proxy `node dist/src/proxy.js -p 5000 --rpc-login himitsu:himitsu --rpc-host localhost:38083 -w relative/path/to/wallets/from/home/directory`
+    * `cd ../client` && `npm i`
 * start the client with `npm start`
 * UI is located at localhost:3000 in your favorite browser
 
