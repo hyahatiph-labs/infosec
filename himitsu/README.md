@@ -6,6 +6,8 @@ Lightweight Monero wallet and browser extension for quick interface with
 monero-wallet-rpc and webxmr. 
 Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 
+![himitsu](https://user-images.githubusercontent.com/13033037/154781827-1f57b602-f18b-4173-ab94-fd62b92cbfe0.png)
+
 ## Development
 
 * create a wallet name and password `himitsu` and mine / faucet some piconeros
