@@ -18,7 +18,7 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
     * start himitsu-proxy
         * `git clone https://github.com/hyahatiph-labs/infosec.git && cd infosec/himitsu/proxy`
         * `npm i` to install modules 
-        * build with `npm run clean && npm run dev`
+        * build with `npm run clean && npm run build`
         * start proxy `node dist/src/proxy.js -p 5000 --rpc-login himitsu:himitsu --rpc-host localhost:38083 -w relative/path/to/wallets/from/home/directory`
     * `cd ../client` && `npm i`
 * start the client with `npm start`
