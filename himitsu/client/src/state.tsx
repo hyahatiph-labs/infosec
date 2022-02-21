@@ -18,8 +18,10 @@ export const {
   },
   init: {
     isWalletInitialized: false,
+    isRestoringFromSeed: false,
     walletName: '',
     walletPassword: '',
     network: '', // TODO: add MAINNET, STAGENET enum / flags
+    rpcHost: 'http://localhost:38083',
   },
 });

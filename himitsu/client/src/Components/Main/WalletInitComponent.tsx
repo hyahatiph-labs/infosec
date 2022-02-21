@@ -16,7 +16,9 @@ import {
   Button, CircularProgress, styled, Switch, Typography,
 } from '@material-ui/core';
 import axios from 'axios';
+import crypto from 'crypto';
 import { setGlobalState, useGlobalState } from '../../state';
+import * as Interfaces from '../../Config/interfaces';
 import * as Constants from '../../Config/constants';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
@@ -88,20 +90,6 @@ const AntSwitch = styled(Switch)(({ theme }) => ({
   },
 }));
 
-interface State {
-    url: string | null;
-    walletPassword: string;
-    walletName: string;
-    showPassword: boolean;
-    isInitializing: boolean;
-    isAdvanced: boolean;
-    rpcUserName: string | null;
-    rpcPassword: string | null;
-    seed: string;
-    networkType: string;
-    mode: string;
-  }
-
 /**
  * If the user wants to configure a remote node,
  * do it in here. Otherwise use the default. Initialize
@@ -111,11 +99,12 @@ interface State {
  * @returns WalletInit
  */
 const WalletInitComponent: React.FC = (): ReactElement => {
+  let host: string;
   const classes = useStyles();
   const [gInit] = useGlobalState('init');
   const [gAccount] = useGlobalState('account');
   const [open] = React.useState(!gInit.isWalletInitialized);
-  const [values, setValues] = React.useState<State>({
+  const [values, setValues] = React.useState<Interfaces.WalletInitState>({
     url: null,
     walletPassword: '',
     walletName: '',
@@ -126,10 +115,10 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     rpcUserName: null,
     rpcPassword: null,
     seed: '',
-    mode: 'Normie',
+    mode: 'Normal',
   });
 
-  const handleChange = (prop: keyof State) => (event:
+  const handleChange = (prop: keyof Interfaces.WalletInitState) => (event:
     React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [prop]: event.target.value });
   };
@@ -142,7 +131,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     setValues({
       ...values,
       isAdvanced: !values.isAdvanced,
-      mode: !values.isAdvanced ? 'Advanced' : 'Normie',
+      mode: !values.isAdvanced ? 'Advanced' : 'Normal',
     });
   };
 
@@ -157,42 +146,60 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    * Easy configure will connect to wallet-rpc over i2p.
    */
   const createAndOpenWallet = async (): Promise<void> => {
+    host = `${values.url || gInit.rpcHost}/json_rpc`;
     setValues({ ...values, isInitializing: true });
-    let body;
-    if (values.isAdvanced) {
-      body = {
-        seed: values.seed,
-        password: values.walletPassword,
-        networkType: 'STAGENET', // TODO: add mainnet flag
-        serverUri: values.url,
-        serverUsername: values.rpcUserName,
-        serverPassword: values.rpcPassword,
+    const filename = crypto.randomBytes(32).toString('hex');
+    const body: Interfaces.CreateWalletRequest = Constants.CREATE_WALLET_REQUEST;
+    body.method = 'create_wallet';
+    body.params.filename = filename;
+    body.params.password = values.walletPassword;
+    if (values.seed) {
+      const dbody: Interfaces.RestoreDeterministicRequest = {
+        ...body, params: { ...body.params, seed: values.seed },
       };
-    } else {
-      body = {
-        password: values.walletPassword,
-        networkType: 'STAGENET',
-        serverUri: 'http://localhost:38083',
-        serverUsername: 'himitsu',
-        serverPassword: 'himitsu',
-      };
-    }
-    axios.post(`${Constants.PROXY}/monero/wallet/create`, body)
-      .then((r) => {
-        const proxy = r.data;
+      dbody.method = 'restore_deterministic_wallet';
+      const result = (await axios.post(host, dbody)).data;
+      if (result.status === Constants.HTTP_OK) {
         setGlobalState('init', {
           ...gInit,
           isWalletInitialized: true,
-          walletName: proxy.walletName,
+          isRestoringFromSeed: true,
+          walletName: filename,
+          // TODO: password management and security
+          walletPassword: values.walletPassword,
+          network: values.networkType,
+        });
+        setGlobalState('account', {
+          ...gAccount,
+          mnemonic: '',
+        }); // TODO: snackbar with error handling
+      }
+    } else {
+      await axios.post(host, body);
+      body.method = 'open_wallet';
+      const result = await axios.post(host, body);
+      if (result.status === Constants.HTTP_OK) {
+        const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
+        kBody.method = 'query_key';
+        kBody.params.key_type = 'mnemonic';
+        const k: Interfaces.QueryKeyResponse = (await axios.post(host, kBody)).data;
+        // TODO: open wallet and query the key
+        // const proxy = r.data;
+        setGlobalState('init', {
+          ...gInit,
+          isWalletInitialized: true,
+          isRestoringFromSeed: false,
+          walletName: filename,
           // TODO: password management and security
           walletPassword: values.walletPassword,
           network: values.networkType,
         }); // TODO: snackbar with error handling
         setGlobalState('account', {
           ...gAccount,
-          mnemonic: proxy.seed,
+          mnemonic: k.result.key,
         }); // TODO: snackbar with error handling
-      });
+      }
+    }
   };
 
   return (
@@ -254,29 +261,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               />
             </FormControl>
             <br />
-            {
-              values.isAdvanced
-              && (
-              <TextField
-                label="rpc username"
-                id="standard-start-adornment"
-                className={clsx(classes.margin, classes.textField)}
-                onChange={handleChange('rpcUserName')}
-              />
-              )
-            }
-            {
-              values.isAdvanced
-              && (
-              <TextField
-                label="rpc password"
-                id="standard-start-adornment"
-                className={clsx(classes.margin, classes.textField)}
-                onChange={handleChange('rpcPassword')}
-              />
-              )
-            }
-            <br />
             <TextField
               label="seed (optional)"
               id="standard-start-adornment"
@@ -287,7 +271,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               values.isAdvanced
               && (
               <TextField
-                label="himitsu proxy url"
+                label="monero-wallet-rpc (host:port)"
                 id="standard-start-adornment"
                 className={clsx(classes.margin, classes.textField)}
                 InputProps={

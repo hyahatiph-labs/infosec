@@ -11,6 +11,7 @@ import axios from 'axios';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Constants from '../../Config/constants';
+import * as Interfaces from '../../Config/interfaces';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   modal: {
@@ -49,7 +50,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
   const [copy, setCopy] = useState(false);
   const [isSeedConfirmed, setSeedConfirmed] = useState(false);
-
+  const host = `${gInit.rpcHost}/json_rpc`;
   const handleCopy = (): void => { setCopy(!copy); };
 
   const handleSeedConfirmation = (): void => {
@@ -61,28 +62,36 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   };
 
   const loadXmrBalance = async (): Promise<void> => {
-    let body;
+    const body: Constants.OpenWalletRequest = Constants.CREATE_WALLET_REQUEST;
     if (isDev) {
-      body = { walletName: 'himitsu', walletPassword: 'himitsu' };
+      body.method = 'open_wallet';
+      body.params.filename = 'himitsu';
+      body.params.password = 'himitsu';
     } else {
-      body = { walletName: gInit.walletName, walletPassword: gInit.walletPassword };
+      body.params.filename = gInit.walletName;
+      body.params.password = gInit.walletPassword;
     }
-    axios.post(`${Constants.PROXY}/monero/balance`, body)
-      .then(async (r) => {
-        const proxy = r.data;
-        const primaryAddress = await proxy.primaryAddress;
-        const balance = await proxy.balance;
-        const unlockedBalance = await proxy.unlockedBalance;
-        setGlobalState('account', {
-          primaryAddress,
-          walletBalance: balance,
-          unlockTime: proxy.unlockBlocks, // TODO: get unlock block time
-          unlockedBalance, // TODO: get unlocked vs locked
-          subAddresses: [],
-          mnemonic: gAccount.mnemonic,
-        });
-        loaded = true;
+    const oResult = await axios.post(host, body);
+    if (oResult.status === Constants.HTTP_OK) {
+      const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
+      aBody.method = 'get_address';
+      const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
+      bBody.method = 'get_balance';
+      const a: Interfaces.ShowAddressResponse = await (await axios.post(host, aBody)).data;
+      const b: Interfaces.ShowBalanceResponse = await (await axios.post(host, bBody)).data;
+      const primaryAddress = a.result.address;
+      const { balance } = b.result;
+      const unlockedBalance = b.result.unlocked_balance;
+      setGlobalState('account', {
+        primaryAddress,
+        walletBalance: balance,
+        unlockTime: b.result.time_to_unlock, // TODO: get unlock block time
+        unlockedBalance, // TODO: get unlocked vs locked
+        subAddresses: [],
+        mnemonic: gAccount.mnemonic,
       });
+      loaded = true;
+    }
   };
 
   useEffect(() => {
@@ -93,33 +102,36 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const unlockTime = gAccount.unlockTime * 2;
   return (
     <div>
-      <Modal
-        aria-labelledby="transition-modal-title"
-        aria-describedby="transition-modal-description"
-        className={classes.modal}
-        open={!isSeedConfirmed && gInit.isWalletInitialized}
-        closeAfterTransition
-      >
-        <Fade in={!isSeedConfirmed && gInit.isWalletInitialized}>
-          <div className={classes.paper}>
-            <h2 id="transition-modal-title">
-              Press &quot;CONFIRM&quot; after securing your mnemonic
-            </h2>
-            <p id="transition-modal-description">
-              Seed phrase:
-            </p>
-            <br />
-            <Typography>{gAccount.mnemonic}</Typography>
-            <Button
-              onClick={() => { handleSeedConfirmation(); }}
-              variant="outlined"
-              color="primary"
-            >
-              Confirm
-            </Button>
-          </div>
-        </Fade>
-      </Modal>
+      { !gInit.isRestoringFromSeed
+        && (
+        <Modal
+          aria-labelledby="transition-modal-title"
+          aria-describedby="transition-modal-description"
+          className={classes.modal}
+          open={!isSeedConfirmed && gInit.isWalletInitialized}
+          closeAfterTransition
+        >
+          <Fade in={!isSeedConfirmed && gInit.isWalletInitialized}>
+            <div className={classes.paper}>
+              <h2 id="transition-modal-title">
+                Press &quot;CONFIRM&quot; after securing your mnemonic
+              </h2>
+              <p id="transition-modal-description">
+                Seed phrase:
+              </p>
+              <br />
+              <Typography>{gAccount.mnemonic}</Typography>
+              <Button
+                onClick={() => { handleSeedConfirmation(); }}
+                variant="outlined"
+                color="primary"
+              >
+                Confirm
+              </Button>
+            </div>
+          </Fade>
+        </Modal>
+        )}
       <h1 color="#FF5722">
         {`${((gAccount.walletBalance - pendingBalance) / Constants.PICO).toFixed(6)} XMR`}
       </h1>
