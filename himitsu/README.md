@@ -22,7 +22,6 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 ## Building
 
 * build browser extension with `npm run build`
-* open Firefox (other browsers pending)
-* type `about:debugging` into the url input
-* click "This Firefox" on the left hand side
-* Install temporary add-on from `$HOME/infosec/himitsu/build/index.html`
+* open Brave (other browsers pending)
+* extensions => "Load Unpacked"
+* open the `build` directory

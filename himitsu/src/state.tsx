@@ -1,4 +1,7 @@
 import { createGlobalState } from 'react-hooks-global-state';
+import * as Interfaces from './Config/interfaces';
+
+const subAddressInit: Interfaces.Address[] = [];
 
 /**
  * Global state management
@@ -13,7 +16,7 @@ export const {
     walletBalance: 0,
     unlockedBalance: 0,
     unlockTime: 0,
-    subAddresses: [],
+    subAddresses: subAddressInit,
     mnemonic: '',
   },
   init: {

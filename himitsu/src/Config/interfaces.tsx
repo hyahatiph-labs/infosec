@@ -43,6 +43,11 @@ interface ShowBalanceParams {
     address_indices: number[]
 }
 
+interface CreateAddressParams {
+    account_index: number
+    label: string
+}
+
 export type ShowAddressParams = ShowBalanceParams;
 
 /* RPC Request Interfaces */
@@ -64,6 +69,10 @@ export interface ShowBalanceRequest extends RequestContext {
 
 export interface ShowAddressRequest extends RequestContext {
     params: ShowBalanceParams
+}
+
+export interface CreateAddressRequest extends RequestContext {
+    params: CreateAddressParams
 }
 
 /* RPC Response Interfaces */
@@ -88,9 +97,9 @@ interface ShowBalanceResult {
     unlocked_balance: number
 }
 
-interface Address {
+export interface Address {
     address: string
-    address_index: number,
+    address_index: number
     label: string
     used: boolean
 }
@@ -98,6 +107,11 @@ interface Address {
 interface ShowAddressResult {
     address: string
     addresses: Address[]
+}
+
+interface CreateAddressResult {
+    address: string
+    address_index: number
 }
 
 interface QueryKeyResult {
@@ -110,6 +124,10 @@ export interface ShowBalanceResponse extends RequestContext {
 
 export interface ShowAddressResponse extends RequestContext {
     result: ShowAddressResult
+}
+
+export interface CreateAddressResponse extends RequestContext {
+    result: CreateAddressResult
 }
 
 export interface QueryKeyResponse extends RequestContext {

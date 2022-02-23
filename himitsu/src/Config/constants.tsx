@@ -54,3 +54,11 @@ export const SHOW_ADDRESS_REQUEST: Interfaces.ShowAddressRequest = {
     address_indices: [],
   },
 };
+
+export const CREATE_ADDRESS_REQUEST: Interfaces.CreateAddressRequest = {
+  ...context,
+  params: {
+    account_index: 0,
+    label: '',
+  },
+};

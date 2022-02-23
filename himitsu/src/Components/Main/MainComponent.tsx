@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
@@ -30,6 +30,7 @@ const useStyles = makeStyles((theme) => ({
   drawer: {
     width: drawerWidth,
     flexShrink: 0,
+    marginBottom: 'auto',
   },
   drawerPaper: {
     width: drawerWidth,
@@ -39,6 +40,7 @@ const useStyles = makeStyles((theme) => ({
     overflow: 'auto',
     backgroundColor: '#212D36',
     color: '#FF5722',
+    marginBottom: 'auto',
   },
   content: {
     fontFamily: 'sagona',
@@ -47,11 +49,19 @@ const useStyles = makeStyles((theme) => ({
     color: '#FF5722',
     backgroundColor: '#FFF',
   },
+  menuButton: {
+    marginRight: theme.spacing(1),
+    backgroundColor: '#212D36',
+  },
 }));
 
 const MainComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
+  const [isDrawerOpen, setDrawer] = useState(false);
   const classes = useStyles();
+
+  const handleMoveDrawer = (): void => { setDrawer(!isDrawerOpen); };
+
   /*
     If you want to use an existing wallet in development
     then set REACT_APP_HIMITSU_DEV=DEV in .env.local
@@ -59,52 +69,58 @@ const MainComponent: React.FC = (): ReactElement => {
   */
   const isDev = process.env.REACT_APP_HIMITSU_DEV === 'DEV';
 
+  // eslint-disable-next-line jsx-a11y/click-events-have-key-events
   return (
-    <div className={classes.root}>
+    <div>
       <CssBaseline />
       <AppBar position="fixed" className={classes.appBar}>
         <Toolbar>
-          <img src={logo} alt="monero logo" width={50} />
+          <button className={classes.menuButton} onClick={handleMoveDrawer} type="button">
+            <img src={logo} alt="monero logo" width={50} />
+          </button>
           <Typography variant="h6" noWrap>
             himitsu v0.1.0
           </Typography>
         </Toolbar>
       </AppBar>
-      <Drawer
-        className={classes.drawer}
-        variant="permanent"
-        classes={{
-          paper: classes.drawerPaper,
-        }}
-      >
-        <Toolbar />
-        <div className={classes.drawerContainer}>
-          <List>
-            <ListItem button key="Wallet">
-              <ListItemIcon>
-                <AccountBalanceWalletIcon />
-              </ListItemIcon>
-              <ListItemText primary="Wallet" />
-            </ListItem>
-            <ListItem button key="Transactions">
-              <ListItemIcon>
-                <ImportExportIcon />
-              </ListItemIcon>
-              <ListItemText primary="Transactions" />
-            </ListItem>
-            <ListItem button key="Settings">
-              <ListItemIcon>
-                <SettingsIcon />
-              </ListItemIcon>
-              <ListItemText primary="Settings" />
-            </ListItem>
-          </List>
-        </div>
-      </Drawer>
+      {isDrawerOpen
+        && (
+          <Drawer
+            className={classes.drawer}
+            variant="permanent"
+            classes={{
+              paper: classes.drawerPaper,
+            }}
+          >
+            <Toolbar />
+            <div className={classes.drawerContainer}>
+              <List>
+                <ListItem button key="Wallet">
+                  <ListItemIcon>
+                    <AccountBalanceWalletIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Wallet" />
+                </ListItem>
+                <ListItem button key="Transactions">
+                  <ListItemIcon>
+                    <ImportExportIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Transactions" />
+                </ListItem>
+                <ListItem button key="Settings">
+                  <ListItemIcon>
+                    <SettingsIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Settings" />
+                </ListItem>
+              </List>
+            </div>
+          </Drawer>
+        )}
       <main className={classes.content}>
         <Toolbar />
         {!gInit.isWalletInitialized && !isDev && <WalletInitComponent />}
-        {(gInit.isWalletInitialized || isDev) && <MoneroAccountComponent />}
+        {(gInit.isWalletInitialized || isDev) && !isDrawerOpen && <MoneroAccountComponent />}
       </main>
     </div>
   );

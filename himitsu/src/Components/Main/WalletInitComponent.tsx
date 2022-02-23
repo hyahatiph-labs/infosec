@@ -183,8 +183,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         kBody.method = 'query_key';
         kBody.params.key_type = 'mnemonic';
         const k: Interfaces.QueryKeyResponse = (await axios.post(host, kBody)).data;
-        // TODO: open wallet and query the key
-        // const proxy = r.data;
         setGlobalState('init', {
           ...gInit,
           isWalletInitialized: true,
