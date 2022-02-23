@@ -17,6 +17,12 @@ import { useGlobalState } from '../../state';
 import WalletInitComponent from './WalletInitComponent';
 import { useStyles } from './styles';
 
+// TODO: Refactor all modals to separate components
+// TODO: Create TransactionsComponent
+// TODO: Create SettingsComponent
+// TODO: Create LoadingComponent
+// TODO: webxmr integration
+
 const MainComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
   const [isDrawerOpen, setDrawer] = useState(false);

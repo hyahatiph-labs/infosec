@@ -300,7 +300,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           </Modal>
         )}
       <h2 className={classes.info}>
-        {`${((gAccount.walletBalance - pendingBalance) / Constants.PICO).toFixed(9)} XMR`}
+        {`${((gAccount.walletBalance - pendingBalance) / Constants.PICO).toFixed(6)} XMR`}
       </h2>
       <div className={classes.qr}>
         <Tooltip title={addressTooltip}>
@@ -313,13 +313,15 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
         </Tooltip>
       </div>
       <h3 className={classes.info}>
-        {`*${(pendingBalance / Constants.PICO).toFixed(3)} (pending XMR)`}
+        {pendingBalance > 0 && `*${(pendingBalance / Constants.PICO).toFixed(3)} (pending XMR)`}
       </h3>
-      <h3 className={classes.info}>{`Unlocks in ~${unlockTime} min.`}</h3>
+      { gAccount.unlockTime > 0
+      && <h3 className={classes.info}>{`Unlocks in ~${unlockTime} min.`}</h3>}
       <br />
       <div className={classes.buttonRow}>
         <Button
           className={classes.send}
+          disabled={gAccount.unlockedBalance === 0}
           onClick={() => { handleTransfer(); }}
           variant="outlined"
           color="primary"

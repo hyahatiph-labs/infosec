@@ -28,6 +28,7 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   qr: {
     marginLeft: theme.spacing(5),
+    marginBottom: theme.spacing(1),
   },
   icon: {
     margin: theme.spacing(0.5),
