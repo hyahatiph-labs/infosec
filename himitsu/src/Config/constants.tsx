@@ -62,3 +62,21 @@ export const CREATE_ADDRESS_REQUEST: Interfaces.CreateAddressRequest = {
     label: '',
   },
 };
+
+export const VALIDATE_ADDRESS_REQUEST: Interfaces.ValidateAddressRequest = {
+  ...context,
+  params: {
+    address: '',
+    any_net_type: true,
+    allow_openalias: true,
+  },
+};
+
+export const TRANSFER_REQUEST: Interfaces.TransferRequest = {
+  ...context,
+  params: {
+    destinations: [],
+    priority: 2,
+    ring_size: 11,
+  },
+};

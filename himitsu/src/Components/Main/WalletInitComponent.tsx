@@ -1,5 +1,4 @@
 import React, { ReactElement } from 'react';
-import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
@@ -13,82 +12,14 @@ import FormControl from '@material-ui/core/FormControl';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import { Visibility } from '@material-ui/icons';
 import {
-  Button, CircularProgress, styled, Switch, Typography,
+  Button, CircularProgress, Typography,
 } from '@material-ui/core';
 import axios from 'axios';
 import crypto from 'crypto';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Interfaces from '../../Config/interfaces';
 import * as Constants from '../../Config/constants';
-
-const useStyles = makeStyles((theme: Theme) => createStyles({
-  modal: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  paper: {
-    fontSize: '20px',
-    backgroundColor: theme.palette.background.paper,
-    border: '2px solid #000',
-    boxShadow: theme.shadows[5],
-    padding: theme.spacing(2, 4, 3),
-  },
-  root: {
-    display: 'flex',
-    flexWrap: 'wrap',
-  },
-  margin: {
-    margin: theme.spacing(1),
-  },
-  withoutLabel: {
-    marginTop: theme.spacing(3),
-  },
-  textField: {
-    width: '25ch',
-  },
-}));
-
-const AntSwitch = styled(Switch)(({ theme }) => ({
-  width: 42,
-  height: 16,
-  padding: 0,
-  display: 'flex',
-  '&:active': {
-    '& .MuiSwitch-thumb': {
-      width: 15,
-    },
-    '& .MuiSwitch-switchBase.Mui-checked': {
-      transform: 'translateX(9px)',
-    },
-  },
-  '& .MuiSwitch-switchBase': {
-    padding: 2,
-    '&.Mui-checked': {
-      transform: 'translateX(12px)',
-      color: '#fff',
-      '& + .MuiSwitch-track': {
-        opacity: 1,
-        backgroundColor: '#FF5722',
-      },
-    },
-  },
-  '& .MuiSwitch-thumb': {
-    boxShadow: '0 2px 4px 0 rgb(0 35 11 / 20%)',
-    width: 26,
-    height: 12,
-    borderRadius: 6,
-    transition: theme.transitions.create(['width'], {
-      duration: 200,
-    }),
-  },
-  '& .MuiSwitch-track': {
-    borderRadius: 16 / 2,
-    opacity: 1,
-    backgroundColor: '#212D36',
-    boxSizing: 'border-box',
-  },
-}));
+import { AntSwitch, useStyles } from './styles';
 
 /**
  * If the user wants to configure a remote node,
@@ -116,6 +47,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     rpcPassword: null,
     seed: '',
     mode: 'Normal',
+    height: '',
   });
 
   const handleChange = (prop: keyof Interfaces.WalletInitState) => (event:
@@ -265,12 +197,19 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               className={clsx(classes.margin, classes.textField)}
               onChange={handleChange('seed')}
             />
+            <TextField
+              label="restore height (optional)"
+              id="standard-start-adornment"
+              className={clsx(classes.margin, classes.textField)}
+              onChange={handleChange('height')}
+            />
             {
               values.isAdvanced
               && (
               <TextField
                 label="monero-wallet-rpc (host:port)"
                 id="standard-start-adornment"
+                required
                 className={clsx(classes.margin, classes.textField)}
                 InputProps={
 
@@ -284,6 +223,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             }
             <br />
             <Button
+              className={classes.send}
               disabled={values.isInitializing}
               onClick={() => { createAndOpenWallet(); }}
               variant="outlined"

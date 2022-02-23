@@ -1,5 +1,4 @@
 import React, { ReactElement, useState } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -16,44 +15,7 @@ import logo from '../../Assets/logo.png';
 import MoneroAccountComponent from '../Monero/MoneroAccountComponent';
 import { useGlobalState } from '../../state';
 import WalletInitComponent from './WalletInitComponent';
-
-const drawerWidth = 240;
-const useStyles = makeStyles((theme) => ({
-  root: {
-    display: 'flex',
-    backgroundColor: '#212D36',
-  },
-  appBar: {
-    backgroundColor: '#FF5722',
-    zIndex: theme.zIndex.drawer + 1,
-  },
-  drawer: {
-    width: drawerWidth,
-    flexShrink: 0,
-    marginBottom: 'auto',
-  },
-  drawerPaper: {
-    width: drawerWidth,
-    backgroundColor: '#212D36',
-  },
-  drawerContainer: {
-    overflow: 'auto',
-    backgroundColor: '#212D36',
-    color: '#FF5722',
-    marginBottom: 'auto',
-  },
-  content: {
-    fontFamily: 'sagona',
-    flexGrow: 1,
-    padding: theme.spacing(10),
-    color: '#FF5722',
-    backgroundColor: '#FFF',
-  },
-  menuButton: {
-    marginRight: theme.spacing(1),
-    backgroundColor: '#212D36',
-  },
-}));
+import { useStyles } from './styles';
 
 const MainComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
@@ -79,7 +41,7 @@ const MainComponent: React.FC = (): ReactElement => {
             <img src={logo} alt="monero logo" width={50} />
           </button>
           <Typography variant="h6" noWrap>
-            himitsu v0.1.0
+            himitsu v0.1.0-experimental
           </Typography>
         </Toolbar>
       </AppBar>
