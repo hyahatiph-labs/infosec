@@ -14,18 +14,15 @@ export const useStyles = makeStyles((theme) => ({
   drawer: {
     width: drawerWidth,
     flexShrink: 0,
-    marginBottom: theme.spacing(10),
   },
   drawerPaper: {
     width: drawerWidth,
     backgroundColor: '#212D36',
-    marginBottom: theme.spacing(10),
   },
   drawerContainer: {
     overflow: 'auto',
     backgroundColor: '#212D36',
     color: '#FF5722',
-    marginBottom: theme.spacing(10),
   },
   content: {
     fontFamily: 'sagona',

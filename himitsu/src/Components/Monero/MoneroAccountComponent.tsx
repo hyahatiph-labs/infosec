@@ -34,7 +34,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [isTransferring, setIsTransferring] = useState(false);
   const [transferSuccess, setIsTransferSuccess] = useState(false);
   const [invalidAmount, setIsInvalidAmount] = useState(false);
-  const [addressTooltip, setAddressTooltip] = useState('Click to recent unused address');
+  const [addressTooltip, setAddressTooltip] = useState('Click to copy');
   const [values, setValues] = React.useState<Interfaces.AccountState>({
     label: '',
     amount: 0,
@@ -249,6 +249,15 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 >
                   Generate
                 </Button>
+                {' '}
+                <Button
+                  className={classes.send}
+                  onClick={() => { setIsGeneratingSubAddress(false); }}
+                  variant="outlined"
+                  color="primary"
+                >
+                  Cancel
+                </Button>
               </div>
             </Fade>
           </Modal>
@@ -289,11 +298,21 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 <br />
                 <Button
                   className={classes.send}
+                  disabled={values.amount * Constants.PICO > gAccount.unlockedBalance}
                   onClick={() => { transfer(); }}
                   variant="outlined"
                   color="primary"
                 >
                   Transfer
+                </Button>
+                {' '}
+                <Button
+                  className={classes.send}
+                  onClick={() => { handleTransfer(); }}
+                  variant="outlined"
+                  color="primary"
+                >
+                  Cancel
                 </Button>
               </div>
             </Fade>

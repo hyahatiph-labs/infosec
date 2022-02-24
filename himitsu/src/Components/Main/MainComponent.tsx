@@ -37,7 +37,6 @@ const MainComponent: React.FC = (): ReactElement => {
   */
   const isDev = process.env.REACT_APP_HIMITSU_DEV === 'DEV';
 
-  // eslint-disable-next-line jsx-a11y/click-events-have-key-events
   return (
     <div>
       <CssBaseline />
