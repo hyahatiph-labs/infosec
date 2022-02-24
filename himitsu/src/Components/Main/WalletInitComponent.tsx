@@ -72,6 +72,8 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     event.preventDefault();
   };
 
+  // TODO: refactor createAndOpenWallet to three functions
+
   /**
    * Create wallet with user input. If not advanced then
    * provide defaults for everything except wallet password.

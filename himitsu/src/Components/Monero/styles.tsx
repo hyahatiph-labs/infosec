@@ -33,16 +33,16 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
   icon: {
     margin: theme.spacing(0.5),
     backgroundColor: '#212D362',
-    color: '#FF5277',
+    color: '#FF5722',
   },
   send: {
     marginRight: theme.spacing(0.1),
     backgroundColor: '#212D362',
-    color: '#FF5277',
+    color: '#FF5722',
   },
   info: {
     marginLeft: theme.spacing(3),
-    color: '#FF5277',
+    color: '#FF5722',
   },
   buttonRow: {
     display: 'flex',

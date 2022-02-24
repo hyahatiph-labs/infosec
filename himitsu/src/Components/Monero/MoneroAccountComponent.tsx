@@ -167,6 +167,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       const tx: Interfaces.TransferResponse = await (await axios.post(host, tBody)).data;
       setValues({ ...values, hash: tx.result.tx_hash });
       handleTransferSuccess();
+      loadXmrBalance();
     }
     if (!vAddress.result.valid || vAddress.result.nettype === 'mainnet') {
       handleInvalidAddress();
@@ -298,7 +299,8 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 <br />
                 <Button
                   className={classes.send}
-                  disabled={values.amount * Constants.PICO > gAccount.unlockedBalance}
+                  disabled={values.amount * Constants.PICO > gAccount.unlockedBalance
+                    || values.amount <= 0}
                   onClick={() => { transfer(); }}
                   variant="outlined"
                   color="primary"
@@ -391,7 +393,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       </Snackbar>
       <Snackbar
         open={invalidAddress}
-        autoHideDuration={10000}
+        autoHideDuration={5000}
         onClose={handleInvalidAddress}
       >
         <Alert
@@ -403,7 +405,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       </Snackbar>
       <Snackbar
         open={transferSuccess}
-        autoHideDuration={10000}
+        autoHideDuration={5000}
         onClose={handleTransferSuccess}
       >
         <Alert
@@ -415,7 +417,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       </Snackbar>
       <Snackbar
         open={invalidAmount}
-        autoHideDuration={10000}
+        autoHideDuration={5000}
         onClose={handleInvalidAmount}
       >
         <Alert
