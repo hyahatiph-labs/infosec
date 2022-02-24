@@ -6,9 +6,7 @@ Lightweight Monero wallet and browser extension for quick interface with
 monero-wallet-rpc and webxmr. 
 Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 
-![himitsu2](https://user-images.githubusercontent.com/13033037/155246061-adacf24b-31ed-4086-8a6a-bd05814f1bab.png)
-
-
+![himitsu](https://user-images.githubusercontent.com/13033037/155557047-d08ebb9b-7f65-4b0d-aec7-03a0f15cce06.png)
 
 ## Development
 
