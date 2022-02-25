@@ -73,7 +73,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
     const vBody: Interfaces.ValidateAddressRequest = Constants.VALIDATE_ADDRESS_REQUEST;
     vBody.params.address = values.address;
     const address: Interfaces.ValidateAddressResponse = await (await axios.post(host, vBody)).data;
-    if (!address.result.valid) {
+    if (!address.result.valid || address.result.nettype === 'mainnet') { // TODO: enable mainnet
       handleInvalidAddress();
     } else {
       const contact: Interfaces.AddAddressBookResponse = await (
