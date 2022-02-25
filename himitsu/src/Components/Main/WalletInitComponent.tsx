@@ -84,14 +84,12 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     setValues({ ...values, isInitializing: true });
     const filename = crypto.randomBytes(32).toString('hex');
     const body: Interfaces.CreateWalletRequest = Constants.CREATE_WALLET_REQUEST;
-    body.method = 'create_wallet';
     body.params.filename = filename;
     body.params.password = values.walletPassword;
     if (values.seed) {
       const dbody: Interfaces.RestoreDeterministicRequest = {
         ...body, params: { ...body.params, seed: values.seed },
       };
-      dbody.method = 'restore_deterministic_wallet';
       const result = (await axios.post(host, dbody)).data;
       if (result.status === Constants.HTTP_OK) {
         setGlobalState('init', {
@@ -110,12 +108,9 @@ const WalletInitComponent: React.FC = (): ReactElement => {
       }
     } else {
       await axios.post(host, body);
-      body.method = 'open_wallet';
       const result = await axios.post(host, body);
       if (result.status === Constants.HTTP_OK) {
         const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
-        kBody.method = 'query_key';
-        kBody.params.key_type = 'mnemonic';
         const k: Interfaces.QueryKeyResponse = (await axios.post(host, kBody)).data;
         setGlobalState('init', {
           ...gInit,

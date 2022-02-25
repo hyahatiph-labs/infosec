@@ -1,9 +1,17 @@
 body {
+  display: block;
+  overflow: scroll;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: #2dd6ec; /* fallback for old browsers */
+  background: -webkit-linear-gradient(right, #ec9a67, #f5670e);
+  background: -webkit-linear-gradient(right, #fa9454, #e66f25);
+  background: -moz-linear-gradient(right, #eb9c6c, #c96628);
+  background: -o-linear-gradient(right, #f09c68, hsl(23, 62%, 42%));
+  background: linear-gradient(to left, #f1e1d7, #aa6235);
   width: 400px;
   height: 500px;
 }

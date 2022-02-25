@@ -13,6 +13,7 @@ const context: Interfaces.RequestContext = {
 
 export const CREATE_WALLET_REQUEST: Interfaces.CreateWalletRequest = {
   ...context,
+  method: 'create_wallet',
   params: {
     password: '',
     filename: '',
@@ -24,6 +25,7 @@ export type OpenWalletRequest = Interfaces.CreateWalletRequest;
 
 export const RESTORE_DETERMINISTIC_REQUEST: Interfaces.RestoreDeterministicRequest = {
   ...context,
+  method: 'restore_deterministic_wallet',
   params: {
     password: '',
     filename: '',
@@ -34,13 +36,15 @@ export const RESTORE_DETERMINISTIC_REQUEST: Interfaces.RestoreDeterministicReque
 
 export const QUERY_KEY_REQUEST: Interfaces.QueryKeyRequest = {
   ...context,
+  method: 'query_key',
   params: {
-    key_type: '',
+    key_type: 'mnemonic',
   },
 };
 
 export const SHOW_BALANCE_REQUEST: Interfaces.ShowBalanceRequest = {
   ...context,
+  method: 'get_balance',
   params: {
     account_index: 0,
     address_indices: [],
@@ -49,6 +53,7 @@ export const SHOW_BALANCE_REQUEST: Interfaces.ShowBalanceRequest = {
 
 export const SHOW_ADDRESS_REQUEST: Interfaces.ShowAddressRequest = {
   ...context,
+  method: 'get_address',
   params: {
     account_index: 0,
     address_indices: [],
@@ -57,6 +62,7 @@ export const SHOW_ADDRESS_REQUEST: Interfaces.ShowAddressRequest = {
 
 export const CREATE_ADDRESS_REQUEST: Interfaces.CreateAddressRequest = {
   ...context,
+  method: 'create_address',
   params: {
     account_index: 0,
     label: '',
@@ -65,6 +71,7 @@ export const CREATE_ADDRESS_REQUEST: Interfaces.CreateAddressRequest = {
 
 export const VALIDATE_ADDRESS_REQUEST: Interfaces.ValidateAddressRequest = {
   ...context,
+  method: 'validate_address',
   params: {
     address: '',
     any_net_type: true,
@@ -74,9 +81,35 @@ export const VALIDATE_ADDRESS_REQUEST: Interfaces.ValidateAddressRequest = {
 
 export const TRANSFER_REQUEST: Interfaces.TransferRequest = {
   ...context,
+  method: 'transfer',
   params: {
     destinations: [],
     priority: 2,
     ring_size: 11,
+  },
+};
+
+export const GET_ADDRESS_BOOK_REQUEST: Interfaces.GetAddressBookRequest = {
+  ...context,
+  method: 'get_address_book',
+  params: {
+    entries: [],
+  },
+};
+
+export const ADD_ADDRESS_BOOK_REQUEST: Interfaces.AddAddressBookRequest = {
+  ...context,
+  method: 'add_address_book',
+  params: {
+    address: '',
+    description: '',
+  },
+};
+
+export const DELETE_ADDRESS_BOOK_REQUEST: Interfaces.DeleteAddressBookRequest = {
+  ...context,
+  method: 'delete_address_book',
+  params: {
+    index: 0,
   },
 };

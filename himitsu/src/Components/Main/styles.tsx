@@ -21,15 +21,19 @@ export const useStyles = makeStyles((theme) => ({
   },
   drawerContainer: {
     overflow: 'auto',
+    marginTop: theme.spacing(1),
     backgroundColor: '#212D36',
     color: '#FF5722',
+  },
+  drawerIcon: {
+    color: '#FFF',
   },
   content: {
     fontFamily: 'sagona',
     flexGrow: 1,
     padding: theme.spacing(10),
     color: '#FF5722',
-    backgroundColor: '#FFF',
+    backgroundColor: '255, 165, 0, 0.73',
   },
   menuButton: {
     marginRight: theme.spacing(1),

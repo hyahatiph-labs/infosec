@@ -19,45 +19,30 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
     flexBasis: 'space-between',
     align: 'center',
   },
-  margin: {
-    margin: theme.spacing(1),
-  },
-  withoutLabel: {
-    marginTop: theme.spacing(3),
-  },
   textField: {
+    margin: theme.spacing(1),
     width: '25ch',
-  },
-  qr: {
-    backgroundColor: '255, 165, 0, 0.73',
-    marginLeft: theme.spacing(5),
-    marginBottom: theme.spacing(1),
-    display: 'flex',
-    alignContent: 'center',
   },
   icon: {
     margin: theme.spacing(0.5),
     color: '#212D36',
   },
   send: {
-    marginRight: theme.spacing(0.1),
+    margin: theme.spacing(1),
     backgroundColor: '#FFF',
     color: '#212D36',
   },
-  pendingBalance: {
-    display: 'flex',
-    alignItems: 'center',
-    color: '#212D36',
-  },
-  unlockedBalance: {
-    textShadow: '1px 1px #FFF',
-    color: '#212D36',
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: 0,
-  },
   buttonRow: {
     display: 'flex',
-    alignItems: 'center',
+    alignContent: 'center',
+  },
+  nofrens: {
+    margin: theme.spacing(1),
+    fontSize: '20px',
+    textAlign: 'center',
+    color: '#212D36',
+  },
+  addButton: {
+    marginLeft: theme.spacing(10),
   },
 }));

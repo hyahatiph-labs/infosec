@@ -2,6 +2,7 @@ import { createGlobalState } from 'react-hooks-global-state';
 import * as Interfaces from './Config/interfaces';
 
 const subAddressInit: Interfaces.Address[] = [];
+const contactInit: Interfaces.Contact[] = [];
 
 /**
  * Global state management
@@ -18,6 +19,9 @@ export const {
     unlockTime: 0,
     subAddresses: subAddressInit,
     mnemonic: '',
+  },
+  contact: {
+    contactList: contactInit,
   },
   init: {
     isWalletInitialized: false,

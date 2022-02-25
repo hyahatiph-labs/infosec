@@ -6,6 +6,8 @@ export interface RequestContext {
   id: string;
   method: string;
 }
+
+// Complex Component State
 export interface WalletInitState {
   url: string | null;
   walletPassword: string;
@@ -28,7 +30,13 @@ export interface AccountState {
   hash: string;
 }
 
-/* RPC Request Parameter Interfacess */
+export interface ContactState {
+  address: string;
+  amount: number;
+  name: string;
+}
+
+/* RPC Request Parameter Interfaces */
 interface CreateWalletParams {
   filename: string;
   password: string;
@@ -73,6 +81,19 @@ interface TransferParams {
   ring_size: number;
 }
 
+interface GetAddressBookParams {
+  entries: number[];
+}
+
+interface AddAddressBookParams {
+  address: string;
+  description: string;
+}
+
+interface DeleteAddressBookParams {
+  index: number;
+}
+
 export type ShowAddressParams = ShowBalanceParams;
 
 /* RPC Request Interfaces */
@@ -108,7 +129,19 @@ export interface TransferRequest extends RequestContext {
   params: TransferParams;
 }
 
-/* RPC Response Interfaces */
+export interface GetAddressBookRequest extends RequestContext {
+  params: GetAddressBookParams
+}
+
+export interface AddAddressBookRequest extends RequestContext {
+  params: AddAddressBookParams;
+}
+
+export interface DeleteAddressBookRequest extends RequestContext {
+  params: DeleteAddressBookParams;
+}
+
+/* RPC Result Interfaces */
 interface SubAddressBalance {
   account_index: number;
   address: string;
@@ -163,6 +196,22 @@ interface TransferResult {
   tx_hash: string;
 }
 
+export interface Contact {
+  address: string;
+  description: string;
+  index: number;
+  payment_id: string;
+}
+
+interface GetAddressBookResult {
+  entries: Contact[]
+}
+
+interface AddAddressBookResult {
+  index: number;
+}
+
+/* RPC Response Interfaces */
 export interface ShowBalanceResponse extends RequestContext {
   result: ShowBalanceResult;
 }
@@ -185,4 +234,12 @@ export interface QueryKeyResponse extends RequestContext {
 
 export interface TransferResponse extends RequestContext {
   result: TransferResult;
+}
+
+export interface GetAddressBookResponse extends RequestContext {
+  result: GetAddressBookResult;
+}
+
+export interface AddAddressBookResponse extends RequestContext {
+  result: AddAddressBookResult
 }

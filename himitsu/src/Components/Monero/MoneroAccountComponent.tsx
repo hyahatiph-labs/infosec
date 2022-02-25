@@ -4,13 +4,14 @@ import QRCode from 'qrcode.react';
 import Snackbar from '@material-ui/core/Snackbar';
 import Alert from '@material-ui/lab/Alert';
 import {
-  Fade, Tooltip, Button, Typography, TextField,
+  Fade, Button, Typography, TextField,
 } from '@material-ui/core';
 import Modal from '@material-ui/core/Modal';
 import clsx from 'clsx';
 import axios from 'axios';
 import SendIcon from '@material-ui/icons/Send';
 import CallReceivedIcon from '@material-ui/icons/CallReceived';
+import { HourglassEmpty, HourglassFull, LockOpen } from '@material-ui/icons';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Constants from '../../Config/constants';
 import * as Interfaces from '../../Config/interfaces';
@@ -34,7 +35,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [isTransferring, setIsTransferring] = useState(false);
   const [transferSuccess, setIsTransferSuccess] = useState(false);
   const [invalidAmount, setIsInvalidAmount] = useState(false);
-  const [addressTooltip, setAddressTooltip] = useState('Click to copy');
   const [values, setValues] = React.useState<Interfaces.AccountState>({
     label: '',
     amount: 0,
@@ -78,8 +78,8 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
 
   const loadXmrBalance = async (): Promise<void> => {
     const body: Constants.OpenWalletRequest = Constants.CREATE_WALLET_REQUEST;
+    body.method = 'open_wallet';
     if (isDev) {
-      body.method = 'open_wallet';
       body.params.filename = 'himitsu';
       body.params.password = 'himitsu';
     } else {
@@ -89,9 +89,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     const oResult = await axios.post(host, body);
     if (oResult.status === Constants.HTTP_OK) {
       const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
-      aBody.method = 'get_address';
       const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
-      bBody.method = 'get_balance';
       const a: Interfaces.ShowAddressResponse = await (await axios.post(host, aBody)).data;
       const b: Interfaces.ShowBalanceResponse = await (await axios.post(host, bBody)).data;
       const aResult = a.result.addresses;
@@ -120,7 +118,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     gAccount.subAddresses.forEach((v) => {
       if (!v.used && v.address_index !== 0) {
         setGlobalState('account', { ...gAccount, primaryAddress: v.address });
-        setAddressTooltip(`Click to copy ${v.label}`);
         unusedAddressExists = true;
         handleSubAddressUpdate();
       }
@@ -133,14 +130,11 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const generateSubAddress = async (): Promise<void> => {
     const aBody: Interfaces.CreateAddressRequest = Constants.CREATE_ADDRESS_REQUEST;
     const sBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
-    aBody.method = 'create_address';
-    sBody.method = 'get_address';
     aBody.params.label = values.label;
     const create: Interfaces.CreateAddressResponse = await (await axios.post(host, aBody)).data;
     const show: Interfaces.ShowAddressResponse = await (await axios.post(host, sBody)).data;
     const newAddress = create.result.address;
     const showResult = show.result.addresses;
-    setAddressTooltip(`Click to copy ${showResult[showResult.length - 1].label}`);
     setGlobalState('account', {
       ...gAccount,
       primaryAddress: newAddress,
@@ -151,14 +145,12 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
 
   const transfer = async (): Promise<void> => {
     const vBody: Interfaces.ValidateAddressRequest = Constants.VALIDATE_ADDRESS_REQUEST;
-    vBody.method = 'validate_address';
     vBody.params.address = values.sendTo.trim();
     const isValidAmt = values.amount < gAccount.unlockedBalance / Constants.PICO;
     const vAddress: Interfaces.ValidateAddressResponse = await (await axios.post(host, vBody)).data;
     if (vAddress.result.valid && isValidAmt
       && vAddress.result.nettype !== 'mainnet') { // TODO: enable mainnet
       const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;
-      tBody.method = 'transfer';
       const destination: Interfaces.Destination = {
         address: values.sendTo.trim(),
         amount: values.amount * Constants.PICO,
@@ -320,25 +312,30 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
             </Fade>
           </Modal>
         )}
-      <h2 className={classes.info}>
-        {`${((gAccount.walletBalance - pendingBalance) / Constants.PICO).toFixed(6)} XMR`}
-      </h2>
-      <div className={classes.qr}>
-        <Tooltip title={addressTooltip}>
-          <CopyToClipboard text={gAccount.primaryAddress}>
-            <QRCode
-              value={gAccount.primaryAddress}
-              onClick={handleCopy}
-            />
-          </CopyToClipboard>
-        </Tooltip>
+      <div className={classes.unlockedBalance}>
+        <LockOpen className={classes.icon} />
+        <h1>
+          {`${((gAccount.walletBalance - pendingBalance) / Constants.PICO).toFixed(3)} XMR`}
+        </h1>
       </div>
-      <h3 className={classes.info}>
-        {pendingBalance > 0 && `*${(pendingBalance / Constants.PICO).toFixed(3)} (pending XMR)`}
-      </h3>
-      { gAccount.unlockTime > 0
-      && <h3 className={classes.info}>{`Unlocks in ~${unlockTime} min.`}</h3>}
-      <br />
+      <div className={classes.qr}>
+        <CopyToClipboard text={gAccount.primaryAddress}>
+          <QRCode
+            value={gAccount.primaryAddress}
+            onClick={handleCopy}
+          />
+        </CopyToClipboard>
+      </div>
+      <div className={classes.pendingBalance}>
+        {((unlockTime > 5 && unlockTime !== 0) && pendingBalance > 0)
+          && <HourglassEmpty className={classes.icon} />}
+        {((unlockTime <= 5 && unlockTime !== 0) && pendingBalance > 0)
+          && <HourglassFull className={classes.icon} />}
+        <h3>
+          {(pendingBalance > 0 && unlockTime > 0)
+            && ` ${(pendingBalance / Constants.PICO).toFixed(3)} ~ ${unlockTime} min.`}
+        </h3>
+      </div>
       <div className={classes.buttonRow}>
         <Button
           className={classes.send}
