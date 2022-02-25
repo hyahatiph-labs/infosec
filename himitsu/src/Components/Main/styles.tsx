@@ -40,12 +40,13 @@ export const useStyles = makeStyles((theme) => ({
     backgroundColor: '#212D36',
   },
   modal: {
+    overflow: 'scroll',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   },
   paper: {
-    fontSize: '20px',
+    fontSize: '16px',
     backgroundColor: theme.palette.background.paper,
     border: '2px solid #000',
     boxShadow: theme.shadows[5],
@@ -58,7 +59,7 @@ export const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(3),
   },
   textField: {
-    width: '25ch',
+    width: '42ch',
   },
   send: {
     marginRight: theme.spacing(0.1),

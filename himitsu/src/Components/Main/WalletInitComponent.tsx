@@ -188,20 +188,28 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               />
             </FormControl>
             <br />
-            <TextField
-              label="seed (optional)"
-              id="standard-start-adornment"
-              className={clsx(classes.margin, classes.textField)}
-              onChange={handleChange('seed')}
-            />
-            <br />
-            <TextField
-              label="restore height (optional)"
-              id="standard-start-adornment"
-              className={clsx(classes.margin, classes.textField)}
-              onChange={handleChange('height')}
-            />
-            <br />
+            {
+              values.isAdvanced
+              && (
+              <TextField
+                label="seed (optional)"
+                id="standard-start-adornment"
+                className={clsx(classes.margin, classes.textField)}
+                onChange={handleChange('seed')}
+              />
+              )
+            }
+            {
+              values.isAdvanced
+              && (
+              <TextField
+                label="height (optional)"
+                id="standard-start-adornment"
+                className={clsx(classes.margin, classes.textField)}
+                onChange={handleChange('height')}
+              />
+              )
+            }
             {
               values.isAdvanced
               && (
