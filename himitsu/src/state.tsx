@@ -3,6 +3,7 @@ import * as Interfaces from './Config/interfaces';
 
 const subAddressInit: Interfaces.Address[] = [];
 const contactInit: Interfaces.Contact[] = [];
+const transferInit: Interfaces.Transfer[] = [];
 
 /**
  * Global state management
@@ -30,5 +31,8 @@ export const {
     walletPassword: '',
     network: '', // TODO: add MAINNET, STAGENET enum / flags
     rpcHost: 'http://localhost:38083',
+  },
+  transfer: {
+    transferList: transferInit,
   },
 });

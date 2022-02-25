@@ -194,7 +194,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
           ))}
         </div>
       )}
-      {/* Transfer modal */}
+      {/* Create contact modal */}
       {isAdding && (
         <MUI.Modal
           aria-labelledby="transition-modal-title"

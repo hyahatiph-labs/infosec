@@ -36,6 +36,10 @@ export interface ContactState {
   name: string;
 }
 
+export interface SettingsState {
+  rpcHost: string;
+}
+
 /* RPC Request Parameter Interfaces */
 interface CreateWalletParams {
   filename: string;
@@ -94,6 +98,15 @@ interface DeleteAddressBookParams {
   index: number;
 }
 
+interface ShowTransfersParams {
+  failed: boolean;
+  in: boolean;
+  out: boolean;
+  pending: boolean;
+  pool: boolean;
+  account_index: number;
+}
+
 export type ShowAddressParams = ShowBalanceParams;
 
 /* RPC Request Interfaces */
@@ -139,6 +152,10 @@ export interface AddAddressBookRequest extends RequestContext {
 
 export interface DeleteAddressBookRequest extends RequestContext {
   params: DeleteAddressBookParams;
+}
+
+export interface ShowTransfersRequest extends RequestContext {
+  params: ShowTransfersParams;
 }
 
 /* RPC Result Interfaces */
@@ -211,6 +228,38 @@ interface AddAddressBookResult {
   index: number;
 }
 
+interface SubAddressIndex {
+  major: number;
+  minor: number;
+}
+
+export interface Transfer {
+  address: string;
+  amount: number;
+  amounts: number[];
+  confirmations: number;
+  double_spend_seed: boolean;
+  fee: number;
+  height: number;
+  locked: false;
+  note: string;
+  payment_id: string;
+  subaddr_index: SubAddressIndex;
+  subaddr_indices: SubAddressIndex[];
+  suggested_confirmations_threshold: number;
+  timestamp: number;
+  txid: string;
+  type: string;
+  unlockTime: number;
+}
+
+interface ShowTransferResult {
+  failed: Transfer[];
+  in: Transfer[];
+  pending: Transfer[];
+  pool: Transfer[];
+  out: Transfer[];
+}
 /* RPC Response Interfaces */
 export interface ShowBalanceResponse extends RequestContext {
   result: ShowBalanceResult;
@@ -242,4 +291,8 @@ export interface GetAddressBookResponse extends RequestContext {
 
 export interface AddAddressBookResponse extends RequestContext {
   result: AddAddressBookResult
+}
+
+export interface ShowTransfersResponse extends RequestContext {
+  result: ShowTransferResult;
 }

@@ -218,6 +218,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
                 id="standard-start-adornment"
                 required
                 className={clsx(classes.margin, classes.textField)}
+                onChange={handleChange('url')}
                 InputProps={
 
                   {

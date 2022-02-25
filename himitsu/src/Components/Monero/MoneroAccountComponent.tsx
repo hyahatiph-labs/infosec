@@ -35,6 +35,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [isTransferring, setIsTransferring] = useState(false);
   const [transferSuccess, setIsTransferSuccess] = useState(false);
   const [invalidAmount, setIsInvalidAmount] = useState(false);
+  const [rpcConnectionFailure, setRpcConnectionFailure] = useState(false);
   const [values, setValues] = React.useState<Interfaces.AccountState>({
     label: '',
     amount: 0,
@@ -62,6 +63,10 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const handleUnusedAddressAlert = (): void => { setUnusedAddressAlert(!unusedAddressAlert); };
 
   const handleInvalidAddress = (): void => { setIsInvalidAddress(!invalidAddress); };
+
+  const handleRpcConnectionFailure = (): void => {
+    setRpcConnectionFailure(!rpcConnectionFailure);
+  };
 
   const handleChange = (prop: keyof Interfaces.AccountState) => (event:
     React.ChangeEvent<HTMLInputElement>) => {
@@ -110,6 +115,8 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       aResult.forEach((v) => { if (!v.used && v.address_index !== 0) { unusedAddress = true; } });
       if (!unusedAddress) { handleUnusedAddressAlert(); }
       loaded = true;
+    } else {
+      handleRpcConnectionFailure();
     }
   };
 
@@ -386,6 +393,18 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           severity="warning"
         >
           Press &apos;receive&apos; to generate a new subaddress.
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={rpcConnectionFailure}
+        autoHideDuration={3000}
+        onClose={handleRpcConnectionFailure}
+      >
+        <Alert
+          onClose={handleRpcConnectionFailure}
+          severity="error"
+        >
+          Failed to connect to RPC.
         </Alert>
       </Snackbar>
       <Snackbar

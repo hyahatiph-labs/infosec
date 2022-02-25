@@ -113,3 +113,81 @@ export const DELETE_ADDRESS_BOOK_REQUEST: Interfaces.DeleteAddressBookRequest = 
     index: 0,
   },
 };
+
+export const SHOW_TRANSFERS_REQUEST: Interfaces.ShowTransfersRequest = {
+  ...context,
+  method: 'get_transfers',
+  params: {
+    account_index: 0,
+    failed: true,
+    in: true,
+    pending: true,
+    pool: true,
+    out: true,
+  },
+};
+
+export const SHOW_TRANSFERS_FAILED_REQUEST: Interfaces.ShowTransfersRequest = {
+  ...context,
+  method: 'get_transfers',
+  params: {
+    account_index: 0,
+    failed: true,
+    in: false,
+    pending: false,
+    pool: false,
+    out: false,
+  },
+};
+
+export const SHOW_TRANSFERS_IN_REQUEST: Interfaces.ShowTransfersRequest = {
+  ...context,
+  method: 'get_transfers',
+  params: {
+    account_index: 0,
+    failed: false,
+    in: true,
+    pending: false,
+    pool: false,
+    out: false,
+  },
+};
+
+export const SHOW_TRANSFERS_PENDING_REQUEST: Interfaces.ShowTransfersRequest = {
+  ...context,
+  method: 'get_transfers',
+  params: {
+    account_index: 0,
+    failed: false,
+    in: false,
+    pending: true,
+    pool: false,
+    out: false,
+  },
+};
+
+export const SHOW_TRANSFERS_POOL_REQUEST: Interfaces.ShowTransfersRequest = {
+  ...context,
+  method: 'get_transfers',
+  params: {
+    account_index: 0,
+    failed: false,
+    in: false,
+    pending: false,
+    pool: true,
+    out: false,
+  },
+};
+
+export const SHOW_TRANSFERS_OUT_REQUEST: Interfaces.ShowTransfersRequest = {
+  ...context,
+  method: 'get_transfers',
+  params: {
+    account_index: 0,
+    failed: false,
+    in: false,
+    pending: false,
+    pool: false,
+    out: true,
+  },
+};

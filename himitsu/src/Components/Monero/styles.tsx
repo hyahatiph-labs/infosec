@@ -29,6 +29,7 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
     width: '25ch',
   },
   qr: {
+    cursor: 'pointer',
     backgroundColor: '255, 165, 0, 0.73',
     marginLeft: theme.spacing(5),
     marginBottom: theme.spacing(1),
@@ -59,5 +60,15 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
   buttonRow: {
     display: 'flex',
     alignItems: 'center',
+    margin: theme.spacing(1),
+    fontSize: '20px',
+    textAlign: 'center',
+  },
+  info: {
+    display: 'block',
+    textAlign: 'left',
+    fontFamily: 'comic',
+    fontSize: '1em',
+    color: '#212D36',
   },
 }));
