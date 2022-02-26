@@ -4,6 +4,7 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
   modal: {
     display: 'flex',
     wrap: 'wrap',
+    overflow: 'scroll',
     alignItems: 'center',
     justifyContent: 'center',
   },

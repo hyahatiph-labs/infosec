@@ -13,7 +13,7 @@ import SendIcon from '@material-ui/icons/Send';
 import CallReceivedIcon from '@material-ui/icons/CallReceived';
 import {
   AddCircle,
-  Check, CloseRounded, HourglassEmpty, HourglassFull, LockOpen, SendRounded,
+  Check, CheckCircleRounded, CloseRounded, HourglassEmpty, HourglassFull, LockOpen, SendRounded,
 } from '@material-ui/icons';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Constants from '../../Config/constants';
@@ -43,6 +43,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [invalidAmount, setIsInvalidAmount] = useState(false);
   const [rpcConnectionFailure, setRpcConnectionFailure] = useState(false);
   const [proofGenerated, setProofGenerated] = useState(false);
+  const [showProofValidation, setShowProofValidation] = useState(false);
   const [values, setValues] = React.useState<Interfaces.AccountState>({
     label: '',
     amount: 0,
@@ -50,6 +51,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     hash: '',
     reserveProof: '',
     message: '',
+    proofValidation: { good: false, spent: 0, total: 0 },
   });
   const host = `http://${gInit.rpcHost}/json_rpc`;
 
@@ -78,7 +80,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   };
 
   const handleProofGeneration = (): void => {
-    setIsGeneratingProof(false);
     setProofGenerated(!proofGenerated);
   };
 
@@ -172,12 +173,28 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   };
 
   const generateReserveProof = async (): Promise<void> => {
+    setProofGenerated(true);
     const proofBody: Interfaces.GetReserveProofRequest = Constants.GET_RESERVE_PROOF_REQUEST;
     proofBody.params.amount = values.amount * Constants.PICO;
+    proofBody.params.message = values.message;
     const proof: Interfaces.GetReserveProofResponse = await (
       await axios.post(host, proofBody)
     ).data;
     setValues({ ...values, reserveProof: proof.result.signature });
+  };
+
+  const checkReserveProof = async (): Promise<void> => {
+    const proofBody: Interfaces.CheckReserveProofRequest = Constants.CHECK_RESERVE_PROOF_REQUEST;
+    proofBody.params.address = values.sendTo;
+    proofBody.params.message = values.message;
+    proofBody.params.signature = values.reserveProof;
+    const proof: Interfaces.CheckReserveProofResponse = await (
+      await axios.post(host, proofBody)
+    ).data;
+    if (proof.result.good) {
+      setValues({ ...values, proofValidation: proof.result });
+      setShowProofValidation(true);
+    }
   };
 
   const transfer = async (): Promise<void> => {
@@ -361,10 +378,11 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
             <Fade in={isGeneratingProof}>
               <div className={clsx(classes.paper, 'altBg')}>
                 <h2 id="transition-modal-title">
-                  Generate Reserve Proof
+                  Reserve Proof
                 </h2>
                 <p id="transition-modal-description">
-                  Enter amount and optional message.
+                  Enter amount and optional message to generate OR
+                  enter address, signature and optional message to validate.
                 </p>
                 <div>
                   <CopyToClipboard text={values.reserveProof}>
@@ -391,6 +409,22 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   className={clsx(classes.margin, classes.textField)}
                   onChange={handleChange('amount')}
                 />
+                <TextField
+                  label="address"
+                  type="text"
+                  required
+                  id="standard-start-adornment"
+                  className={clsx(classes.margin, classes.textField)}
+                  onChange={handleChange('sendTo')}
+                />
+                <TextField
+                  label="signature"
+                  type="text"
+                  required
+                  id="standard-start-adornment"
+                  className={clsx(classes.margin, classes.textField)}
+                  onChange={handleChange('reserveProof')}
+                />
                 <br />
                 <Button
                   className={classes.send}
@@ -401,6 +435,16 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   color="primary"
                 >
                   <AddCircle />
+                </Button>
+                {' '}
+                <Button
+                  className={classes.send}
+                  disabled={values.sendTo === '' || values.reserveProof === ''}
+                  onClick={() => { checkReserveProof(); }}
+                  variant="outlined"
+                  color="primary"
+                >
+                  <CheckCircleRounded />
                 </Button>
                 {' '}
                 <Button
@@ -557,7 +601,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       </Snackbar>
       <Snackbar
         open={proofGenerated}
-        autoHideDuration={5000}
+        autoHideDuration={2000}
         onClose={handleProofGeneration}
       >
         <Alert
@@ -565,6 +609,19 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           severity="info"
         >
           Generating reserve proof...
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={showProofValidation}
+        autoHideDuration={5000}
+        onClose={() => { setShowProofValidation(false); }}
+      >
+        <Alert
+          onClose={() => { setShowProofValidation(false); }}
+          severity="info"
+        >
+          {`Valid proof on ${(values.proofValidation.spent / Constants.PICO).toFixed(3)}
+            spent and ${(values.proofValidation.total / Constants.PICO).toFixed(3)} total`}
         </Alert>
       </Snackbar>
     </div>

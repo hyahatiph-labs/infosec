@@ -200,5 +200,16 @@ export const GET_RESERVE_PROOF_REQUEST: Interfaces.GetReserveProofRequest = {
     all: false,
     amount: 0,
     account_index: 0,
+    message: '',
+  },
+};
+
+export const CHECK_RESERVE_PROOF_REQUEST: Interfaces.CheckReserveProofRequest = {
+  ...context,
+  method: 'check_reserve_proof',
+  params: {
+    address: '',
+    message: '',
+    signature: '',
   },
 };

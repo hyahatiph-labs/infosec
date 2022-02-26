@@ -30,6 +30,7 @@ export interface AccountState {
   hash: string;
   reserveProof: string;
   message: string;
+  proofValidation: CheckReserveProofResult;
 }
 
 export interface ContactState {
@@ -114,6 +115,13 @@ interface GetReserveProofParams {
   all: boolean;
   account_index: number;
   amount: number;
+  message: string;
+}
+
+interface CheckReserveProofParams {
+  address: string;
+  message: string;
+  signature: string;
 }
 
 export type ShowAddressParams = ShowBalanceParams;
@@ -169,6 +177,10 @@ export interface ShowTransfersRequest extends RequestContext {
 
 export interface GetReserveProofRequest extends RequestContext {
   params: GetReserveProofParams;
+}
+
+export interface CheckReserveProofRequest extends RequestContext {
+  params: CheckReserveProofParams;
 }
 
 /* RPC Result Interfaces */
@@ -278,6 +290,12 @@ interface GetReserveProofResult {
   signature: string;
 }
 
+export interface CheckReserveProofResult {
+  good: boolean;
+  spent: number;
+  total: number;
+}
+
 /* RPC Response Interfaces */
 export interface ShowBalanceResponse extends RequestContext {
   result: ShowBalanceResult;
@@ -317,4 +335,8 @@ export interface ShowTransfersResponse extends RequestContext {
 
 export interface GetReserveProofResponse extends RequestContext {
   result: GetReserveProofResult;
+}
+
+export interface CheckReserveProofResponse extends RequestContext {
+  result: CheckReserveProofResult;
 }
