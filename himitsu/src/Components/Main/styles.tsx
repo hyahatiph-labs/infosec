@@ -26,6 +26,7 @@ export const useStyles = makeStyles((theme) => ({
     color: '#FF5722',
   },
   drawerIcon: {
+    cursor: 'pointer',
     color: '#FFF',
   },
   content: {
@@ -37,6 +38,7 @@ export const useStyles = makeStyles((theme) => ({
     backgroundColor: '255, 165, 0, 0.73',
   },
   menuButton: {
+    cursor: 'pointer',
     marginRight: theme.spacing(1),
     backgroundColor: '#212D36',
   },

@@ -33,6 +33,14 @@ export interface AccountState {
   proofValidation: CheckReserveProofResult;
 }
 
+export interface TransactionState {
+  txid: string;
+  address: string;
+  txProof: string;
+  message: string;
+  proofValidation: CheckTxProofResult;
+}
+
 export interface ContactState {
   address: string;
   amount: number;
@@ -124,6 +132,19 @@ interface CheckReserveProofParams {
   signature: string;
 }
 
+interface GetTxProofParams {
+  address: string;
+  txid: string;
+  message: string;
+}
+
+interface CheckTxProofParams {
+  address: string;
+  txid: string;
+  message: string;
+  signature: string;
+}
+
 export type ShowAddressParams = ShowBalanceParams;
 
 /* RPC Request Interfaces */
@@ -181,6 +202,14 @@ export interface GetReserveProofRequest extends RequestContext {
 
 export interface CheckReserveProofRequest extends RequestContext {
   params: CheckReserveProofParams;
+}
+
+export interface GetTxProofRequest extends RequestContext {
+  params: GetTxProofParams;
+}
+
+export interface CheckTxProofRequest extends RequestContext {
+  params: CheckTxProofParams;
 }
 
 /* RPC Result Interfaces */
@@ -290,10 +319,19 @@ interface GetReserveProofResult {
   signature: string;
 }
 
+export type GetTxProofResult = GetReserveProofResult
+
 export interface CheckReserveProofResult {
   good: boolean;
   spent: number;
   total: number;
+}
+
+export interface CheckTxProofResult {
+  confirmations: number;
+  good: boolean;
+  in_pool: boolean;
+  received: number;
 }
 
 /* RPC Response Interfaces */
@@ -339,4 +377,12 @@ export interface GetReserveProofResponse extends RequestContext {
 
 export interface CheckReserveProofResponse extends RequestContext {
   result: CheckReserveProofResult;
+}
+
+export interface GetTxProofResponse extends RequestContext {
+  result: GetTxProofResult;
+}
+
+export interface CheckTxProofResponse extends RequestContext {
+  result: CheckTxProofResult;
 }

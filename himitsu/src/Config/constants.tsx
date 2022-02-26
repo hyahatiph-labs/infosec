@@ -213,3 +213,24 @@ export const CHECK_RESERVE_PROOF_REQUEST: Interfaces.CheckReserveProofRequest = 
     signature: '',
   },
 };
+
+export const GET_TX_PROOF_REQUEST: Interfaces.GetTxProofRequest = {
+  ...context,
+  method: 'get_tx_proof',
+  params: {
+    address: '',
+    message: '',
+    txid: '',
+  },
+};
+
+export const CHECK_TX_PROOF_REQUEST: Interfaces.CheckTxProofRequest = {
+  ...context,
+  method: 'check_tx_proof',
+  params: {
+    address: '',
+    txid: '',
+    message: '',
+    signature: '',
+  },
+};
