@@ -50,7 +50,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     rpcPassword: null,
     seed: '',
     mode: 'Normal',
-    height: '',
+    height: 0,
   });
 
   const handleChange = (prop: keyof Interfaces.WalletInitState) => (
@@ -100,10 +100,14 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         const body: Interfaces.CreateWalletRequest = Constants.CREATE_WALLET_REQUEST;
         body.params.filename = filename;
         body.params.password = values.walletPassword;
-        if (values.seed) {
+        if (values.seed !== '') {
           const dbody: Interfaces.RestoreDeterministicRequest = {
             ...body,
-            params: { ...body.params, seed: values.seed },
+            params: {
+              ...body.params,
+              seed: values.seed,
+              restore_height: values.height,
+            },
           };
           const dResult = (await axios.post(host, dbody)).data;
           if (dResult.status === Constants.HTTP_OK) {

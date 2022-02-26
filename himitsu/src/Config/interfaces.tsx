@@ -20,7 +20,7 @@ export interface WalletInitState {
   seed: string;
   networkType: string;
   mode: string;
-  height: string;
+  height: number;
 }
 
 export interface AccountState {
@@ -52,6 +52,7 @@ interface RestoreDeterministicParams {
   password: string;
   language: string;
   seed: string;
+  restore_height: number;
 }
 
 interface QueryKeyParams {

@@ -31,6 +31,7 @@ export const RESTORE_DETERMINISTIC_REQUEST: Interfaces.RestoreDeterministicReque
     filename: '',
     language: '',
     seed: '',
+    restore_height: 0,
   },
 };
 

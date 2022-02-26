@@ -27,6 +27,7 @@ export const {
   init: {
     isWalletInitialized: false,
     isRestoringFromSeed: false,
+    isSeedConfirmed: false,
     walletName: '',
     walletPassword: '',
     network: '', // TODO: add MAINNET, STAGENET enum / flags

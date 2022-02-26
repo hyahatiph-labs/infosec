@@ -1,5 +1,7 @@
 import * as MUI from '@material-ui/core';
-import { ContactMailRounded, DeleteForeverOutlined, ExpandMore } from '@material-ui/icons';
+import {
+  AddCircle, CloseRounded, ContactMailRounded, DeleteForeverOutlined, ExpandMore,
+} from '@material-ui/icons';
 import SendIcon from '@material-ui/icons/Send';
 import React, { ReactElement, useEffect, useState } from 'react';
 import clsx from 'clsx';
@@ -18,6 +20,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
   const [noContacts, setNoContacts] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [invalidAddress, setIsInvalidAddress] = useState(false);
   const [deleteFailure, setDeleteFailure] = useState(false);
   const [transferFailure, setTransferFailure] = useState(false);
@@ -36,6 +39,10 @@ const ContactsComponent: React.FC = (): ReactElement => {
 
   const handleIsAdding = (): void => {
     setIsAdding(!isAdding);
+  };
+
+  const handleIsSending = (): void => {
+    setIsSending(!isSending);
   };
 
   const handleInvalidAddress = (): void => {
@@ -99,6 +106,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
   };
 
   const transferToContact = async (recipient: string, amount: number): Promise<void> => {
+    setIsSending(true);
     const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;
     const d: Interfaces.Destination = { address: recipient, amount };
     // disable send and notify user it is in progress
@@ -112,8 +120,10 @@ const ContactsComponent: React.FC = (): ReactElement => {
         unlockedBalance: balance.result.unlocked_balance,
         walletBalance: balance.result.balance,
       });
+      setIsSending(false);
       handleTransferSuccess();
     } else {
+      setIsSending(false);
       handleTransferFailure();
     }
   };
@@ -175,7 +185,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
               <div className={classes.buttonRow}>
                 <MUI.Button
                   className={classes.send}
-                  disabled={gAccount.unlockedBalance === 0
+                  disabled={gAccount.unlockedBalance === 0 || isSending
                     || values.amount * Constants.PICO > gAccount.unlockedBalance}
                   onClick={() => { transferToContact(v.address, values.amount * Constants.PICO); }}
                   variant="outlined"
@@ -234,7 +244,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
                 variant="outlined"
                 color="primary"
               >
-                Add
+                <AddCircle />
               </MUI.Button>
               {' '}
               <MUI.Button
@@ -245,7 +255,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
                 variant="outlined"
                 color="primary"
               >
-                Cancel
+                <CloseRounded />
               </MUI.Button>
             </div>
           </MUI.Fade>
@@ -264,6 +274,11 @@ const ContactsComponent: React.FC = (): ReactElement => {
       <MUI.Snackbar open={transferFailure} autoHideDuration={5000} onClose={handleTransferFailure}>
         <Alert onClose={handleTransferFailure} severity="error">
           Failed to send to contact.
+        </Alert>
+      </MUI.Snackbar>
+      <MUI.Snackbar open={isSending} autoHideDuration={5000} onClose={handleIsSending}>
+        <Alert onClose={handleIsSending} severity="info">
+          Transfer in progress...
         </Alert>
       </MUI.Snackbar>
       <MUI.Snackbar open={transferSuccess} autoHideDuration={5000} onClose={handleTransferSuccess}>

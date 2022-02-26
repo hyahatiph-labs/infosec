@@ -123,7 +123,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
                 </MUI.Typography>
                 <MUI.Typography className={classes.info}>
                   <b>Confirmations:</b>
-                  <code>{` ${v.confirmations}`}</code>
+                  <code>{` ${v.confirmations ? v.confirmations : 0}`}</code>
                 </MUI.Typography>
               </MUI.AccordionDetails>
             </MUI.Accordion>

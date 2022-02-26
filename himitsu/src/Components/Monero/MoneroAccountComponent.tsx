@@ -11,14 +11,18 @@ import clsx from 'clsx';
 import axios from 'axios';
 import SendIcon from '@material-ui/icons/Send';
 import CallReceivedIcon from '@material-ui/icons/CallReceived';
-import { HourglassEmpty, HourglassFull, LockOpen } from '@material-ui/icons';
+import {
+  AddCircle,
+  Check, CloseRounded, HourglassEmpty, HourglassFull, LockOpen, SendRounded,
+} from '@material-ui/icons';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Constants from '../../Config/constants';
 import * as Interfaces from '../../Config/interfaces';
 import { useStyles } from './styles';
 import busy from '../../Assets/dance.gif';
 
-// TODO: Refactor all modals to separate components
+// TODO: tx / reserve proof generation
+// TODO: create wallet locked component and logic / password hashed to local storage
 
 // load balance once
 let loaded = false;
@@ -32,7 +36,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [subAddressUpdated, setSubAddressUpdated] = useState(false);
   const [invalidAddress, setIsInvalidAddress] = useState(false);
   const [unusedAddressAlert, setUnusedAddressAlert] = useState(false);
-  const [isSeedConfirmed, setSeedConfirmed] = useState(false);
   const [isGeneratingSubAddress, setIsGeneratingSubAddress] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
   const [transferSuccess, setIsTransferSuccess] = useState(false);
@@ -76,11 +79,8 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   };
 
   const handleSeedConfirmation = (): void => {
-    setSeedConfirmed(true);
-    setGlobalState('account', {
-      ...gAccount,
-      mnemonic: '',
-    });
+    setGlobalState('init', { ...gInit, isRestoringFromSeed: true });
+    setGlobalState('account', { ...gAccount, mnemonic: '' });
   };
 
   const loadXmrBalance = async (): Promise<void> => {
@@ -101,6 +101,8 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
         const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
         const a: Interfaces.ShowAddressResponse = await (await axios.post(host, aBody)).data;
         const b: Interfaces.ShowBalanceResponse = await (await axios.post(host, bBody)).data;
+        const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
+        const k: Interfaces.QueryKeyResponse = (await axios.post(host, kBody)).data;
         const aResult = a.result.addresses;
         const aLength = aResult.length;
         // display the latest unused subaddress, warn if all addresses are used
@@ -108,12 +110,13 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
         const { balance } = b.result;
         const unlockedBalance = b.result.unlocked_balance;
         setGlobalState('account', {
+          ...gAccount,
           primaryAddress,
           walletBalance: balance,
           unlockTime: b.result.blocks_to_unlock,
           unlockedBalance,
           subAddresses: a.result.addresses,
-          mnemonic: gAccount.mnemonic,
+          mnemonic: k.result.key,
         });
         let unusedAddress = false;
         aResult.forEach((v) => { if (!v.used && v.address_index !== 0) { unusedAddress = true; } });
@@ -194,24 +197,21 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
 
   return (
     <div className={classes.root}>
-      { !gInit.isRestoringFromSeed
+      { (!gInit.isRestoringFromSeed && !gInit.isSeedConfirmed)
         && (
         // Seed confirmation modal
         <Modal
           aria-labelledby="transition-modal-title"
           aria-describedby="transition-modal-description"
           className={classes.modal}
-          open={!isSeedConfirmed && gInit.isWalletInitialized}
+          open={!gInit.isSeedConfirmed && gInit.isWalletInitialized}
           closeAfterTransition
         >
-          <Fade in={!isSeedConfirmed && gInit.isWalletInitialized}>
+          <Fade in={!gInit.isSeedConfirmed && gInit.isWalletInitialized}>
             <div className={clsx(classes.paper, 'altBg')}>
               <h2 id="transition-modal-title">
                 Press &quot;CONFIRM&quot; after securing your mnemonic
               </h2>
-              <p id="transition-modal-description">
-                Seed phrase:
-              </p>
               <Typography>{gAccount.mnemonic}</Typography>
               <Button
                 className={classes.send}
@@ -256,7 +256,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   variant="outlined"
                   color="primary"
                 >
-                  Generate
+                  <AddCircle />
                 </Button>
                 {' '}
                 <Button
@@ -265,7 +265,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   variant="outlined"
                   color="primary"
                 >
-                  Cancel
+                  <CloseRounded />
                 </Button>
               </div>
             </Fade>
@@ -313,7 +313,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   variant="outlined"
                   color="primary"
                 >
-                  Transfer
+                  <SendRounded />
                 </Button>
                 {' '}
                 <Button
@@ -322,7 +322,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   variant="outlined"
                   color="primary"
                 >
-                  Cancel
+                  <CloseRounded />
                 </Button>
               </div>
             </Fade>
@@ -347,7 +347,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       {isBusy
         && (
           <div className={classes.qr}>
-            <img className={classes.qr} loading="lazy" src={busy} alt="monero logo" width={200} />
+            <img loading="lazy" src={busy} alt="monero logo" width={200} />
           </div>
         )}
       {!isBusy
@@ -371,7 +371,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           size="medium"
         >
           <SendIcon className={classes.icon} />
-          Send
         </Button>
         <Button
           className={classes.send}
@@ -381,7 +380,15 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           size="medium"
         >
           <CallReceivedIcon className={classes.icon} />
-          Receive
+        </Button>
+        <Button
+          className={classes.send}
+          // onClick={() => { getSubAddress(); }}
+          variant="outlined"
+          color="primary"
+          size="medium"
+        >
+          <Check className={classes.icon} />
         </Button>
       </div>
       {/* food court! */}

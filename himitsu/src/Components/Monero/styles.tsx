@@ -43,11 +43,13 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
     marginRight: theme.spacing(0.1),
     backgroundColor: '#FFF',
     color: '#212D36',
+    borderRadius: '50',
   },
   pendingBalance: {
+    color: '#212D36',
     display: 'flex',
     alignItems: 'center',
-    color: '#212D36',
+    marginBottom: 0,
   },
   unlockedBalance: {
     marginTop: theme.spacing(30),
