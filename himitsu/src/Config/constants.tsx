@@ -3,6 +3,7 @@ import * as Interfaces from './interfaces';
 export {};
 export const PICO = 1000000000000;
 export const HTTP_OK = 200;
+export const CONFIG_HASH = 'CONFIG_HASH';
 
 /* RPC Request constants */
 const context: Interfaces.RequestContext = {

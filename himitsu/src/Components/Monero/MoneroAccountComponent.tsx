@@ -1,4 +1,5 @@
 import React, { ReactElement, useState, useEffect } from 'react';
+import crypto from 'crypto';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import QRCode from 'qrcode.react';
 import Snackbar from '@material-ui/core/Snackbar';
@@ -26,6 +27,7 @@ import busy from '../../Assets/dance.gif';
 
 // load balance once
 let loaded = false;
+const IS_WALLET_CONFIGURED = localStorage.getItem('configured');
 const isDev = process.env.REACT_APP_HIMITSU_DEV === 'DEV';
 const MoneroAccountComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
@@ -33,6 +35,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
   const [isBusy, setIsBusy] = useState(false);
   const [copy, setCopy] = useState(false);
+  const [invalidPin, setInvalidPin] = useState(false);
   const [subAddressUpdated, setSubAddressUpdated] = useState(false);
   const [invalidAddress, setIsInvalidAddress] = useState(false);
   const [unusedAddressAlert, setUnusedAddressAlert] = useState(false);
@@ -44,8 +47,10 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [rpcConnectionFailure, setRpcConnectionFailure] = useState(false);
   const [proofGenerated, setProofGenerated] = useState(false);
   const [showProofValidation, setShowProofValidation] = useState(false);
+  const [showPinWarning, setShowPinWarning] = useState(false);
   const [values, setValues] = React.useState<Interfaces.AccountState>({
     label: '',
+    pin: 0,
     amount: 0,
     sendTo: '',
     hash: '',
@@ -62,7 +67,11 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     setIsGeneratingSubAddress(false);
   };
 
-  const handleTransfer = (): void => { setIsTransferring(!isTransferring); };
+  const handleTransfer = (): void => {
+    const pinRequired = gInit.pin !== '';
+    if (!pinRequired) { setShowPinWarning(true); }
+    setIsTransferring(!isTransferring);
+  };
 
   const handleTransferSuccess = (): void => {
     setIsTransferSuccess(!transferSuccess);
@@ -89,7 +98,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   };
 
   const handleSeedConfirmation = (): void => {
-    setGlobalState('init', { ...gInit, isRestoringFromSeed: true });
+    localStorage.setItem(Constants.CONFIG_HASH,
+      crypto.randomBytes(32).toString('hex')); // save configured wallet
+    setGlobalState('init', { ...gInit, isSeedConfirmed: true });
     setGlobalState('account', { ...gAccount, mnemonic: '' });
   };
 
@@ -198,11 +209,17 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   };
 
   const transfer = async (): Promise<void> => {
+    // pin set
+    setInvalidPin(false);
+    const pinRequired = gInit.pin !== '';
+    const hUserPin = crypto.createHash('sha256');
+    hUserPin.update(values.pin.toString());
+    const validPin = pinRequired ? gInit.pin === hUserPin.digest('hex') : true;
     const vBody: Interfaces.ValidateAddressRequest = Constants.VALIDATE_ADDRESS_REQUEST;
     vBody.params.address = values.sendTo.trim();
     const isValidAmt = values.amount < gAccount.unlockedBalance / Constants.PICO;
     const vAddress: Interfaces.ValidateAddressResponse = await (await axios.post(host, vBody)).data;
-    if (vAddress.result.valid && isValidAmt
+    if (vAddress.result.valid && isValidAmt && validPin
       && vAddress.result.nettype !== 'mainnet') { // TODO: enable mainnet
       const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;
       const destination: Interfaces.Destination = {
@@ -221,6 +238,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     if (!isValidAmt) {
       handleInvalidAmount();
     }
+    if (gInit.pin !== hUserPin.digest('hex')) {
+      setInvalidPin(true);
+    }
   };
 
   useEffect(() => {
@@ -232,7 +252,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
 
   return (
     <div className={classes.root}>
-      { (!gInit.isRestoringFromSeed && !gInit.isSeedConfirmed)
+      { (!gInit.isSeedConfirmed && !IS_WALLET_CONFIGURED)
         && (
         // Seed confirmation modal
         <Modal
@@ -340,6 +360,13 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   id="standard-start-adornment"
                   className={clsx(classes.margin, classes.textField)}
                   onChange={handleChange('amount')}
+                />
+                <TextField
+                  label="pin (optional)"
+                  type="number"
+                  id="standard-start-adornment"
+                  className={clsx(classes.margin, classes.textField)}
+                  onChange={handleChange('pin')}
                 />
                 <br />
                 <Button
@@ -622,6 +649,30 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
         >
           {`Valid proof on ${(values.proofValidation.spent / Constants.PICO).toFixed(3)}
             spent and ${(values.proofValidation.total / Constants.PICO).toFixed(3)} total`}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={showPinWarning}
+        autoHideDuration={2000}
+        onClose={() => { setShowPinWarning(false); }}
+      >
+        <Alert
+          onClose={() => { setShowPinWarning(false); }}
+          severity="warning"
+        >
+          No pin set. Go to settings to enable.
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={invalidPin}
+        autoHideDuration={2000}
+        onClose={() => { setInvalidPin(false); }}
+      >
+        <Alert
+          onClose={() => { setInvalidPin(false); }}
+          severity="error"
+        >
+          Invalid pin. Enter a 6-digit pin
         </Alert>
       </Snackbar>
     </div>

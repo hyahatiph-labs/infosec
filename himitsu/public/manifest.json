@@ -8,13 +8,11 @@
     "default_popup": "index.html",
     "default_title": "himitsu",
     "default_icon": {
-      "48": "logo48.png",
-      "96": "logo96.png"
+      "128": "logo128.png"
     }
   },
   "icons": {
-    "48": "logo48.png",
-    "96": "logo96.png"
+    "128": "logo128.png"
   },
-  "content_security_policy": "object-src 'self'; script-src 'self' 'sha256-RM7CC5EMR41MzIWTM2C2Wje/V5REwRujUNd1lm/0M70=';"
+  "content_security_policy": "object-src 'self'; script-src 'self' 'sha256-H4T/pWRPRQTG/HWD/y0tECaJXCSCUsYXB4W841C/Izw=';"
 }

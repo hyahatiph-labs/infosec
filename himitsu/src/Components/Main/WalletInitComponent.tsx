@@ -94,8 +94,14 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     setValues({ ...values, isInitializing: true });
     const rBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
     try {
-      const rpcResult = await axios.post(host, rBody);
-      if (rpcResult.status === Constants.HTTP_OK) {
+      let rpcResult = null;
+      if (values.isAdvanced && values.url === '') {
+        setValues({ ...values, isInitializing: false });
+        handleInvalidRpcHost();
+      } else {
+        rpcResult = await axios.post(host, rBody);
+      }
+      if (rpcResult !== null && rpcResult.status === Constants.HTTP_OK) {
         const filename = crypto.randomBytes(32).toString('hex');
         const body: Interfaces.CreateWalletRequest = Constants.CREATE_WALLET_REQUEST;
         body.params.filename = filename;
@@ -116,7 +122,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               isWalletInitialized: true,
               isRestoringFromSeed: true,
               walletName: filename,
-              // TODO: password management and security
               walletPassword: values.walletPassword,
               network: values.networkType,
             });
@@ -136,7 +141,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               isWalletInitialized: true,
               isRestoringFromSeed: false,
               walletName: filename,
-              // TODO: password management and security
               walletPassword: values.walletPassword,
               network: values.networkType,
             }); // TODO: snackbar with error handling
@@ -148,6 +152,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         }
       }
     } catch {
+      setValues({ ...values, isInitializing: false });
       handleInvalidRpcHost();
     }
   };
@@ -176,10 +181,11 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               below.
             </p>
             <p id="transition-modal-description">
-              Once the wallet is created your seed phrase will be presented.
+              Once the wallet is created your mnemonic phrase will be presented.
             </p>
             <p id="transition-modal-description">
-              Be sure to keep it somewhere safe, it is the only way to recover your funds!
+              Leave the screen open until you write it down,
+              it is the only way to recover your funds!
             </p>
             <Typography>{values.mode}</Typography>
             <AntSwitch inputProps={{ 'aria-label': 'ant design' }} onClick={handleWalletMode} />
@@ -207,6 +213,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             {values.isAdvanced && (
               <TextField
                 label="seed (optional)"
+                type="password"
                 id="standard-start-adornment"
                 className={clsx(classes.margin, classes.textField)}
                 onChange={handleChange('seed')}
@@ -215,6 +222,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             {values.isAdvanced && (
               <TextField
                 label="height (optional)"
+                type="number"
                 id="standard-start-adornment"
                 className={clsx(classes.margin, classes.textField)}
                 onChange={handleChange('height')}
@@ -259,7 +267,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
       </Snackbar>
       <Snackbar open={invalidRpcHost} autoHideDuration={2000} onClose={handleInvalidRpcHost}>
         <Alert onClose={handleInvalidRpcHost} severity="error">
-          {`${values.url} is not valid`}
+          {`url ${values.url} is not valid`}
         </Alert>
       </Snackbar>
     </div>

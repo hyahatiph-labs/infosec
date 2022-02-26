@@ -9,10 +9,17 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
     backgroundColor: theme.palette.background.paper,
     border: '2px solid #000',
     boxShadow: theme.shadows[5],
+    width: '25ch',
   },
   uButton: {
     marginTop: theme.spacing(2),
     backgroundColor: '#FFF',
     color: '#212D36',
+  },
+  settings: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    width: '100%',
   },
 }));

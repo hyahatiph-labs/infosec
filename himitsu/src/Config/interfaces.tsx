@@ -24,6 +24,7 @@ export interface WalletInitState {
 }
 
 export interface AccountState {
+  pin: number;
   label: string;
   amount: number;
   sendTo: string;
@@ -48,6 +49,8 @@ export interface ContactState {
 }
 
 export interface SettingsState {
+  oldPin: string;
+  pin: number;
   rpcHost: string;
 }
 

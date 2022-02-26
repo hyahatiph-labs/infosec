@@ -1,9 +1,11 @@
 import { createGlobalState } from 'react-hooks-global-state';
+import { CONFIG_HASH } from './Config/constants';
 import * as Interfaces from './Config/interfaces';
 
 const subAddressInit: Interfaces.Address[] = [];
 const contactInit: Interfaces.Contact[] = [];
 const transferInit: Interfaces.Transfer[] = [];
+const configHash = localStorage.getItem(CONFIG_HASH);
 
 /**
  * Global state management
@@ -32,6 +34,8 @@ export const {
     walletPassword: '',
     network: '', // TODO: add MAINNET, STAGENET enum / flags
     rpcHost: 'localhost:38083',
+    pin: '',
+    configHash,
   },
   transfer: {
     transferList: transferInit,

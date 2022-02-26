@@ -135,11 +135,16 @@ const MainComponent: React.FC = (): ReactElement => {
         )}
       <main className={classes.content}>
         <Toolbar />
-        {!gInit.isWalletInitialized && !isDev && <WalletInitComponent />}
-        {(gInit.isWalletInitialized || isDev) && isViewingWallet && <MoneroAccountComponent />}
-        {(gInit.isWalletInitialized || isDev) && isViewingTxs && <TransactionsComponent />}
-        {(gInit.isWalletInitialized || isDev) && isViewingSettings && <SettingsComponent />}
-        {(gInit.isWalletInitialized || isDev) && isViewingContacts && <ContactsComponent />}
+        {(!gInit.isWalletInitialized && gInit.configHash === null)
+          && !isDev && <WalletInitComponent />}
+        {((gInit.isWalletInitialized || gInit.configHash !== null)
+          || isDev) && isViewingWallet && <MoneroAccountComponent />}
+        {((gInit.isWalletInitialized || gInit.configHash !== null)
+          || isDev) && isViewingTxs && <TransactionsComponent />}
+        {((gInit.isWalletInitialized || gInit.configHash !== null)
+          || isDev) && isViewingSettings && <SettingsComponent />}
+        {((gInit.isWalletInitialized || gInit.configHash !== null)
+          || isDev) && isViewingContacts && <ContactsComponent />}
       </main>
     </div>
   );

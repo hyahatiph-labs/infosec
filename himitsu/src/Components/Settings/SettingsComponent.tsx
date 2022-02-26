@@ -2,6 +2,8 @@ import React, { ReactElement, useState } from 'react';
 import * as MUI from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import axios from 'axios';
+import { UpdateRounded } from '@material-ui/icons';
+import crypto from 'crypto';
 import { setGlobalState, useGlobalState } from '../../state';
 import { useStyles } from './styles';
 import * as Constants from '../../Config/constants';
@@ -11,8 +13,12 @@ const SettingsComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
   const [gInit] = useGlobalState('init');
   const [invalidRpcHost, setInvalidRpcHost] = useState(false);
+  const [invalidPin, setInvalidPin] = useState(false);
+  const [updatedPin, setUpdatedPin] = useState(false);
   const [isUpdatedRpcHost, setUpdatedRpcHost] = useState(false);
   const [values, setValues] = React.useState<Interfaces.SettingsState>({
+    oldPin: '',
+    pin: 0,
     rpcHost: '',
   });
 
@@ -21,7 +27,12 @@ const SettingsComponent: React.FC = (): ReactElement => {
     setValues({ ...values, [prop]: event.target.value });
   };
 
+  const handleUpdatedPin = (): void => { setUpdatedPin(!updatedPin); };
+
+  const handleInvalidPin = (): void => { setInvalidPin(!invalidPin); };
+
   const handleInvalidRpcHost = (): void => { setInvalidRpcHost(!invalidRpcHost); };
+
   const handleUpdateRpcHostSuccess = (): void => { setUpdatedRpcHost(!isUpdatedRpcHost); };
 
   const updateRpcHost = async (): Promise<void> => {
@@ -36,8 +47,27 @@ const SettingsComponent: React.FC = (): ReactElement => {
     }
   };
 
+  const updatePin = async (): Promise<void> => {
+    // check for set pin
+    const pinRequired = gInit.pin !== '';
+    const hUserPin = crypto.createHash('sha256');
+    hUserPin.update(values.oldPin.toString());
+    const validPin = pinRequired ? gInit.pin === hUserPin.digest('hex') : true;
+    if (values.pin <= 99999 || values.pin > 999999 || !validPin) {
+      handleInvalidPin();
+      setValues({ ...values, pin: 0, oldPin: '' });
+    } else {
+      const hash = crypto.createHash('sha256');
+      hash.update(values.pin.toString());
+      const hPin = hash.digest('hex');
+      setGlobalState('init', { ...gInit, pin: hPin });
+      handleUpdatedPin();
+      setValues({ ...values, pin: 0, oldPin: '' });
+    }
+  };
+
   return (
-    <div>
+    <div className={classes.settings}>
       <MUI.TextField
         label="monero-wallet-rpc (host:port)"
         id="standard-start-adornment"
@@ -59,7 +89,31 @@ const SettingsComponent: React.FC = (): ReactElement => {
         variant="outlined"
         color="primary"
       >
-        Update
+        <UpdateRounded />
+      </MUI.Button>
+      <MUI.TextField
+        label="current pin (optional)"
+        value={values.oldPin}
+        id="standard-start-adornment"
+        className={classes.paper}
+        onChange={handleChange('oldPin')}
+      />
+      <MUI.TextField
+        label="pin-to-send (6-digit pin)"
+        value={values.pin}
+        id="standard-start-adornment"
+        className={classes.paper}
+        onChange={handleChange('pin')}
+      />
+      <MUI.Button
+        className={classes.uButton}
+        onClick={() => {
+          updatePin();
+        }}
+        variant="outlined"
+        color="primary"
+      >
+        <UpdateRounded />
       </MUI.Button>
       <MUI.Snackbar
         open={isUpdatedRpcHost}
@@ -83,6 +137,30 @@ const SettingsComponent: React.FC = (): ReactElement => {
           severity="error"
         >
           {`${values.rpcHost} is not valid`}
+        </Alert>
+      </MUI.Snackbar>
+      <MUI.Snackbar
+        open={updatedPin}
+        autoHideDuration={2000}
+        onClose={handleUpdatedPin}
+      >
+        <Alert
+          onClose={handleUpdatedPin}
+          severity="success"
+        >
+          Pin updated successfully
+        </Alert>
+      </MUI.Snackbar>
+      <MUI.Snackbar
+        open={invalidPin}
+        autoHideDuration={2000}
+        onClose={handleInvalidPin}
+      >
+        <Alert
+          onClose={handleInvalidPin}
+          severity="error"
+        >
+          Invalid pin. Enter a 6-digit pin
         </Alert>
       </MUI.Snackbar>
     </div>
