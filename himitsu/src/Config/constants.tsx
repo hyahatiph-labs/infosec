@@ -192,3 +192,13 @@ export const SHOW_TRANSFERS_OUT_REQUEST: Interfaces.ShowTransfersRequest = {
     out: true,
   },
 };
+
+export const GET_RESERVE_PROOF_REQUEST: Interfaces.GetReserveProofRequest = {
+  ...context,
+  method: 'get_reserve_proof',
+  params: {
+    all: false,
+    amount: 0,
+    account_index: 0,
+  },
+};

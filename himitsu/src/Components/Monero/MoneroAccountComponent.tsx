@@ -38,14 +38,18 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [unusedAddressAlert, setUnusedAddressAlert] = useState(false);
   const [isGeneratingSubAddress, setIsGeneratingSubAddress] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
+  const [isGeneratingProof, setIsGeneratingProof] = useState(false);
   const [transferSuccess, setIsTransferSuccess] = useState(false);
   const [invalidAmount, setIsInvalidAmount] = useState(false);
   const [rpcConnectionFailure, setRpcConnectionFailure] = useState(false);
+  const [proofGenerated, setProofGenerated] = useState(false);
   const [values, setValues] = React.useState<Interfaces.AccountState>({
     label: '',
     amount: 0,
     sendTo: '',
     hash: '',
+    reserveProof: '',
+    message: '',
   });
   const host = `http://${gInit.rpcHost}/json_rpc`;
 
@@ -71,6 +75,11 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
 
   const handleRpcConnectionFailure = (): void => {
     setRpcConnectionFailure(!rpcConnectionFailure);
+  };
+
+  const handleProofGeneration = (): void => {
+    setIsGeneratingProof(false);
+    setProofGenerated(!proofGenerated);
   };
 
   const handleChange = (prop: keyof Interfaces.AccountState) => (event:
@@ -162,6 +171,15 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     handleSubAddressUpdate();
   };
 
+  const generateReserveProof = async (): Promise<void> => {
+    const proofBody: Interfaces.GetReserveProofRequest = Constants.GET_RESERVE_PROOF_REQUEST;
+    proofBody.params.amount = values.amount * Constants.PICO;
+    const proof: Interfaces.GetReserveProofResponse = await (
+      await axios.post(host, proofBody)
+    ).data;
+    setValues({ ...values, reserveProof: proof.result.signature });
+  };
+
   const transfer = async (): Promise<void> => {
     const vBody: Interfaces.ValidateAddressRequest = Constants.VALIDATE_ADDRESS_REQUEST;
     vBody.params.address = values.sendTo.trim();
@@ -180,7 +198,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       handleTransferSuccess();
       loadXmrBalance();
     }
-    if (!vAddress.result.valid || vAddress.result.nettype === 'mainnet') {
+    if (!vAddress.result.valid || vAddress.result.nettype === 'mainnet') { // TODO: enable mainnet
       handleInvalidAddress();
     }
     if (!isValidAmt) {
@@ -330,6 +348,73 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
             </Fade>
           </Modal>
         )}
+      {/* Reserve Proof modal */}
+      { isGeneratingProof
+        && (
+          <Modal
+            aria-labelledby="transition-modal-title"
+            aria-describedby="transition-modal-description"
+            className={classes.modal}
+            open={isGeneratingProof}
+            closeAfterTransition
+          >
+            <Fade in={isGeneratingProof}>
+              <div className={clsx(classes.paper, 'altBg')}>
+                <h2 id="transition-modal-title">
+                  Generate Reserve Proof
+                </h2>
+                <p id="transition-modal-description">
+                  Enter amount and optional message.
+                </p>
+                <div>
+                  <CopyToClipboard text={values.reserveProof}>
+                    <button type="button" onClick={handleCopy}>
+                      <code className={classes.proof}>
+                        {`${values.reserveProof.slice(0, 19)}...`}
+                      </code>
+                    </button>
+                  </CopyToClipboard>
+                </div>
+                <TextField
+                  label="message"
+                  type="text"
+                  required
+                  id="standard-start-adornment"
+                  className={clsx(classes.margin, classes.textField)}
+                  onChange={handleChange('message')}
+                />
+                <TextField
+                  label="amount"
+                  type="number"
+                  required
+                  id="standard-start-adornment"
+                  className={clsx(classes.margin, classes.textField)}
+                  onChange={handleChange('amount')}
+                />
+                <br />
+                <Button
+                  className={classes.send}
+                  disabled={values.amount * Constants.PICO > gAccount.unlockedBalance
+                    || values.amount <= 0}
+                  onClick={() => { generateReserveProof(); }}
+                  variant="outlined"
+                  color="primary"
+                >
+                  <AddCircle />
+                </Button>
+                {' '}
+                <Button
+                  className={classes.send}
+                  onClick={() => { setIsGeneratingProof(false); }}
+                  variant="outlined"
+                  color="primary"
+                >
+                  <CloseRounded />
+                </Button>
+              </div>
+            </Fade>
+          </Modal>
+        )}
       <div className={classes.unlockedBalance}>
         <LockOpen className={classes.icon} />
         <h1>
@@ -385,7 +470,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
         </Button>
         <Button
           className={classes.send}
-          // onClick={() => { getSubAddress(); }}
+          onClick={() => { setIsGeneratingProof(true); }}
           variant="outlined"
           color="primary"
           size="medium"
@@ -396,7 +481,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       {/* food court! */}
       <Snackbar open={copy} autoHideDuration={2000} onClose={handleCopy}>
         <Alert onClose={handleCopy} severity="success">
-          Address copied to clipboard
+          Data copied to clipboard
         </Alert>
       </Snackbar>
       <Snackbar open={subAddressUpdated} autoHideDuration={10000} onClose={handleSubAddressUpdate}>
@@ -468,6 +553,18 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           severity="error"
         >
           {`${values.amount} is not valid`}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={proofGenerated}
+        autoHideDuration={5000}
+        onClose={handleProofGeneration}
+      >
+        <Alert
+          onClose={handleProofGeneration}
+          severity="info"
+        >
+          Generating reserve proof...
         </Alert>
       </Snackbar>
     </div>

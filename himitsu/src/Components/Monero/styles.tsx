@@ -3,6 +3,7 @@ import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 export const useStyles = makeStyles((theme: Theme) => createStyles({
   modal: {
     display: 'flex',
+    wrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -74,5 +75,9 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
     fontFamily: 'comic',
     fontSize: '1em',
     color: '#212D36',
+  },
+  proof: {
+    cursor: 'pointer',
+    fontSize: '1em',
   },
 }));

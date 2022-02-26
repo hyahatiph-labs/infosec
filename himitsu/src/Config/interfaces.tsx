@@ -28,6 +28,8 @@ export interface AccountState {
   amount: number;
   sendTo: string;
   hash: string;
+  reserveProof: string;
+  message: string;
 }
 
 export interface ContactState {
@@ -108,6 +110,12 @@ interface ShowTransfersParams {
   account_index: number;
 }
 
+interface GetReserveProofParams {
+  all: boolean;
+  account_index: number;
+  amount: number;
+}
+
 export type ShowAddressParams = ShowBalanceParams;
 
 /* RPC Request Interfaces */
@@ -157,6 +165,10 @@ export interface DeleteAddressBookRequest extends RequestContext {
 
 export interface ShowTransfersRequest extends RequestContext {
   params: ShowTransfersParams;
+}
+
+export interface GetReserveProofRequest extends RequestContext {
+  params: GetReserveProofParams;
 }
 
 /* RPC Result Interfaces */
@@ -261,6 +273,11 @@ interface ShowTransferResult {
   pool: Transfer[];
   out: Transfer[];
 }
+
+interface GetReserveProofResult {
+  signature: string;
+}
+
 /* RPC Response Interfaces */
 export interface ShowBalanceResponse extends RequestContext {
   result: ShowBalanceResult;
@@ -296,4 +313,8 @@ export interface AddAddressBookResponse extends RequestContext {
 
 export interface ShowTransfersResponse extends RequestContext {
   result: ShowTransferResult;
+}
+
+export interface GetReserveProofResponse extends RequestContext {
+  result: GetReserveProofResult;
 }
