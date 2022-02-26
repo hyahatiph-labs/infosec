@@ -16,5 +16,5 @@
     "48": "logo48.png",
     "96": "logo96.png"
   },
-  "content_security_policy": "object-src 'self'; script-src 'self' 'sha256-UqG8cXBFH42NMjWcUklZMjNc32J3Ak0WYxVaBCaUrDg=';"
+  "content_security_policy": "object-src 'self'; script-src 'self' 'sha256-pHW2JNnrc+A0Duwe8GGpynC3eZy02Zd5QRhqyNzIeyM=';"
 }

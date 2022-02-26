@@ -62,7 +62,8 @@ const TransactionsComponent: React.FC = (): ReactElement => {
       if (r.pending) { all = all.concat(...all, r.pending); }
       if (r.pool) { all = all.concat(...all, r.pool); }
       if (r.out) { all = all.concat(...all, r.out); }
-      setGlobalState('transfer', { ...gTransfer, transferList: all });
+      const filter: Set<Interfaces.Transfer> = new Set(all);
+      setGlobalState('transfer', { ...gTransfer, transferList: Array.from(filter) });
     } else {
       setGlobalState('transfer', { ...gTransfer, transferList: [] });
       handleNoTransfers();

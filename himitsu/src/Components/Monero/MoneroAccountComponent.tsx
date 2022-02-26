@@ -246,12 +246,14 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 <TextField
                   label="subaddress label"
                   id="standard-start-adornment"
+                  required
                   className={clsx(classes.margin, classes.textField)}
                   onChange={handleChange('label')}
                 />
                 <br />
                 <Button
                   className={classes.send}
+                  disabled={values.label === ''}
                   onClick={() => { generateSubAddress(); }}
                   variant="outlined"
                   color="primary"

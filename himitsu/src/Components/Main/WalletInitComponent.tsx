@@ -106,7 +106,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             params: {
               ...body.params,
               seed: values.seed,
-              restore_height: values.height,
+              restore_height: values.height > 0 ? values.height : 0,
             },
           };
           const dResult = (await axios.post(host, dbody)).data;
