@@ -30,7 +30,7 @@ export const {
     walletName: '',
     walletPassword: '',
     network: '', // TODO: add MAINNET, STAGENET enum / flags
-    rpcHost: 'http://localhost:38083',
+    rpcHost: 'localhost:38083',
   },
   transfer: {
     transferList: transferInit,

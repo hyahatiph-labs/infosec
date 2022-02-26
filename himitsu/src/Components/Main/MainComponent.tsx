@@ -1,4 +1,5 @@
 import React, { ReactElement, useState } from 'react';
+import clsx from 'clsx';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -22,9 +23,6 @@ import TransactionsComponent from '../Monero/TransactionsComponent';
 import ContactsComponent from '../Contacts/ContactsComponent';
 
 // TODO: Refactor all modals to separate components
-// TODO: Create TransactionsComponent
-// TODO: Create SettingsComponent
-// TODO: Create LoadingComponent
 // TODO: webxmr integration
 
 const MainComponent: React.FC = (): ReactElement => {
@@ -85,7 +83,7 @@ const MainComponent: React.FC = (): ReactElement => {
   return (
     <div>
       <CssBaseline />
-      <AppBar position="fixed" className={classes.appBar}>
+      <AppBar position="fixed" className={clsx(classes.appBar, 'altBg')}>
         <Toolbar>
           <button className={classes.menuButton} onClick={handleMoveDrawer} type="button">
             <img src={logo} alt="monero logo" width={50} />

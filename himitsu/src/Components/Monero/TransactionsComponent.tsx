@@ -14,7 +14,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
   const [gTransfer] = useGlobalState('transfer');
   const [noTransfers, setNoTransfers] = useState(false);
-  const host = `${gInit.rpcHost}/json_rpc`;
+  const host = `http://${gInit.rpcHost}/json_rpc`;
 
   const handleNoTransfers = (): void => {
     setNoTransfers(!noTransfers);
@@ -22,6 +22,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
 
   const filterTransactions = (type: string): Interfaces.ShowTransfersRequest => {
     gTransfer.transferList = [];
+    setGlobalState('transfer', { ...gTransfer, transferList: [] });
     let body: Interfaces.ShowTransfersRequest = Constants.SHOW_TRANSFERS_REQUEST;
     if (type === 'failed') {
       body = Constants.SHOW_TRANSFERS_FAILED_REQUEST;
@@ -91,32 +92,38 @@ const TransactionsComponent: React.FC = (): ReactElement => {
       {gTransfer.transferList.length > 0 && (
         <div>
           {gTransfer.transferList.map((v) => (
-            <MUI.Accordion key={`${v.txid}`}>
+            <MUI.Accordion className="altBg" key={`${v.txid}`}>
               <MUI.AccordionSummary
                 expandIcon={<ExpandMore />}
                 aria-controls="panel1a-content"
                 id="panel1a-header"
               >
-                <MUI.Typography>{`${v.txid.slice(0, 18)}...`}</MUI.Typography>
+                <MUI.Typography>
+                  <b>{`${v.type.toUpperCase()} - `}</b>
+                  <b>TXID: </b>
+                  <code>{` ${v.txid.slice(0, 18)}...`}</code>
+                </MUI.Typography>
               </MUI.AccordionSummary>
               <MUI.AccordionDetails className={classes.info}>
                 <MUI.Typography className={classes.info}>
-                  {`${new Date(v.timestamp * 1000).toISOString()}`}
+                  <b>Date:</b>
+                  <code>{` ${new Date(v.timestamp * 1000).toISOString()}`}</code>
                 </MUI.Typography>
                 <MUI.Typography className={classes.info}>
-                  {`${v.address.slice(0, 18)}...`}
+                  <b>Address:</b>
+                  <code>{` ${v.address.slice(0, 36)}...`}</code>
                 </MUI.Typography>
                 <MUI.Typography className={classes.info}>
-                  {`${(v.amount / Constants.PICO).toFixed(3)} XMR`}
+                  <b>Amt: </b>
+                  <code>{` ${(v.amount / Constants.PICO).toFixed(12)} XMR (`}</code>
                 </MUI.Typography>
                 <MUI.Typography className={classes.info}>
-                  {`Fee: ${(v.fee / Constants.PICO).toFixed(9)}`}
+                  <b>Fee:</b>
+                  <code>{` ${(v.fee / Constants.PICO).toFixed(12)} XMR)`}</code>
                 </MUI.Typography>
                 <MUI.Typography className={classes.info}>
-                  {`Confirmations: ${v.confirmations}`}
-                </MUI.Typography>
-                <MUI.Typography className={classes.info}>
-                  {`Type: ${v.type}`}
+                  <b>Confirmations:</b>
+                  <code>{` ${v.confirmations}`}</code>
                 </MUI.Typography>
               </MUI.AccordionDetails>
             </MUI.Accordion>

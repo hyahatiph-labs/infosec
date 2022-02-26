@@ -32,9 +32,8 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
     cursor: 'pointer',
     backgroundColor: '255, 165, 0, 0.73',
     marginLeft: theme.spacing(5),
+    marginTop: theme.spacing(5),
     marginBottom: theme.spacing(1),
-    display: 'flex',
-    alignContent: 'center',
   },
   icon: {
     margin: theme.spacing(0.5),
@@ -51,6 +50,7 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
     color: '#212D36',
   },
   unlockedBalance: {
+    marginTop: theme.spacing(30),
     textShadow: '1px 1px #FFF',
     color: '#212D36',
     display: 'flex',
@@ -65,7 +65,9 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
     textAlign: 'center',
   },
   info: {
-    display: 'block',
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'left',
     textAlign: 'left',
     fontFamily: 'comic',
     fontSize: '1em',

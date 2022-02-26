@@ -28,7 +28,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
     name: '',
   });
 
-  const host = `${gInit.rpcHost}/json_rpc`;
+  const host = `http://${gInit.rpcHost}/json_rpc`;
 
   const handleNoContacts = (): void => {
     setNoContacts(!noContacts);
@@ -101,6 +101,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
   const transferToContact = async (recipient: string, amount: number): Promise<void> => {
     const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;
     const d: Interfaces.Destination = { address: recipient, amount };
+    // disable send and notify user it is in progress
     tBody.params.destinations.push(d);
     const transfer = await (await axios.post(host, tBody)).data;
     if (transfer.result.tx_hash) {
@@ -149,7 +150,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
       {gContact.contactList.length > 0 && (
         <div>
           {gContact.contactList.map((v) => (
-            <MUI.Accordion key={v.index}>
+            <MUI.Accordion className="altBg" key={v.index}>
               <MUI.AccordionSummary
                 expandIcon={<ExpandMore />}
                 aria-controls="panel1a-content"
@@ -158,7 +159,10 @@ const ContactsComponent: React.FC = (): ReactElement => {
                 <MUI.Typography>{v.description}</MUI.Typography>
               </MUI.AccordionSummary>
               <MUI.AccordionDetails>
-                <MUI.Typography>{`${v.address.slice(0, 9)}...`}</MUI.Typography>
+                <MUI.Typography>
+                  <b>Address:</b>
+                  <code>{` ${v.address.slice(0, 36)}...`}</code>
+                </MUI.Typography>
               </MUI.AccordionDetails>
               <MUI.TextField
                 label="amount"
@@ -199,12 +203,12 @@ const ContactsComponent: React.FC = (): ReactElement => {
         <MUI.Modal
           aria-labelledby="transition-modal-title"
           aria-describedby="transition-modal-description"
-          className={classes.modal}
+          className={clsx(classes.modal)}
           open={isAdding}
           closeAfterTransition
         >
           <MUI.Fade in={isAdding}>
-            <div className={classes.paper}>
+            <div className={clsx(classes.paper, 'altBg')}>
               <h2 id="transition-modal-title">Create contact</h2>
               <p id="transition-modal-description">Enter name and address</p>
               <MUI.TextField

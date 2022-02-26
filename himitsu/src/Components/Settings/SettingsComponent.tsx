@@ -26,12 +26,14 @@ const SettingsComponent: React.FC = (): ReactElement => {
 
   const updateRpcHost = async (): Promise<void> => {
     const rBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
-    axios.post(`http://${values.rpcHost}/json_rpc`, rBody)
-      .then(() => {
-        handleUpdateRpcHostSuccess();
+    try {
+      const result = await axios.post(`http://${values.rpcHost}/json_rpc`, rBody);
+      if (result.status === Constants.HTTP_OK) {
         setGlobalState('init', { ...gInit, rpcHost: values.rpcHost });
-      })
-      .catch(() => handleInvalidRpcHost());
+      }
+    } catch {
+      handleInvalidRpcHost();
+    }
   };
 
   return (

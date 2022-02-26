@@ -9,7 +9,7 @@ export interface RequestContext {
 
 // Complex Component State
 export interface WalletInitState {
-  url: string | null;
+  url: string;
   walletPassword: string;
   walletName: string;
   showPassword: boolean;

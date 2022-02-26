@@ -30,8 +30,9 @@ export const useStyles = makeStyles((theme) => ({
   },
   content: {
     fontFamily: 'sagona',
+    marginTop: theme.spacing(2),
     flexGrow: 1,
-    padding: theme.spacing(10),
+    pwidth: 'max-content',
     color: '#FF5722',
     backgroundColor: '255, 165, 0, 0.73',
   },

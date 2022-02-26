@@ -16,6 +16,7 @@ import { setGlobalState, useGlobalState } from '../../state';
 import * as Constants from '../../Config/constants';
 import * as Interfaces from '../../Config/interfaces';
 import { useStyles } from './styles';
+import busy from '../../Assets/dance.gif';
 
 // TODO: Refactor all modals to separate components
 
@@ -26,6 +27,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
   const [gAccount] = useGlobalState('account');
   const [gInit] = useGlobalState('init');
+  const [isBusy, setIsBusy] = useState(false);
   const [copy, setCopy] = useState(false);
   const [subAddressUpdated, setSubAddressUpdated] = useState(false);
   const [invalidAddress, setIsInvalidAddress] = useState(false);
@@ -42,7 +44,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     sendTo: '',
     hash: '',
   });
-  const host = `${gInit.rpcHost}/json_rpc`;
+  const host = `http://${gInit.rpcHost}/json_rpc`;
 
   const handleCopy = (): void => { setCopy(!copy); };
 
@@ -82,6 +84,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   };
 
   const loadXmrBalance = async (): Promise<void> => {
+    setIsBusy(true);
     const body: Constants.OpenWalletRequest = Constants.CREATE_WALLET_REQUEST;
     body.method = 'open_wallet';
     if (isDev) {
@@ -91,31 +94,37 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       body.params.filename = gInit.walletName;
       body.params.password = gInit.walletPassword;
     }
-    const oResult = await axios.post(host, body);
-    if (oResult.status === Constants.HTTP_OK) {
-      const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
-      const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
-      const a: Interfaces.ShowAddressResponse = await (await axios.post(host, aBody)).data;
-      const b: Interfaces.ShowBalanceResponse = await (await axios.post(host, bBody)).data;
-      const aResult = a.result.addresses;
-      const aLength = aResult.length;
-      // display the latest unused subaddress, warn if all addresses are used
-      const primaryAddress = aLength <= 1 ? a.result.address : aResult[aLength - 1].address;
-      const { balance } = b.result;
-      const unlockedBalance = b.result.unlocked_balance;
-      setGlobalState('account', {
-        primaryAddress,
-        walletBalance: balance,
-        unlockTime: b.result.blocks_to_unlock,
-        unlockedBalance,
-        subAddresses: a.result.addresses,
-        mnemonic: gAccount.mnemonic,
-      });
-      let unusedAddress = false;
-      aResult.forEach((v) => { if (!v.used && v.address_index !== 0) { unusedAddress = true; } });
-      if (!unusedAddress) { handleUnusedAddressAlert(); }
+    try {
+      const oResult = await axios.post(host, body);
+      if (oResult.status === Constants.HTTP_OK) {
+        const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
+        const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
+        const a: Interfaces.ShowAddressResponse = await (await axios.post(host, aBody)).data;
+        const b: Interfaces.ShowBalanceResponse = await (await axios.post(host, bBody)).data;
+        const aResult = a.result.addresses;
+        const aLength = aResult.length;
+        // display the latest unused subaddress, warn if all addresses are used
+        const primaryAddress = aLength <= 1 ? a.result.address : aResult[aLength - 1].address;
+        const { balance } = b.result;
+        const unlockedBalance = b.result.unlocked_balance;
+        setGlobalState('account', {
+          primaryAddress,
+          walletBalance: balance,
+          unlockTime: b.result.blocks_to_unlock,
+          unlockedBalance,
+          subAddresses: a.result.addresses,
+          mnemonic: gAccount.mnemonic,
+        });
+        let unusedAddress = false;
+        aResult.forEach((v) => { if (!v.used && v.address_index !== 0) { unusedAddress = true; } });
+        if (!unusedAddress) { handleUnusedAddressAlert(); }
+        setIsBusy(false);
+        loaded = true;
+      } else {
+        handleRpcConnectionFailure();
+      }
+    } catch {
       loaded = true;
-    } else {
       handleRpcConnectionFailure();
     }
   };
@@ -196,7 +205,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           closeAfterTransition
         >
           <Fade in={!isSeedConfirmed && gInit.isWalletInitialized}>
-            <div className={classes.paper}>
+            <div className={clsx(classes.paper, 'altBg')}>
               <h2 id="transition-modal-title">
                 Press &quot;CONFIRM&quot; after securing your mnemonic
               </h2>
@@ -227,7 +236,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
             closeAfterTransition
           >
             <Fade in={isGeneratingSubAddress}>
-              <div className={classes.paper}>
+              <div className={clsx(classes.paper, 'altBg')}>
                 <h2 id="transition-modal-title">
                   Create a label
                 </h2>
@@ -273,7 +282,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
             closeAfterTransition
           >
             <Fade in={isTransferring}>
-              <div className={classes.paper}>
+              <div className={clsx(classes.paper, 'altBg')}>
                 <h2 id="transition-modal-title">
                   Send moneroj
                 </h2>
@@ -325,14 +334,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           {`${((gAccount.walletBalance - pendingBalance) / Constants.PICO).toFixed(3)} XMR`}
         </h1>
       </div>
-      <div className={classes.qr}>
-        <CopyToClipboard text={gAccount.primaryAddress}>
-          <QRCode
-            value={gAccount.primaryAddress}
-            onClick={handleCopy}
-          />
-        </CopyToClipboard>
-      </div>
       <div className={classes.pendingBalance}>
         {((unlockTime > 5 && unlockTime !== 0) && pendingBalance > 0)
           && <HourglassEmpty className={classes.icon} />}
@@ -343,6 +344,23 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
             && ` ${(pendingBalance / Constants.PICO).toFixed(3)} ~ ${unlockTime} min.`}
         </h3>
       </div>
+      {isBusy
+        && (
+          <div className={classes.qr}>
+            <img className={classes.qr} loading="lazy" src={busy} alt="monero logo" width={200} />
+          </div>
+        )}
+      {!isBusy
+        && (
+          <div className={classes.qr}>
+            <CopyToClipboard text={gAccount.primaryAddress}>
+              <QRCode
+                value={gAccount.primaryAddress}
+                onClick={handleCopy}
+              />
+            </CopyToClipboard>
+          </div>
+        )}
       <div className={classes.buttonRow}>
         <Button
           className={classes.send}
