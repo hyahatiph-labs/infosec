@@ -28,3 +28,16 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 * open Brave (other browsers pending)
 * extensions => "Load Unpacked"
 * open the `build` directory
+
+### Additional Notes
+
+* there is a `Dockerfile` that can run with `docker build -t himitsu:v.0.1.0 .` from the infosec/himitsu directory
+* if using the optimized build run `monero-wallet-rpc` with `./path/to/monero-wallet-rpc --stagenet --wallet-dir /full/path/to/Monero/wallets/dev/ --rpc-bind-port 38083 --rpc-access-control-origins "*" --disable-rpc-login`
+
+## Testing
+
+Sadly, non-existent. Pls halp!
+
+## TODOs
+
+Everything
