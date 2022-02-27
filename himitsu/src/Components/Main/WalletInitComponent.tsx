@@ -82,6 +82,22 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     setUpdatedRpcHost(!isUpdatedRpcHost);
   };
 
+  /**
+   * Password Management: The password gets temporarily stored
+   * during wallet initialization as UNLOCK_KEY with a timestamp
+   * of TIME_HASH. The corresponding password hash is stored as
+   * UNLOCK_HASH with the CONFIG_HASH aka wallet name.
+   * TODO: better security without local storage usage.
+   */
+  const setLocalStorage = (filename: string, walletName: string): void => {
+    const keyHash = crypto.createHash('sha256');
+    keyHash.update(values.walletPassword);
+    localStorage.setItem(Constants.TIME_HASH, Date.now().toString());
+    localStorage.setItem(Constants.UNLOCK_KEY, walletName);
+    localStorage.setItem(Constants.CONFIG_HASH, filename);
+    localStorage.setItem(Constants.UNLOCK_HASH, keyHash.digest('hex'));
+  };
+
   // TODO: refactor createAndOpenWallet to three functions
 
   /**
@@ -92,14 +108,14 @@ const WalletInitComponent: React.FC = (): ReactElement => {
   const createAndOpenWallet = async (): Promise<void> => {
     host = `http://${values.isAdvanced ? values.url : gInit.rpcHost}/json_rpc`;
     setValues({ ...values, isInitializing: true });
-    const rBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
+    const vBody: Interfaces.RequestContext = Constants.GET_VERSION_REQUEST;
     try {
       let rpcResult = null;
       if (values.isAdvanced && values.url === '') {
         setValues({ ...values, isInitializing: false });
         handleInvalidRpcHost();
       } else {
-        rpcResult = await axios.post(host, rBody);
+        rpcResult = await axios.post(host, vBody);
       }
       if (rpcResult !== null && rpcResult.status === Constants.HTTP_OK) {
         const filename = crypto.randomBytes(32).toString('hex');
@@ -109,13 +125,14 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         if (values.seed !== '') {
           const dbody: Interfaces.RestoreDeterministicRequest = {
             ...body,
+            method: 'restore_deterministic_wallet',
             params: {
               ...body.params,
               seed: values.seed,
               restore_height: values.height > 0 ? values.height : 0,
             },
           };
-          const dResult = (await axios.post(host, dbody)).data;
+          const dResult = (await axios.post(host, dbody));
           if (dResult.status === Constants.HTTP_OK) {
             setGlobalState('init', {
               ...gInit,
@@ -129,6 +146,10 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               ...gAccount,
               mnemonic: '',
             }); // TODO: snackbar with error handling
+            setLocalStorage(filename, values.walletPassword);
+          } else {
+            handleInvalidRpcHost();
+            setValues({ ...values, isInitializing: false });
           }
         } else {
           await axios.post(host, body);
@@ -148,6 +169,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               ...gAccount,
               mnemonic: k.result.key,
             }); // TODO: snackbar with error handling
+            setLocalStorage(filename, values.walletPassword);
           }
         }
       }

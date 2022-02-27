@@ -1,11 +1,15 @@
 import { createGlobalState } from 'react-hooks-global-state';
-import { CONFIG_HASH } from './Config/constants';
+import * as Constants from './Config/constants';
 import * as Interfaces from './Config/interfaces';
 
 const subAddressInit: Interfaces.Address[] = [];
 const contactInit: Interfaces.Contact[] = [];
 const transferInit: Interfaces.Transfer[] = [];
-const configHash = localStorage.getItem(CONFIG_HASH);
+const configHash = localStorage.getItem(Constants.CONFIG_HASH);
+const timeHash = localStorage.getItem(Constants.TIME_HASH);
+const unlockKey = localStorage.getItem(Constants.UNLOCK_KEY);
+const unlockHash = localStorage.getItem(Constants.UNLOCK_HASH);
+const pinHash = localStorage.getItem(Constants.PIN_HASH);
 
 /**
  * Global state management
@@ -30,12 +34,13 @@ export const {
     isWalletInitialized: false,
     isRestoringFromSeed: false,
     isSeedConfirmed: false,
-    walletName: '',
-    walletPassword: '',
+    walletName: configHash || '',
+    walletPassword: unlockKey || '',
+    timeHash,
+    unlockHash,
     network: '', // TODO: add MAINNET, STAGENET enum / flags
     rpcHost: 'localhost:38083',
-    pin: '',
-    configHash,
+    pinHash,
   },
   transfer: {
     transferList: transferInit,

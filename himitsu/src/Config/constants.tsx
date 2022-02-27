@@ -4,6 +4,11 @@ export {};
 export const PICO = 1000000000000;
 export const HTTP_OK = 200;
 export const CONFIG_HASH = 'CONFIG_HASH';
+export const TIME_HASH = 'TIME_HASH';
+export const UNLOCK_KEY = 'UNLOCK_KEY';
+export const UNLOCK_HASH = 'UNLOCK_HASH';
+export const PIN_HASH = 'PIN_HASH';
+export const LOCK_LIMIT = 360000;
 
 /* RPC Request constants */
 const context: Interfaces.RequestContext = {
@@ -234,4 +239,9 @@ export const CHECK_TX_PROOF_REQUEST: Interfaces.CheckTxProofRequest = {
     message: '',
     signature: '',
   },
+};
+
+export const GET_VERSION_REQUEST: Interfaces.RequestContext = {
+  ...context,
+  method: 'get_version',
 };

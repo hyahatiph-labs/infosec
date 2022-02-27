@@ -14,5 +14,5 @@
   "icons": {
     "128": "logo128.png"
   },
-  "content_security_policy": "object-src 'self'; script-src 'self' 'sha256-H4T/pWRPRQTG/HWD/y0tECaJXCSCUsYXB4W841C/Izw=';"
+  "content_security_policy": "object-src 'self'; script-src 'self' 'sha256-F9WtS9m5E6WeX3J+MdTu0oJM5RJEUp9SLGONS4lUvBM=';"
 }

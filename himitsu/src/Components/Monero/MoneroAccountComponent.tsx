@@ -12,22 +12,15 @@ import clsx from 'clsx';
 import axios from 'axios';
 import SendIcon from '@material-ui/icons/Send';
 import CallReceivedIcon from '@material-ui/icons/CallReceived';
-import {
-  AddCircle,
-  Check, CheckCircleRounded, CloseRounded, HourglassEmpty, HourglassFull, LockOpen, SendRounded,
-} from '@material-ui/icons';
+import * as MuIcons from '@material-ui/icons';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Constants from '../../Config/constants';
 import * as Interfaces from '../../Config/interfaces';
 import { useStyles } from './styles';
 import busy from '../../Assets/dance.gif';
 
-// TODO: tx / reserve proof generation
-// TODO: create wallet locked component and logic / password hashed to local storage
-
 // load balance once
 let loaded = false;
-const IS_WALLET_CONFIGURED = localStorage.getItem('configured');
 const isDev = process.env.REACT_APP_HIMITSU_DEV === 'DEV';
 const MoneroAccountComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
@@ -68,7 +61,8 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   };
 
   const handleTransfer = (): void => {
-    const pinRequired = gInit.pin !== '';
+    const lHash = localStorage.getItem(Constants.PIN_HASH);
+    const pinRequired = lHash !== null;
     if (!pinRequired) { setShowPinWarning(true); }
     setIsTransferring(!isTransferring);
   };
@@ -98,8 +92,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   };
 
   const handleSeedConfirmation = (): void => {
-    localStorage.setItem(Constants.CONFIG_HASH,
-      crypto.randomBytes(32).toString('hex')); // save configured wallet
     setGlobalState('init', { ...gInit, isSeedConfirmed: true });
     setGlobalState('account', { ...gAccount, mnemonic: '' });
   };
@@ -211,10 +203,11 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const transfer = async (): Promise<void> => {
     // pin set
     setInvalidPin(false);
-    const pinRequired = gInit.pin !== '';
+    const pinRequired = gInit.pinHash !== null;
     const hUserPin = crypto.createHash('sha256');
     hUserPin.update(values.pin.toString());
-    const validPin = pinRequired ? gInit.pin === hUserPin.digest('hex') : true;
+    const hUserHash = hUserPin.digest('hex');
+    const validPin = pinRequired ? gInit.pinHash === hUserHash : true;
     const vBody: Interfaces.ValidateAddressRequest = Constants.VALIDATE_ADDRESS_REQUEST;
     vBody.params.address = values.sendTo.trim();
     const isValidAmt = values.amount < gAccount.unlockedBalance / Constants.PICO;
@@ -235,12 +228,8 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     if (!vAddress.result.valid || vAddress.result.nettype === 'mainnet') { // TODO: enable mainnet
       handleInvalidAddress();
     }
-    if (!isValidAmt) {
-      handleInvalidAmount();
-    }
-    if (gInit.pin !== hUserPin.digest('hex')) {
-      setInvalidPin(true);
-    }
+    if (!isValidAmt) { handleInvalidAmount(); }
+    if (pinRequired && !validPin) { setInvalidPin(true); }
   };
 
   useEffect(() => {
@@ -252,7 +241,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
 
   return (
     <div className={classes.root}>
-      { (!gInit.isSeedConfirmed && !IS_WALLET_CONFIGURED)
+      { (!gInit.isSeedConfirmed && !gInit.isRestoringFromSeed)
         && (
         // Seed confirmation modal
         <Modal
@@ -313,7 +302,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   variant="outlined"
                   color="primary"
                 >
-                  <AddCircle />
+                  <MuIcons.AddCircle />
                 </Button>
                 {' '}
                 <Button
@@ -322,7 +311,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   variant="outlined"
                   color="primary"
                 >
-                  <CloseRounded />
+                  <MuIcons.CloseRounded />
                 </Button>
               </div>
             </Fade>
@@ -363,7 +352,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 />
                 <TextField
                   label="pin (optional)"
-                  type="number"
+                  type="password"
                   id="standard-start-adornment"
                   className={clsx(classes.margin, classes.textField)}
                   onChange={handleChange('pin')}
@@ -377,7 +366,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   variant="outlined"
                   color="primary"
                 >
-                  <SendRounded />
+                  <MuIcons.SendRounded />
                 </Button>
                 {' '}
                 <Button
@@ -386,7 +375,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   variant="outlined"
                   color="primary"
                 >
-                  <CloseRounded />
+                  <MuIcons.CloseRounded />
                 </Button>
               </div>
             </Fade>
@@ -461,7 +450,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   variant="outlined"
                   color="primary"
                 >
-                  <AddCircle />
+                  <MuIcons.AddCircle />
                 </Button>
                 {' '}
                 <Button
@@ -471,7 +460,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   variant="outlined"
                   color="primary"
                 >
-                  <CheckCircleRounded />
+                  <MuIcons.CheckCircleRounded />
                 </Button>
                 {' '}
                 <Button
@@ -480,23 +469,34 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   variant="outlined"
                   color="primary"
                 >
-                  <CloseRounded />
+                  <MuIcons.CloseRounded />
                 </Button>
               </div>
             </Fade>
           </Modal>
         )}
       <div className={classes.unlockedBalance}>
-        <LockOpen className={classes.icon} />
+        <MuIcons.LockOpen className={classes.icon} />
         <h1>
           {`${((gAccount.walletBalance - pendingBalance) / Constants.PICO).toFixed(3)} XMR`}
+          {' '}
+          <Button
+            className={classes.send}
+            disabled={isBusy}
+            onClick={() => { loadXmrBalance(); }}
+            variant="outlined"
+            color="primary"
+            size="medium"
+          >
+            <MuIcons.RefreshRounded className={classes.icon} />
+          </Button>
         </h1>
       </div>
       <div className={classes.pendingBalance}>
         {((unlockTime > 5 && unlockTime !== 0) && pendingBalance > 0)
-          && <HourglassEmpty className={classes.icon} />}
+          && <MuIcons.HourglassEmpty className={classes.icon} />}
         {((unlockTime <= 5 && unlockTime !== 0) && pendingBalance > 0)
-          && <HourglassFull className={classes.icon} />}
+          && <MuIcons.HourglassFull className={classes.icon} />}
         <h3>
           {(pendingBalance > 0 && unlockTime > 0)
             && ` ${(pendingBalance / Constants.PICO).toFixed(3)} ~ ${unlockTime} min.`}
@@ -505,7 +505,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       {isBusy
         && (
           <div className={classes.qr}>
-            <img loading="lazy" src={busy} alt="monero logo" width={200} />
+            <img loading="lazy" src={busy} alt="monero logo" width={100} />
           </div>
         )}
       {!isBusy
@@ -546,7 +546,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           color="primary"
           size="medium"
         >
-          <Check className={classes.icon} />
+          <MuIcons.Check className={classes.icon} />
         </Button>
       </div>
       {/* food court! */}
@@ -672,7 +672,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           onClose={() => { setInvalidPin(false); }}
           severity="error"
         >
-          Invalid pin. Enter a 6-digit pin
+          Invalid pin. Enter a valid 6-digit pin
         </Alert>
       </Snackbar>
     </div>

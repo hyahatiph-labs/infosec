@@ -49,10 +49,10 @@ const SettingsComponent: React.FC = (): ReactElement => {
 
   const updatePin = async (): Promise<void> => {
     // check for set pin
-    const pinRequired = gInit.pin !== '';
+    const pinRequired = gInit.pinHash !== null;
     const hUserPin = crypto.createHash('sha256');
     hUserPin.update(values.oldPin.toString());
-    const validPin = pinRequired ? gInit.pin === hUserPin.digest('hex') : true;
+    const validPin = pinRequired ? gInit.pinHash === hUserPin.digest('hex') : true;
     if (values.pin <= 99999 || values.pin > 999999 || !validPin) {
       handleInvalidPin();
       setValues({ ...values, pin: 0, oldPin: '' });
@@ -60,7 +60,7 @@ const SettingsComponent: React.FC = (): ReactElement => {
       const hash = crypto.createHash('sha256');
       hash.update(values.pin.toString());
       const hPin = hash.digest('hex');
-      setGlobalState('init', { ...gInit, pin: hPin });
+      localStorage.setItem(Constants.PIN_HASH, hPin);
       handleUpdatedPin();
       setValues({ ...values, pin: 0, oldPin: '' });
     }

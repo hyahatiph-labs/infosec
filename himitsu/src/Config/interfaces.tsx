@@ -61,10 +61,7 @@ interface CreateWalletParams {
   language: string;
 }
 
-interface RestoreDeterministicParams {
-  filename: string;
-  password: string;
-  language: string;
+interface RestoreDeterministicParams extends CreateWalletParams {
   seed: string;
   restore_height: number;
 }
