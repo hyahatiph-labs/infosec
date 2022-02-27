@@ -11,7 +11,7 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 ## Development
 
 * New to Monero? Start [here](https://getmonero.org).
-* Install node.js via [nvm](https://github.com/nvm-sh/nvm)
+* Install node.js via [nvm](https://github.com/nvm-sh/nvm) (`nvm install 16` and `nvm use 16`)
 * create a wallet name and password `himitsu` and mine / faucet some piconeros
 * export environment variable `export REACT_APP_HIMITSU_DEV=DEV`
 * if working on wallet init component, seed confirmation modal etc. don't export `REACT_APP_HIMITSU_DEV`
