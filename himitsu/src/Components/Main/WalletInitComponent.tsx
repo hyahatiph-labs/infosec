@@ -88,14 +88,18 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    * of TIME_HASH. The corresponding password hash is stored as
    * UNLOCK_HASH with the CONFIG_HASH aka wallet name.
    * TODO: better security without local storage usage.
+   * @param f - wallet filename
+   * @param p - wallet password
+   * @param h - rpc host
    */
-  const setLocalStorage = (filename: string, walletPassword: string): void => {
+  const setLocalStorage = (f: string, p: string, h: string): void => {
     const keyHash = crypto.createHash('sha256');
-    keyHash.update(values.walletPassword);
+    keyHash.update(p);
     localStorage.setItem(Constants.TIME_HASH, Date.now().toString());
-    localStorage.setItem(Constants.UNLOCK_KEY, walletPassword);
-    localStorage.setItem(Constants.CONFIG_HASH, filename);
+    localStorage.setItem(Constants.UNLOCK_KEY, p);
+    localStorage.setItem(Constants.CONFIG_HASH, f);
     localStorage.setItem(Constants.UNLOCK_HASH, keyHash.digest('hex'));
+    localStorage.setItem(Constants.HIMITSU_RPC_HOST, h);
   };
 
   // TODO: refactor createAndOpenWallet to three functions
@@ -146,7 +150,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               ...gAccount,
               mnemonic: '',
             }); // TODO: snackbar with error handling
-            setLocalStorage(filename, values.walletPassword);
+            setLocalStorage(filename, values.walletPassword, values.url);
           } else {
             handleInvalidRpcHost();
             setValues({ ...values, isInitializing: false });
@@ -169,7 +173,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               ...gAccount,
               mnemonic: k.result.key,
             }); // TODO: snackbar with error handling
-            setLocalStorage(filename, values.walletPassword);
+            setLocalStorage(filename, values.walletPassword, gInit.rpcHost);
           }
         }
       }

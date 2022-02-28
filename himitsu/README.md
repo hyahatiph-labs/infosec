@@ -34,12 +34,15 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 
 ### Android
 
-* Like mobile apps? Me too
+* Like mobile apps?
 * get started with the Android build by downloading [Android Studio](https://developer.android.com/studio/#downloads)
-* Install [Capacitor](https://capacitorjs.com/docs) and [Capacitor Android](https://capacitorjs.com/docs/android)
-* set the environment variable like `export CAPACITOR_ANDROID_STUDIO_PATH=$HOME/android-studio/bin/studio.sh`
-* follow the documentation for starting the app
+* Read up on [Capacitor](https://capacitorjs.com/docs) and [Capacitor Android](https://capacitorjs.com/docs/android)
+* set the environment variable like `export CAPACITOR_ANDROID_STUDIO_PATH=$HOME/android-studio/bin/studio.sh` for 
+  `npx cap open android` and `export ANDROID_HOME=$HOME/Android/Sdk` for `npx cap run android`
 * create an emulator, build and hack away
+* get device ip with a command like `ip a` (Linux)
+* on load go in app settings and change host 'DEVICE_IP':'RPC_PORT'
+* start `monero-wallet-rpc` on a local network dedicated for development `./build/Linux/_HEAD_detached_at_pr-review_no_rpc_aco_login_/release/bin/monero-wallet-rpc --stagenet --wallet-dir /path/to/Monero/wallets/dev --rpc-bind-port 38083 --rpc-access-control-origins "*" --disable-rpc-login --rpc-bind-ip <DEVICE_IP> --confirm-external-bind`
 
 ## Building
 

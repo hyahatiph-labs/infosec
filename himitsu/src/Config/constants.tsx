@@ -8,6 +8,7 @@ export const TIME_HASH = 'TIME_HASH';
 export const UNLOCK_KEY = 'UNLOCK_KEY';
 export const UNLOCK_HASH = 'UNLOCK_HASH';
 export const PIN_HASH = 'PIN_HASH';
+export const HIMITSU_RPC_HOST = 'HIMITSU_RPC_HOST';
 export const LOCK_LIMIT = 360000;
 
 /* RPC Request constants */

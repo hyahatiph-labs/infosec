@@ -41,6 +41,8 @@ const SettingsComponent: React.FC = (): ReactElement => {
       const result = await axios.post(`http://${values.rpcHost}/json_rpc`, rBody);
       if (result.status === Constants.HTTP_OK) {
         setGlobalState('init', { ...gInit, rpcHost: values.rpcHost });
+        localStorage.setItem(Constants.HIMITSU_RPC_HOST, values.rpcHost);
+        handleUpdateRpcHostSuccess();
       }
     } catch {
       handleInvalidRpcHost();
