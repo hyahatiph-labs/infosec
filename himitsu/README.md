@@ -6,6 +6,14 @@ Lightweight Monero wallet and browser extension for quick interface with
 monero-wallet-rpc and webxmr. 
 Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 
+### Firefox
+
+* experimental version in [store](https://addons.mozilla.org/en-US/firefox/addon/himitsu/)
+* still much work to do to get this to work out of the box and connect to public rpc over i2p
+* currently requires code from approved [pull request](https://github.com/monero-project/monero/pull/8187) which is not yet merged
+
+<br />
+
 ![himitsu](himitsu.png)
 
 ## Development
