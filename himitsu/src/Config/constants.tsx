@@ -1,7 +1,7 @@
 import * as Interfaces from './interfaces';
 
 export {};
-export const PICO = 1000000000000;
+export const PICO = 1000000000000n;
 export const HTTP_OK = 200;
 export const CONFIG_HASH = 'CONFIG_HASH';
 export const TIME_HASH = 'TIME_HASH';
@@ -204,7 +204,7 @@ export const GET_RESERVE_PROOF_REQUEST: Interfaces.GetReserveProofRequest = {
   method: 'get_reserve_proof',
   params: {
     all: false,
-    amount: 0,
+    amount: 0n,
     account_index: 0,
     message: '',
   },

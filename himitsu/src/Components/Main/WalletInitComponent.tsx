@@ -89,11 +89,11 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    * UNLOCK_HASH with the CONFIG_HASH aka wallet name.
    * TODO: better security without local storage usage.
    */
-  const setLocalStorage = (filename: string, walletName: string): void => {
+  const setLocalStorage = (filename: string, walletPassword: string): void => {
     const keyHash = crypto.createHash('sha256');
     keyHash.update(values.walletPassword);
     localStorage.setItem(Constants.TIME_HASH, Date.now().toString());
-    localStorage.setItem(Constants.UNLOCK_KEY, walletName);
+    localStorage.setItem(Constants.UNLOCK_KEY, walletPassword);
     localStorage.setItem(Constants.CONFIG_HASH, filename);
     localStorage.setItem(Constants.UNLOCK_HASH, keyHash.digest('hex'));
   };

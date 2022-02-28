@@ -21,8 +21,8 @@ export const {
 } = createGlobalState({
   account: {
     primaryAddress: '',
-    walletBalance: 0,
-    unlockedBalance: 0,
+    walletBalance: BigInt(0),
+    unlockedBalance: BigInt(0),
     unlockTime: 0,
     subAddresses: subAddressInit,
     mnemonic: '',

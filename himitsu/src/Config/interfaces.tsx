@@ -87,7 +87,7 @@ interface ValidateAddressParams {
 }
 
 export interface Destination {
-  amount: number;
+  amount: bigint | string;
   address: string;
 }
 
@@ -122,7 +122,7 @@ interface ShowTransfersParams {
 interface GetReserveProofParams {
   all: boolean;
   account_index: number;
-  amount: number;
+  amount: bigint | string;
   message: string;
 }
 
@@ -226,12 +226,12 @@ interface SubAddressBalance {
 }
 
 interface ShowBalanceResult {
-  balance: number;
+  balance: bigint;
   blocks_to_unlock: number;
   multisig_import_needed: boolean;
   per_subaddress: SubAddressBalance[];
   time_to_unlock: number;
-  unlocked_balance: number;
+  unlocked_balance: bigint;
 }
 
 export interface Address {
@@ -289,11 +289,11 @@ interface SubAddressIndex {
 
 export interface Transfer {
   address: string;
-  amount: number;
-  amounts: number[];
+  amount: bigint;
+  amounts: bigint[];
   confirmations: number;
   double_spend_seed: boolean;
-  fee: number;
+  fee: bigint;
   height: number;
   locked: false;
   note: string;
@@ -323,15 +323,15 @@ export type GetTxProofResult = GetReserveProofResult
 
 export interface CheckReserveProofResult {
   good: boolean;
-  spent: number;
-  total: number;
+  spent: bigint;
+  total: bigint;
 }
 
 export interface CheckTxProofResult {
   confirmations: number;
   good: boolean;
   in_pool: boolean;
-  received: number;
+  received: bigint;
 }
 
 /* RPC Response Interfaces */

@@ -197,7 +197,7 @@ const MainComponent: React.FC = (): ReactElement => {
         {isWalletInitialized && isViewingTxs && <TransactionsComponent />}
         {isWalletInitialized && isViewingSettings && <SettingsComponent />}
       </main>
-      {/* Reserve Proof modal */}
+      {/* Screen lock modal */}
       { isScreenLocked
         && (
           <Modal

@@ -1,4 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
+import BigDecimal from 'js-big-decimal';
 import * as MUI from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import {
@@ -30,7 +31,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
       confirmations: 0,
       good: false,
       in_pool: false,
-      received: 0,
+      received: 0n,
     },
   });
   const host = `http://${gInit.rpcHost}/json_rpc`;
@@ -180,11 +181,17 @@ const TransactionsComponent: React.FC = (): ReactElement => {
                 </MUI.Typography>
                 <MUI.Typography className={classes.info}>
                   <b>Amt: </b>
-                  <code>{` ${(v.amount / Constants.PICO).toFixed(12)} XMR (`}</code>
+                  <code>
+                    {` ${BigDecimal.divide(v.amount.toString(),
+                      Constants.PICO.toString(), 12)} XMR (`}
+                  </code>
                 </MUI.Typography>
                 <MUI.Typography className={classes.info}>
                   <b>Fee:</b>
-                  <code>{` ${(v.fee / Constants.PICO).toFixed(12)} XMR)`}</code>
+                  <code>
+                    {` ${BigDecimal.divide(v.fee.toString(),
+                      Constants.PICO.toString(), 12)} XMR)`}
+                  </code>
                 </MUI.Typography>
                 <MUI.Typography className={classes.info}>
                   <b>Confirmations:</b>

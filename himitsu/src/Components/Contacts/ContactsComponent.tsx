@@ -105,10 +105,10 @@ const ContactsComponent: React.FC = (): ReactElement => {
     }
   };
 
-  const transferToContact = async (recipient: string, amount: number): Promise<void> => {
+  const transferToContact = async (recipient: string, amount: bigint): Promise<void> => {
     setIsSending(true);
     const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;
-    const d: Interfaces.Destination = { address: recipient, amount };
+    const d: Interfaces.Destination = { address: recipient, amount: amount.toString() };
     // disable send and notify user it is in progress
     tBody.params.destinations.push(d);
     const transfer = await (await axios.post(host, tBody)).data;
@@ -185,9 +185,11 @@ const ContactsComponent: React.FC = (): ReactElement => {
               <div className={classes.buttonRow}>
                 <MUI.Button
                   className={classes.send}
-                  disabled={gAccount.unlockedBalance === 0 || isSending
-                    || values.amount * Constants.PICO > gAccount.unlockedBalance}
-                  onClick={() => { transferToContact(v.address, values.amount * Constants.PICO); }}
+                  disabled={gAccount.unlockedBalance === 0n || isSending
+                    || BigInt(values.amount) * Constants.PICO > gAccount.unlockedBalance}
+                  onClick={() => {
+                    transferToContact(v.address, BigInt(values.amount) * Constants.PICO);
+                  }}
                   variant="outlined"
                   color="primary"
                   size="medium"

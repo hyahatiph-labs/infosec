@@ -1,5 +1,6 @@
 import React, { ReactElement, useState, useEffect } from 'react';
 import crypto from 'crypto';
+import BigDecimal from 'js-big-decimal';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import QRCode from 'qrcode.react';
 import Snackbar from '@material-ui/core/Snackbar';
@@ -49,7 +50,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     hash: '',
     reserveProof: '',
     message: '',
-    proofValidation: { good: false, spent: 0, total: 0 },
+    proofValidation: { good: false, spent: 0n, total: 0n },
   });
   const host = `http://${gInit.rpcHost}/json_rpc`;
 
@@ -178,7 +179,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const generateReserveProof = async (): Promise<void> => {
     setProofGenerated(true);
     const proofBody: Interfaces.GetReserveProofRequest = Constants.GET_RESERVE_PROOF_REQUEST;
-    proofBody.params.amount = values.amount * Constants.PICO;
+    proofBody.params.amount = (BigInt(values.amount) * Constants.PICO).toString();
     proofBody.params.message = values.message;
     const proof: Interfaces.GetReserveProofResponse = await (
       await axios.post(host, proofBody)
@@ -210,16 +211,18 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     const validPin = pinRequired ? gInit.pinHash === hUserHash : true;
     const vBody: Interfaces.ValidateAddressRequest = Constants.VALIDATE_ADDRESS_REQUEST;
     vBody.params.address = values.sendTo.trim();
-    const isValidAmt = values.amount < gAccount.unlockedBalance / Constants.PICO;
+    const isValidAmt = values.amount < parseFloat(BigDecimal
+      .divide(gAccount.unlockedBalance.toString(), Constants.PICO.toString(), 6));
     const vAddress: Interfaces.ValidateAddressResponse = await (await axios.post(host, vBody)).data;
     if (vAddress.result.valid && isValidAmt && validPin
       && vAddress.result.nettype !== 'mainnet') { // TODO: enable mainnet
       const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;
       const destination: Interfaces.Destination = {
         address: values.sendTo.trim(),
-        amount: values.amount * Constants.PICO,
+        amount: (BigInt(values.amount) * Constants.PICO).toString(),
       };
       tBody.params.destinations.push(destination);
+      // serialize the destination with big int
       const tx: Interfaces.TransferResponse = await (await axios.post(host, tBody)).data;
       setValues({ ...values, hash: tx.result.tx_hash });
       handleTransferSuccess();
@@ -360,7 +363,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 <br />
                 <Button
                   className={classes.send}
-                  disabled={values.amount * Constants.PICO > gAccount.unlockedBalance
+                  disabled={BigInt(values.amount) * Constants.PICO > gAccount.unlockedBalance
                     || values.amount <= 0}
                   onClick={() => { transfer(); }}
                   variant="outlined"
@@ -444,7 +447,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 <br />
                 <Button
                   className={classes.send}
-                  disabled={values.amount * Constants.PICO > gAccount.unlockedBalance
+                  disabled={BigInt(values.amount) * Constants.PICO > gAccount.unlockedBalance
                     || values.amount <= 0}
                   onClick={() => { generateReserveProof(); }}
                   variant="outlined"
@@ -478,7 +481,8 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       <div className={classes.unlockedBalance}>
         <MuIcons.LockOpen className={classes.icon} />
         <h1>
-          {`${((gAccount.walletBalance - pendingBalance) / Constants.PICO).toFixed(3)} XMR`}
+          {`${BigDecimal.divide((gAccount.walletBalance - pendingBalance).toString(),
+            Constants.PICO.toString(), 3)} XMR`}
           {' '}
           <Button
             className={classes.send}
@@ -499,7 +503,8 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           && <MuIcons.HourglassFull className={classes.icon} />}
         <h3>
           {(pendingBalance > 0 && unlockTime > 0)
-            && ` ${(pendingBalance / Constants.PICO).toFixed(3)} ~ ${unlockTime} min.`}
+            && ` ${BigDecimal.divide(pendingBalance.toString(),
+              Constants.PICO.toString(), 3)} ~ ${unlockTime} min.`}
         </h3>
       </div>
       {isBusy
@@ -522,7 +527,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       <div className={classes.buttonRow}>
         <Button
           className={classes.send}
-          disabled={gAccount.unlockedBalance === 0}
+          disabled={gAccount.unlockedBalance === 0n}
           onClick={() => { handleTransfer(); }}
           variant="outlined"
           color="primary"
@@ -647,8 +652,10 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           onClose={() => { setShowProofValidation(false); }}
           severity="info"
         >
-          {`Valid proof on ${(values.proofValidation.spent / Constants.PICO).toFixed(3)}
-            spent and ${(values.proofValidation.total / Constants.PICO).toFixed(3)} total`}
+          {`Valid proof on ${BigDecimal.divide(values.proofValidation.spent.toString(),
+            Constants.PICO.toString(), 3)} spent and
+            ${BigDecimal.divide(values.proofValidation.total.toString(),
+            Constants.PICO.toString(), 3)} total`}
         </Alert>
       </Snackbar>
       <Snackbar
