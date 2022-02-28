@@ -1,0 +1,6 @@
+{
+	"appId": "org.hiahatf.himitsu",
+	"appName": "himitsu",
+	"webDir": "build",
+	"bundledWebRuntime": false
+}
