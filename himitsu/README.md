@@ -18,11 +18,20 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 * pull the code from this [pull request](https://github.com/monero-project/monero/pull/8187), and compile it
 * start `monerod` with `--stagenet` flag
 * start `monero-wallet-rpc` with: `./path/to/monero-wallet-rpc --stagenet --wallet-dir /full/path/to/Monero/wallets/dev/ --rpc-bind-port 38083 --rpc-access-control-origins http://localhost:3000 --disable-rpc-login`
-* there is a pre-compiled rpc binary (built on Fedora) for Linux X86_64 users, if you don't want to compile from source.
+* there is a pre-compiled rpc binary (built on Fedora) for Linux x86_64 users, if you don't want to compile from source.
 * initial setup => `git clone https://github.com/hyahatiph-labs/infosec.git && cd infosec/himitsu && npm i`
 * start the client with `npm start`
 * UI is located at localhost:3000 in your favorite browser
 * works best to view in responsive 400 * 500
+
+### Android
+
+* Like mobile apps? Me too
+* get started with the Android build by downloading [Android Studio](https://developer.android.com/studio/#downloads)
+* Install [Capacitor](https://capacitorjs.com/docs) and [Capacitor Android](https://capacitorjs.com/docs/android)
+* set the environment variable like `export CAPACITOR_ANDROID_STUDIO_PATH=$HOME/android-studio/bin/studio.sh`
+* follow the documentation for starting the app
+* create an emulator, build and hack away
 
 ## Building
 
