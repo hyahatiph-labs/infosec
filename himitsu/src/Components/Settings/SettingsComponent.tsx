@@ -37,8 +37,9 @@ const SettingsComponent: React.FC = (): ReactElement => {
 
   const updateRpcHost = async (): Promise<void> => {
     const rBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
+    const host = `http://${values.rpcHost}/json_rpc`;
     try {
-      const result = await axios.post(`http://${values.rpcHost}/json_rpc`, rBody);
+      const result = await axios.post(host, rBody, Constants.I2P_PROXY);
       if (result.status === Constants.HTTP_OK) {
         setGlobalState('init', { ...gInit, rpcHost: values.rpcHost });
         localStorage.setItem(Constants.HIMITSU_RPC_HOST, values.rpcHost);
@@ -71,7 +72,7 @@ const SettingsComponent: React.FC = (): ReactElement => {
   return (
     <div className={classes.settings}>
       <MUI.TextField
-        label="monero-wallet-rpc (host:port)"
+        label={Constants.IS_DEV ? 'monero-wallet-rpc (host:port)' : 'host.b32.i2p'}
         id="standard-start-adornment"
         className={classes.paper}
         onChange={handleChange('rpcHost')}

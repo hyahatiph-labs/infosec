@@ -119,7 +119,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         setValues({ ...values, isInitializing: false });
         handleInvalidRpcHost();
       } else {
-        rpcResult = await axios.post(host, vBody);
+        rpcResult = await axios.post(host, vBody, Constants.I2P_PROXY);
       }
       if (rpcResult !== null && rpcResult.status === Constants.HTTP_OK) {
         const filename = crypto.randomBytes(32).toString('hex');
@@ -136,7 +136,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               restore_height: values.height > 0 ? values.height : 0,
             },
           };
-          const dResult = (await axios.post(host, dbody));
+          const dResult = (await axios.post(host, dbody, Constants.I2P_PROXY));
           if (dResult.status === Constants.HTTP_OK) {
             setGlobalState('init', {
               ...gInit,
@@ -156,11 +156,12 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             setValues({ ...values, isInitializing: false });
           }
         } else {
-          await axios.post(host, body);
-          const result = await axios.post(host, body);
+          await axios.post(host, body, Constants.I2P_PROXY);
+          const result = await axios.post(host, body, Constants.I2P_PROXY);
           if (result.status === Constants.HTTP_OK) {
             const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
-            const k: Interfaces.QueryKeyResponse = (await axios.post(host, kBody)).data;
+            const k: Interfaces.QueryKeyResponse = (
+              await axios.post(host, kBody, Constants.I2P_PROXY)).data;
             setGlobalState('init', {
               ...gInit,
               isWalletInitialized: true,

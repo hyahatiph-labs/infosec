@@ -82,7 +82,8 @@ const TransactionsComponent: React.FC = (): ReactElement => {
     if (type) {
       tBody = filterTransactions(type);
     }
-    const transfers: Interfaces.ShowTransfersResponse = await (await axios.post(host, tBody)).data;
+    const transfers: Interfaces.ShowTransfersResponse = await (
+      await axios.post(host, tBody, Constants.I2P_PROXY)).data;
     const r = transfers.result;
     const hasTransfers = r.failed || r.in || r.out || r.pending || r.pool;
     if (hasTransfers) {
@@ -117,7 +118,8 @@ const TransactionsComponent: React.FC = (): ReactElement => {
     const proofBody: Interfaces.GetTxProofRequest = Constants.GET_TX_PROOF_REQUEST;
     proofBody.params.address = address;
     proofBody.params.txid = txid;
-    const proof: Interfaces.GetTxProofResponse = await (await axios.post(host, proofBody)).data;
+    const proof: Interfaces.GetTxProofResponse = await (
+      await axios.post(host, proofBody, Constants.I2P_PROXY)).data;
     setValues({ ...values, txProof: proof.result.signature });
   };
 
@@ -127,7 +129,8 @@ const TransactionsComponent: React.FC = (): ReactElement => {
     proofBody.params.message = values.message;
     proofBody.params.signature = values.txProof;
     proofBody.params.txid = values.txid;
-    const proof: Interfaces.CheckTxProofResponse = await (await axios.post(host, proofBody)).data;
+    const proof: Interfaces.CheckTxProofResponse = await (
+      await axios.post(host, proofBody, Constants.I2P_PROXY)).data;
     if (proof.result.good) {
       setValues({ ...values, proofValidation: proof.result });
       setShowProofValidation(true);

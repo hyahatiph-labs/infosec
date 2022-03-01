@@ -22,7 +22,6 @@ import busy from '../../Assets/dance.gif';
 
 // load balance once
 let loaded = false;
-const isDev = process.env.REACT_APP_HIMITSU_DEV === 'DEV';
 const MoneroAccountComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
   const [gAccount] = useGlobalState('account');
@@ -101,7 +100,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     setIsBusy(true);
     const body: Constants.OpenWalletRequest = Constants.CREATE_WALLET_REQUEST;
     body.method = 'open_wallet';
-    if (isDev) {
+    if (Constants.IS_DEV) {
       body.params.filename = 'himitsu';
       body.params.password = 'himitsu';
     } else {
@@ -109,14 +108,17 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       body.params.password = gInit.walletPassword;
     }
     try {
-      const oResult = await axios.post(host, body);
+      const oResult = await axios.post(host, body, Constants.I2P_PROXY);
       if (oResult.status === Constants.HTTP_OK) {
         const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
         const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
-        const a: Interfaces.ShowAddressResponse = await (await axios.post(host, aBody)).data;
-        const b: Interfaces.ShowBalanceResponse = await (await axios.post(host, bBody)).data;
+        const a: Interfaces.ShowAddressResponse = await (
+          await axios.post(host, aBody, Constants.I2P_PROXY)).data;
+        const b: Interfaces.ShowBalanceResponse = await (
+          await axios.post(host, bBody, Constants.I2P_PROXY)).data;
         const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
-        const k: Interfaces.QueryKeyResponse = (await axios.post(host, kBody)).data;
+        const k: Interfaces.QueryKeyResponse = (
+          await axios.post(host, kBody, Constants.I2P_PROXY)).data;
         const aResult = a.result.addresses;
         const aLength = aResult.length;
         // display the latest unused subaddress, warn if all addresses are used
@@ -164,8 +166,10 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     const aBody: Interfaces.CreateAddressRequest = Constants.CREATE_ADDRESS_REQUEST;
     const sBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
     aBody.params.label = values.label;
-    const create: Interfaces.CreateAddressResponse = await (await axios.post(host, aBody)).data;
-    const show: Interfaces.ShowAddressResponse = await (await axios.post(host, sBody)).data;
+    const create: Interfaces.CreateAddressResponse = await (
+      await axios.post(host, aBody, Constants.I2P_PROXY)).data;
+    const show: Interfaces.ShowAddressResponse = await (
+      await axios.post(host, sBody, Constants.I2P_PROXY)).data;
     const newAddress = create.result.address;
     const showResult = show.result.addresses;
     setGlobalState('account', {
@@ -182,7 +186,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     proofBody.params.amount = (BigInt(values.amount) * Constants.PICO).toString();
     proofBody.params.message = values.message;
     const proof: Interfaces.GetReserveProofResponse = await (
-      await axios.post(host, proofBody)
+      await axios.post(host, proofBody, Constants.I2P_PROXY)
     ).data;
     setValues({ ...values, reserveProof: proof.result.signature });
   };
@@ -193,7 +197,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     proofBody.params.message = values.message;
     proofBody.params.signature = values.reserveProof;
     const proof: Interfaces.CheckReserveProofResponse = await (
-      await axios.post(host, proofBody)
+      await axios.post(host, proofBody, Constants.I2P_PROXY)
     ).data;
     if (proof.result.good) {
       setValues({ ...values, proofValidation: proof.result });
@@ -213,9 +217,10 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     vBody.params.address = values.sendTo.trim();
     const isValidAmt = values.amount < parseFloat(BigDecimal
       .divide(gAccount.unlockedBalance.toString(), Constants.PICO.toString(), 6));
-    const vAddress: Interfaces.ValidateAddressResponse = await (await axios.post(host, vBody)).data;
+    const vAddress: Interfaces.ValidateAddressResponse = await (
+      await axios.post(host, vBody, Constants.I2P_PROXY)).data;
     if (vAddress.result.valid && isValidAmt && validPin
-      && vAddress.result.nettype !== 'mainnet') { // TODO: enable mainnet
+      && vAddress.result.nettype !== 'mainnet') {
       const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;
       const destination: Interfaces.Destination = {
         address: values.sendTo.trim(),
@@ -223,12 +228,13 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       };
       tBody.params.destinations.push(destination);
       // serialize the destination with big int
-      const tx: Interfaces.TransferResponse = await (await axios.post(host, tBody)).data;
+      const tx: Interfaces.TransferResponse = await (
+        await axios.post(host, tBody, Constants.I2P_PROXY)).data;
       setValues({ ...values, hash: tx.result.tx_hash });
       handleTransferSuccess();
       loadXmrBalance();
     }
-    if (!vAddress.result.valid || vAddress.result.nettype === 'mainnet') { // TODO: enable mainnet
+    if (!vAddress.result.valid) {
       handleInvalidAddress();
     }
     if (!isValidAmt) { handleInvalidAmount(); }

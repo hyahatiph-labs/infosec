@@ -29,6 +29,8 @@ import ContactsComponent from '../Contacts/ContactsComponent';
 import * as Constants from '../../Config/constants';
 
 // TODO: Refactor all modals to separate components
+// TODO: Android styling
+// TODO: rpc over i2p
 // TODO: webxmr integration
 
 interface UnlockState {
@@ -95,7 +97,7 @@ const MainComponent: React.FC = (): ReactElement => {
   /**
    * Defines the logic for the lock screen. The password is
    * put in local storage temporarily purely for convenience sake,
-   * but should never be in there I think. After 360k seconds the
+   * but should never be in there I think. After 360 seconds the
    * cleartext password is nuked from local storage upon attempting
    * to access the app. At this point the user must enter the password
    * matching the hash which remains in local storage.
@@ -132,9 +134,9 @@ const MainComponent: React.FC = (): ReactElement => {
     then set REACT_APP_HIMITSU_DEV=DEV in .env.local
     This will override wallet initialization.
   */
-  const isDev = process.env.REACT_APP_HIMITSU_DEV === 'DEV';
   const isWalletConfigured = gInit.walletName !== '';
-  const isWalletInitialized = ((gInit.isWalletInitialized || isWalletConfigured) || isDev);
+  const isWalletInitialized = ((gInit.isWalletInitialized || isWalletConfigured)
+    || Constants.IS_DEV);
 
   return (
     <div>
@@ -191,7 +193,8 @@ const MainComponent: React.FC = (): ReactElement => {
         )}
       <main className={classes.content}>
         <Toolbar />
-        {(!gInit.isWalletInitialized && !isWalletConfigured) && !isDev && <WalletInitComponent />}
+        {(!gInit.isWalletInitialized && !isWalletConfigured)
+          && !Constants.IS_DEV && <WalletInitComponent />}
         {isWalletInitialized && isViewingContacts && <ContactsComponent />}
         {isWalletInitialized && isViewingWallet && !isScreenLocked && <MoneroAccountComponent />}
         {isWalletInitialized && isViewingTxs && <TransactionsComponent />}

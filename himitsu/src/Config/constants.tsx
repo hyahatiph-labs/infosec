@@ -10,6 +10,9 @@ export const UNLOCK_HASH = 'UNLOCK_HASH';
 export const PIN_HASH = 'PIN_HASH';
 export const HIMITSU_RPC_HOST = 'HIMITSU_RPC_HOST';
 export const LOCK_LIMIT = 360000;
+export const IS_DEV = process.env.REACT_APP_HIMITSU_DEV === 'DEV'
+  || process.env.REACT_APP_HIMITSU_DEV === 'ANDROID';
+export const I2P_PROXY = IS_DEV ? {} : { proxy: { host: 'localhost', port: 4444 } };
 
 /* RPC Request constants */
 const context: Interfaces.RequestContext = {
