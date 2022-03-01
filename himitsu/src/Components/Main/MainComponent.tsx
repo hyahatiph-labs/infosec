@@ -193,7 +193,7 @@ const MainComponent: React.FC = (): ReactElement => {
         <Toolbar />
         {(!gInit.isWalletInitialized && !isWalletConfigured) && !isDev && <WalletInitComponent />}
         {isWalletInitialized && isViewingContacts && <ContactsComponent />}
-        {isWalletInitialized && isViewingWallet && <MoneroAccountComponent />}
+        {isWalletInitialized && isViewingWallet && !isScreenLocked && <MoneroAccountComponent />}
         {isWalletInitialized && isViewingTxs && <TransactionsComponent />}
         {isWalletInitialized && isViewingSettings && <SettingsComponent />}
       </main>
