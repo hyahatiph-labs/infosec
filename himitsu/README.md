@@ -6,6 +6,8 @@ Lightweight Monero wallet and browser extension for quick interface with
 monero-wallet-rpc and webxmr. 
 Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 
+![architecture](himitsu_arch.png)
+
 ### Firefox
 
 * experimental version in [store](https://addons.mozilla.org/en-US/firefox/addon/himitsu/)
@@ -30,7 +32,7 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 * initial setup => `git clone https://github.com/hyahatiph-labs/infosec.git && cd infosec/himitsu && npm i`
 * start the client with `npm start`
 * UI is located at localhost:3000 in your favorite browser
-* works best to view in responsive 400 * 500
+* works best to view in responsive 500 * 600 (responsive design in progress)
 
 ### Android
 
