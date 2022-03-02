@@ -12,7 +12,8 @@ let himitsuConfigured = false;
 let addressIsSet = false;
 let himitsuAddress = '';
 let data = crypto.randomBytes(32).toString();
-
+let lastKnownSignature = '';
+const setLastKnownSignature = (s: string) => { lastKnownSignature = s; }
 
 const verifyHimitsuSignature = async (address: string, signature: string): Promise<boolean> => {
   const body = {
@@ -46,13 +47,14 @@ const verifyHimitsuSignature = async (address: string, signature: string): Promi
  * NOTE: An attacker would somehow need to get the challenge which is
  * not possible because a new 32-byte challenge is generated on each request.
  * Himitsu does not store this challenge, nor does prokurilo store the signature which has yet
- * to be generated. The only way to gain access to the new signature is to 
+ * to be generated*. The only way to gain access to the new signature is to 
  * gain physical access to the device on which himitsu is running.
  * To mitigate, himitsu has a password lock screen which with a secure enough
  * password makes the wallet inaccessible. There is also an additional pin-to-send
  * feature in which the pin is not stored on the device. Only the hash of it.
  * basic <address:signature> on the first request "handshake"
- * basic <himitsu:signature> on all subsequent requests dummy username, only signature matters
+ * basic <h(address):signature> SHA-256 hash of address on all subsequent requests
+ * * last known signature is kept for re-signings
  * @param auth - basic auth for himitsu
  */
 const configureHimitsu = async (auth: string, req: any, res: any) => {
@@ -64,6 +66,7 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
     himitsuConfigured = true;
     // clear the challenge to start the regeneration process on subsequent verifications
     data = null;
+    setLastKnownSignature(signature);
     res.status(Config.Http.OK).send();
   } else if (!addressIsSet || req.body.method === 'sign') {
     log(`bypass for signing only`, LogLevel.WARN, true);
@@ -79,17 +82,24 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
 };
 
 const verifyHimitsu = async (auth:string, req: any, res: any) => {
+  const address = auth.split("basic ")[1].split(":")[0];
   const signature = auth.split("basic ")[1].split(":")[1];
+  const hAddress = crypto.createHash('sha256');
+  hAddress.update(himitsuAddress);
+  const isKnown = address === hAddress.digest('hex') && lastKnownSignature === signature;
   log(`verifying himitsu instance`, LogLevel.INFO, true);
   if (await verifyHimitsuSignature(himitsuAddress, signature) && data !== null) {
     passThrough(req, res, null);
-    data = null;
+    data = null; // reset challenge
+  } else if (req.body.method === 'sign' && isKnown && data !== null) {
+      // pass through to sign after challenge set
+      passThrough(req, res, null);
   } else {
     log(`himitsu verification failure`, LogLevel.ERROR, true);
     data = crypto.randomBytes(32).toString(); // create new challenge
     res
       .status(Config.Http.FORBIDDEN)
-      .header("www-authenticate", `challenge=${data}`)
+      .header("www-authenticate", `challenge=${isKnown ? data : ''}`)
       .send();
   }
 };

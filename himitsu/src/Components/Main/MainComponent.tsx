@@ -99,9 +99,7 @@ const MainComponent: React.FC = (): ReactElement => {
 
   /**
    * Defines the logic for the lock screen. After 360 seconds the
-   * cleartext password is nuked from local storage upon attempting
-   * to access the app. At this point the user must enter the password
-   * matching the hash which remains in local storage.
+   *  user must enter the password matching the hash which remains in local storage.
    */
   const lockScreen = async (): Promise<void> => {
     const tLock = localStorage.getItem(Constants.TIME_HASH);

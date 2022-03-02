@@ -52,7 +52,14 @@ APP.patch('/*', (req: any, res: any) => {
 setup();
 
 // only stay online if i2p is online as well
-setInterval(() => { Util.i2pCheck(); });
+Util.i2pCheck();
+setInterval(() => { 
+  Util.i2pCheck();
+});
+
+if (Config.HIMITSU_RESTRICTED) {
+  log(`/sign API is open until himitsu configures`, LogLevel.WARN, true);
+}
 
 /* Anti-Spam Algorithm
  * Bin payments into default one-hour windows

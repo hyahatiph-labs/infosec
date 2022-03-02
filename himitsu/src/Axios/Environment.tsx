@@ -1,8 +1,8 @@
 import * as Constants from '../Config/constants';
 
 const dev = {
-  prokurilo: 'http://localhost: 38083',
-  monerod: 'http://localhost: 380831',
+  prokurilo: 'http://localhost:38083',
+  monerod: 'http://localhost:38081',
 };
 
 const prod = {
