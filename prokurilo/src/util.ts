@@ -1,12 +1,98 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
-import * as CONFIG from "./config";
+import * as Config from "./config";
 import log, { LogLevel } from "./logging";
 import { getConfigs, getDemoStaticFiles } from "./setup";
 import crypto from "crypto";
 import path from 'path';
 
-export const jail: CONFIG.JailedToken[] = [];
+export const jail: Config.JailedToken[] = [];
 const NODE_ENV = process.env.NODE_ENV || "";
+let himitsuConfigured = false;
+let addressIsSet = false;
+let himitsuAddress = '';
+let data = crypto.randomBytes(32).toString();
+
+
+const verifyHimitsuSignature = async (address: string, signature: string): Promise<boolean> => {
+  const body = {
+    jsonrpc: Config.RPC.VERSION,
+    id: Config.RPC.ID,
+    method: Config.RPC.VERIFY,
+    params: { address, data, signature },
+  };
+  return await axios
+    .post(`http://${Config.XMR_RPC_HOST}/json_rpc`, body)
+    .then((v) => { return v.data.result.good; })
+    .catch(() => {
+      log(`rpc failure`, LogLevel.ERROR, true);
+      return false;
+    });
+}
+
+/**
+ * Use one time challenge to configure himitsu.
+ * 1. Start monero-wallet-rpc
+ * 2. Start prokurilo with --himitsu-rpc-restrict flag
+ * 3. On wallet initialization Himitsu will request the challenge
+ *    from prokurilo. It will then take the challenge and use
+ *    it as data for signing.
+ * 5. On the initial request himitsu fails with 403 and 
+ *     challenge response. Next it sends primary address and
+ *    signature for validation.
+ * 6. Set himitsu configured and challenge address
+ * 7. New challenge generated on each request with 403
+ * 8. Continue to send signature to match challenge for each additional auth
+ * NOTE: An attacker would somehow need to get the challenge which is
+ * not possible because a new 32-byte challenge is generated on each request.
+ * Himitsu does not store this challenge, nor does prokurilo store the signature which has yet
+ * to be generated. The only way to gain access to the new signature is to 
+ * gain physical access to the device on which himitsu is running.
+ * To mitigate, himitsu has a password lock screen which with a secure enough
+ * password makes the wallet inaccessible. There is also an additional pin-to-send
+ * feature in which the pin is not stored on the device. Only the hash of it.
+ * basic <address:signature> on the first request "handshake"
+ * basic <himitsu:signature> on all subsequent requests dummy username, only signature matters
+ * @param auth - basic auth for himitsu
+ */
+const configureHimitsu = async (auth: string, req: any, res: any) => {
+  const address = auth.split("basic ")[1].split(":")[0];
+  const signature = auth.split("basic ")[1].split(":")[1];
+  if (await verifyHimitsuSignature(address, signature) && addressIsSet) {
+    log(`configuring himitsu instance`, LogLevel.INFO, true);
+    himitsuAddress = address;
+    himitsuConfigured = true;
+    // clear the challenge to start the regeneration process on subsequent verifications
+    data = null;
+    res.status(Config.Http.OK).send();
+  } else if (!addressIsSet || req.body.method === 'sign') {
+    log(`bypass for signing only`, LogLevel.WARN, true);
+    passThrough(req, res, null); // one time deal for the handshake
+    addressIsSet = !addressIsSet ? req.body.method === 'get_address' : addressIsSet;
+  } else {
+    log(`himitsu configuration failure`, LogLevel.ERROR, true);
+    res
+      .status(Config.Http.FORBIDDEN)
+      .header("www-authenticate", `challenge=${data}`)
+      .send();
+  }
+};
+
+const verifyHimitsu = async (auth:string, req: any, res: any) => {
+  const signature = auth.split("basic ")[1].split(":")[1];
+  log(`verifying himitsu instance`, LogLevel.INFO, true);
+  if (await verifyHimitsuSignature(himitsuAddress, signature) && data !== null) {
+    passThrough(req, res, null);
+    data = null;
+  } else {
+    log(`himitsu verification failure`, LogLevel.ERROR, true);
+    data = crypto.randomBytes(32).toString(); // create new challenge
+    res
+      .status(Config.Http.FORBIDDEN)
+      .header("www-authenticate", `challenge=${data}`)
+      .send();
+  }
+};
 
 /**
  * Hash the signature and store hash temporarily
@@ -47,10 +133,10 @@ const isJailed = (proof: string): boolean => {
  * @param uri - uri of asset
  * @returns Asset
  */
-const validateAsset = (uri: string): CONFIG.Asset => {
+const validateAsset = (uri: string): Config.Asset => {
   log(`validate asset for uri: ${uri}`, LogLevel.DEBUG, true);
   const sConfig: string = getConfigs().toString();
-  const assets: CONFIG.Asset[] = JSON.parse(sConfig).assets;
+  const assets: Config.Asset[] = JSON.parse(sConfig).assets;
   let vAsset = null;
   assets.forEach((a) => {
     if (a.uri === uri) {
@@ -74,7 +160,7 @@ const bypassAsset = (req: any): boolean => {
      won't be on this server.
   */
   const d = getDemoStaticFiles();
-  const isDemoContent = CONFIG.LOCAL_HOSTS.indexOf(req.ip) > -1
+  const isDemoContent = Config.LOCAL_HOSTS.indexOf(req.ip) > -1
     && d.indexOf(req.url.replace("/", "")) > -1 && NODE_ENV === 'test';
   return uris.indexOf(req.url) > -1 || isDemoContent;
 };
@@ -84,7 +170,7 @@ const bypassAsset = (req: any): boolean => {
  * @param {String} tpat - transaction proof authentication token
  * @returns {Object} data with hash and signature
  */
-const parseHeader = (tpat: string): CONFIG.TPAT | null => {
+const parseHeader = (tpat: string): Config.TPAT | null => {
   log(`tpat: ${tpat}`, LogLevel.DEBUG, true);
   try {
     let hash;
@@ -136,27 +222,27 @@ const parseHeader = (tpat: string): CONFIG.TPAT | null => {
  * @param req
  * @param res
  */
-const returnHeader = (parsedHeader: CONFIG.TPAT, req: any, res: any): void => {
+const returnHeader = (parsedHeader: Config.TPAT, req: any, res: any): void => {
   const h = validateAsset(req.url);
   if (parsedHeader === null && h !== null) {
     res
-      .status(CONFIG.Http.PAYMENT_REQUIRED)
+      .status(Config.Http.PAYMENT_REQUIRED)
       .header(
         "www-authenticate",
         `TPAT address="${h.subaddress}", ` +
-          `min_amt="${h.amt}", ttl="${h.ttl}", hash="", signature="", ast="${CONFIG.ANTI_SPAM_THRESHOLD}"`
+          `min_amt="${h.amt}", ttl="${h.ttl}", hash="", signature="", ast="${Config.ANTI_SPAM_THRESHOLD}"`
       )
       .send();
   } else if (h === null) {
-    res.status(CONFIG.Http.FORBIDDEN).send();
+    res.status(Config.Http.FORBIDDEN).send();
   } else {
     res
-      .status(CONFIG.Http.PAYMENT_REQUIRED)
+      .status(Config.Http.PAYMENT_REQUIRED)
       .header(
         "www-authenticate",
         `TPAT address="${h.subaddress}", ` +
           `min_amt="${h.amt}", ttl="${h.ttl}", hash="${parsedHeader.hash}",` +
-          `signature="${parsedHeader.signature}", ast="${CONFIG.ANTI_SPAM_THRESHOLD}"`
+          `signature="${parsedHeader.signature}", ast="${Config.ANTI_SPAM_THRESHOLD}"`
       )
       .send();
   }
@@ -167,7 +253,7 @@ const returnHeader = (parsedHeader: CONFIG.TPAT, req: any, res: any): void => {
  * @param req
  * @param res
  */
-const passThrough = (req: any, res: any, h: CONFIG.Asset) => {
+const passThrough = (req: any, res: any, h: Config.Asset) => {
   if (h && h.static && NODE_ENV === "test") { // demo examples
     res.sendFile(path.join(__dirname, "../examples/static", h.file));
   } else if (NODE_ENV === "test" && req.url === "/") {
@@ -177,7 +263,7 @@ const passThrough = (req: any, res: any, h: CONFIG.Asset) => {
   } else if ((!h || h.static) || (h && h.static)) { // static or redirects
     if (req.method === "GET") {
       axios
-        .get(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
+        .get(`http://${Config.ASSET_HOST}${req.url}`, req.body)
         .then((v) => {
           const html = v.data.replace("\n", "");
           res.send(html);
@@ -185,7 +271,7 @@ const passThrough = (req: any, res: any, h: CONFIG.Asset) => {
         .catch((v) => res.json(v));
     } else if (req.method === "POST") {
       axios
-        .post(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
+        .post(`http://${Config.ASSET_HOST}${req.url}`, req.body)
         .then((v) => {
           const html = v.data.replace("\n", "");
           res.send(html);
@@ -193,7 +279,7 @@ const passThrough = (req: any, res: any, h: CONFIG.Asset) => {
         .catch((v) => res.json(v));
     } else if (req.method === "PATCH") {
       axios
-        .patch(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
+        .patch(`http://${Config.ASSET_HOST}${req.url}`, req.body)
         .then((v) => {
           const html = v.data.replace("\n", "");
           res.send(html);
@@ -201,7 +287,7 @@ const passThrough = (req: any, res: any, h: CONFIG.Asset) => {
         .catch((v) => res.json(v));
     } else if (req.method === "DELETE") {
       axios
-        .delete(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
+        .delete(`http://${Config.ASSET_HOST}${req.url}`, req.body)
         .then((v) => {
           const html = v.data.replace("\n", "");
           res.send(html);
@@ -212,22 +298,22 @@ const passThrough = (req: any, res: any, h: CONFIG.Asset) => {
   else { // return json from protected API handlers
     if (req.method === "GET") {
       axios
-        .get(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
+        .get(`http://${Config.ASSET_HOST}${req.url}`, req.body)
         .then((v) => res.json(v.data))
         .catch((v) => res.json(v));
     } else if (req.method === "POST") {
       axios
-        .post(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
+        .post(`http://${Config.ASSET_HOST}${req.url}`, req.body)
         .then((v) => res.json(v.data))
         .catch((v) => res.json(v));
     } else if (req.method === "PATCH") {
       axios
-        .patch(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
+        .patch(`http://${Config.ASSET_HOST}${req.url}`, req.body)
         .then((v) => res.json(v.data))
         .catch((v) => res.json(v));
     } else if (req.method === "DELETE") {
       axios
-        .delete(`http://${CONFIG.ASSET_HOST}${req.url}`, req.body)
+        .delete(`http://${Config.ASSET_HOST}${req.url}`, req.body)
         .then((v) => res.json(v.data))
         .catch((v) => res.json(v));
     }
@@ -244,15 +330,20 @@ const passThrough = (req: any, res: any, h: CONFIG.Asset) => {
  *  hash="<transaction_hash>", signature="<transaction_proof>", ast="<60>"'
  * @returns
  */
-const isValidProof = (req: any, res: any): void => {
+export const isValidProof = (req: any, res: any): void => {
   log(`request body: ${JSON.stringify(req.body)}`, LogLevel.DEBUG, false);
+  const authHeader = req.headers[Config.Header.AUTHORIZATION];
   // check for bypass, always bypass home (login?) page
   if (bypassAsset(req) || req.url === "/") {
     passThrough(req, res, null);
+  } else if (Config.HIMITSU_RESTRICTED && !himitsuConfigured) {
+    configureHimitsu(authHeader, req, res);
+  } else if (Config.HIMITSU_RESTRICTED && himitsuConfigured) {
+    verifyHimitsu(authHeader, req, res);
   } else {
     // check the proof
     const h = validateAsset(req.url);
-    const values = parseHeader(req.headers[CONFIG.Header.AUTHORIZATION]);
+    const values = parseHeader(authHeader);
     if (values === null && !h) {
       returnHeader(values, req, res);
     } else {
@@ -265,9 +356,9 @@ const isValidProof = (req: any, res: any): void => {
       const ioa = oa !== null && oa !== undefined && oa !== "" && h.override;
       const sig = h.static ? req.body.tpat_tx_proof : values.signature;
       const body = {
-        jsonrpc: CONFIG.RPC.VERSION,
-        id: CONFIG.RPC.ID,
-        method: CONFIG.RPC.CHECK_TX_PROOF,
+        jsonrpc: Config.RPC.VERSION,
+        id: Config.RPC.ID,
+        method: Config.RPC.CHECK_TX_PROOF,
         params: {
           address: ioa ? oa : h.subaddress,
           txid: h.static ? req.body.tpat_tx_hash : values.hash,
@@ -275,7 +366,7 @@ const isValidProof = (req: any, res: any): void => {
         },
       };
       axios
-        .post(`http://${CONFIG.XMR_RPC_HOST}/json_rpc`, body)
+        .post(`http://${Config.XMR_RPC_HOST}/json_rpc`, body)
         .then((rp) => {
           const p = rp.data.result;
           log(`rpc response: ${JSON.stringify(p)}`, LogLevel.DEBUG, false);
@@ -312,11 +403,32 @@ const isValidProof = (req: any, res: any): void => {
         })
         .catch(() =>
           res
-            .status(CONFIG.Http.SERVER_FAILURE)
+            .status(Config.Http.SERVER_FAILURE)
             .json({ message: "Proof validation failure" })
         );
     }
   }
+};
+
+/**
+ * This is some really hacky logic for killing prokurilo
+ * if it is not running over i2p.
+ */
+export const i2pCheck = (): void => {
+  axios.get('http://localhost:7657/tunnels')
+      .then(v => {
+          const status = v.data.split('<h4><span class="tunnelBuildStatus">')[1].split('</span></h4>')[0]
+          const ACCEPTING_TUNNELS = 'Accepting tunnels'
+          const REJECTING_TUNNELS = 'Rejecting tunnels: Starting up'
+          if (status === ACCEPTING_TUNNELS) {
+              log('i2p is active', LogLevel.INFO, true);
+          } else if (status === REJECTING_TUNNELS) {
+              log('i2p is starting up', LogLevel.INFO, true);
+          } else {
+              log('no i2p connection', LogLevel.INFO, true);
+          }
+      })
+      .catch(() => { throw new Error('I2P check failed. Are you sure, it is running?') })
 };
 
 export default isValidProof;

@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import express from "express";
 import helmet from "helmet";
-import { ANTI_SPAM_THRESHOLD, CERT_PATH, JAIL_JANITOR_INTERVAL, KEY_PATH, PORT } from "./config";
-import isValidProof, { jail } from "./util";
+import * as Config from "./config";
+import * as Util from "./util";
 import os from "os";
 import setup from "./setup";
 import log, { LogLevel } from "./logging";
@@ -32,23 +33,26 @@ APP.use(helmet({
 
 // entry
 APP.get('/*', (req: any, res: any) => {
-  isValidProof(req, res);
+  Util.isValidProof(req, res);
 })
 
 APP.post('/*', (req: any, res: any) => {
-  isValidProof(req, res);
+  Util.isValidProof(req, res);
 })
 
 APP.delete('/*', (req: any, res: any) => {
-  isValidProof(req, res);
+  Util.isValidProof(req, res);
 })
 
 APP.patch('/*', (req: any, res: any) => {
-  isValidProof(req, res);
+  Util.isValidProof(req, res);
 })
 
 // initialize the config
 setup();
+
+// only stay online if i2p is online as well
+setInterval(() => { Util.i2pCheck(); });
 
 /* Anti-Spam Algorithm
  * Bin payments into default one-hour windows
@@ -59,27 +63,27 @@ setup();
  */
 setInterval(() => {
   log('checking jail to free tokens...', LogLevel.INFO, false);
-  jail.forEach((j,i) => {
-    if ((Date.now() - j.timestamp) > ANTI_SPAM_THRESHOLD) {
+  Util.jail.forEach((j,i) => {
+    if ((Date.now() - j.timestamp) > Config.ANTI_SPAM_THRESHOLD) {
       log(`free token at index: ${i}`, LogLevel.DEBUG, false);
-      delete jail[i]
+      delete Util.jail[i]
     }
   })
-}, JAIL_JANITOR_INTERVAL)
+}, Config.JAIL_JANITOR_INTERVAL)
 
 // start the server
 if (NODE_ENV === 'test') {
-  APP.listen(PORT,  () => {
+  APP.listen(Config.PORT,  () => {
     log(`Prokurilo DEV running on ${os.hostname()}`, LogLevel.INFO, false);
   })
 } else {
   try {
     log(`Prokurilo PROD running on ${os.hostname()}`, LogLevel.INFO, false);
     const HTTPS_SERVER = https.createServer({
-      key: fs.readFileSync(KEY_PATH),
-      cert: fs.readFileSync(CERT_PATH)
+      key: fs.readFileSync(Config.KEY_PATH),
+      cert: fs.readFileSync(Config.CERT_PATH)
     }, APP);
-    HTTPS_SERVER.listen(PORT, 'localhost'); 
+    HTTPS_SERVER.listen(Config.PORT, 'localhost'); 
   } catch {
     throw new Error('failed to set https');
   }

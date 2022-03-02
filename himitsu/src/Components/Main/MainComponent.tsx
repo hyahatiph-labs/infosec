@@ -31,6 +31,9 @@ import * as Constants from '../../Config/constants';
 // TODO: Refactor all modals to separate components
 // TODO: Android styling
 // TODO: rpc over i2p
+// TODO: view only wallet creation
+// TODO: network stats and monerod connection
+// TODO: fee estimate
 // TODO: webxmr integration
 
 interface UnlockState {
@@ -95,18 +98,14 @@ const MainComponent: React.FC = (): ReactElement => {
   };
 
   /**
-   * Defines the logic for the lock screen. The password is
-   * put in local storage temporarily purely for convenience sake,
-   * but should never be in there I think. After 360 seconds the
+   * Defines the logic for the lock screen. After 360 seconds the
    * cleartext password is nuked from local storage upon attempting
    * to access the app. At this point the user must enter the password
    * matching the hash which remains in local storage.
-   * TODO: better security on password management
    */
   const lockScreen = async (): Promise<void> => {
     const tLock = localStorage.getItem(Constants.TIME_HASH);
     if (tLock && Date.now() - parseInt(tLock, 10) > Constants.LOCK_LIMIT) {
-      localStorage.setItem(Constants.UNLOCK_KEY, '');
       setScreenLocked(true);
     }
     locked = true;
@@ -118,7 +117,6 @@ const MainComponent: React.FC = (): ReactElement => {
     userHash.update(values.password);
     if (localHash === userHash.digest('hex')) {
       localStorage.setItem(Constants.TIME_HASH, Date.now().toString());
-      localStorage.setItem(Constants.UNLOCK_KEY, values.password);
       setScreenLocked(false);
     } else {
       setInvalidPassword(true);

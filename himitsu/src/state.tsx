@@ -7,7 +7,6 @@ const contactInit: Interfaces.Contact[] = [];
 const transferInit: Interfaces.Transfer[] = [];
 const configHash = localStorage.getItem(Constants.CONFIG_HASH);
 const timeHash = localStorage.getItem(Constants.TIME_HASH);
-const unlockKey = localStorage.getItem(Constants.UNLOCK_KEY);
 const unlockHash = localStorage.getItem(Constants.UNLOCK_HASH);
 const pinHash = localStorage.getItem(Constants.PIN_HASH);
 const host = localStorage.getItem(Constants.HIMITSU_RPC_HOST);
@@ -36,7 +35,7 @@ export const {
     isRestoringFromSeed: false,
     isSeedConfirmed: false,
     walletName: configHash || '',
-    walletPassword: unlockKey || '',
+    walletPassword: '',
     timeHash,
     unlockHash,
     network: '', // TODO: add MAINNET, STAGENET enum / flags

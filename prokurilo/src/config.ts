@@ -74,6 +74,12 @@ export interface ConfigFile {
    description: "Host and port of monero-wallet-rpc",
    demand: true,
  })
+ .option("himitsu-rpc-restrict", {
+  boolean: true,
+  default: false,
+  description: "Authenticates a single himitsu client only.",
+  demand: true,
+})
  .option("log-level", {
    string: true,
    alias: "l",
@@ -90,6 +96,7 @@ export enum RPC {
   ID = "0",
   VERSION = "2.0",
   CHECK_TX_PROOF = "check_tx_proof",
+  VERIFY = "verify",
   GET_VERSION = "get_version",
 }
 
@@ -151,7 +158,9 @@ export const DEFAULT_CONFIG: ConfigFile = {
     bypass: ["/"]
   };
 export const INDENT = 2;
-export const LOCAL_HOSTS: string[] = ["::ffff:127.0.0.1", "127.0.0.1", "::1"]
+export const LOCAL_HOSTS: string[] = ["::ffff:127.0.0.1", "127.0.0.1", "::1"];
+
+export const I2P_CHECK_INTERVAL = 600000;
 
 // set cmd line args
 export const PORT: number = ARGS["port"];
@@ -159,5 +168,6 @@ export const KEY_PATH: string = ARGS["key-path"];
 export const CERT_PATH: string = ARGS["cert-path"];
 export const ASSET_HOST: string = ARGS["asset-host"];
 export const XMR_RPC_HOST: string = ARGS["rpc-host"];
-export const ANTI_SPAM_THRESHOLD: number = ARGS["anti-spam-threshold"] * 60000
-export const JAIL_JANITOR_INTERVAL: number = ARGS["jail-janitor-interval"] * 60000
+export const HIMITSU_RESTRICTED: boolean = ARGS["himitsu-rpc-restrict"];
+export const ANTI_SPAM_THRESHOLD: number = ARGS["anti-spam-threshold"] * 60000;
+export const JAIL_JANITOR_INTERVAL: number = ARGS["jail-janitor-interval"] * 60000;

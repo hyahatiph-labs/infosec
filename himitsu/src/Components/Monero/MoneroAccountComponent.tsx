@@ -10,10 +10,11 @@ import {
 } from '@material-ui/core';
 import Modal from '@material-ui/core/Modal';
 import clsx from 'clsx';
-import axios from 'axios';
 import SendIcon from '@material-ui/icons/Send';
 import CallReceivedIcon from '@material-ui/icons/CallReceived';
 import * as MuIcons from '@material-ui/icons';
+import * as AxiosClients from '../../Axios/Clients';
+import * as Prokurilo from '../../prokurilo';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Constants from '../../Config/constants';
 import * as Interfaces from '../../Config/interfaces';
@@ -108,17 +109,26 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       body.params.password = gInit.walletPassword;
     }
     try {
-      const oResult = await axios.post(host, body, Constants.I2P_PROXY);
+      await Prokurilo.authenticate(null, false);
+      const oResult = await AxiosClients.RPC.post(host, body);
       if (oResult.status === Constants.HTTP_OK) {
         const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
         const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
+        await Prokurilo.authenticate(null, false);
         const a: Interfaces.ShowAddressResponse = await (
-          await axios.post(host, aBody, Constants.I2P_PROXY)).data;
+          await AxiosClients.RPC.post(host, aBody)
+        ).data;
+        await Prokurilo.authenticate(null, false);
         const b: Interfaces.ShowBalanceResponse = await (
-          await axios.post(host, bBody, Constants.I2P_PROXY)).data;
+          await AxiosClients.RPC.post(host, bBody)
+        ).data;
         const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
-        const k: Interfaces.QueryKeyResponse = (
-          await axios.post(host, kBody, Constants.I2P_PROXY)).data;
+        await Prokurilo.authenticate(null, false);
+        // dont query the key after wallet initialized
+        let k: Interfaces.QueryKeyResponse | null = null;
+        if (!gInit.isSeedConfirmed) {
+          k = (await AxiosClients.RPC.post(host, kBody)).data;
+        }
         const aResult = a.result.addresses;
         const aLength = aResult.length;
         // display the latest unused subaddress, warn if all addresses are used
@@ -132,7 +142,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           unlockTime: b.result.blocks_to_unlock,
           unlockedBalance,
           subAddresses: a.result.addresses,
-          mnemonic: k.result.key,
+          mnemonic: k ? k.result.key : '',
         });
         let unusedAddress = false;
         aResult.forEach((v) => { if (!v.used && v.address_index !== 0) { unusedAddress = true; } });
@@ -166,10 +176,15 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     const aBody: Interfaces.CreateAddressRequest = Constants.CREATE_ADDRESS_REQUEST;
     const sBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
     aBody.params.label = values.label;
+    await Prokurilo.authenticate(null, false);
+    Prokurilo.authenticate(null, false);
     const create: Interfaces.CreateAddressResponse = await (
-      await axios.post(host, aBody, Constants.I2P_PROXY)).data;
+      await AxiosClients.RPC.post(host, aBody)
+    ).data;
+    Prokurilo.authenticate(null, false);
     const show: Interfaces.ShowAddressResponse = await (
-      await axios.post(host, sBody, Constants.I2P_PROXY)).data;
+      await AxiosClients.RPC.post(host, sBody)
+    ).data;
     const newAddress = create.result.address;
     const showResult = show.result.addresses;
     setGlobalState('account', {
@@ -183,10 +198,11 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const generateReserveProof = async (): Promise<void> => {
     setProofGenerated(true);
     const proofBody: Interfaces.GetReserveProofRequest = Constants.GET_RESERVE_PROOF_REQUEST;
-    proofBody.params.amount = (BigInt(values.amount) * Constants.PICO).toString();
+    proofBody.params.amount = BigInt(values.amount * Constants.PICO).toString();
     proofBody.params.message = values.message;
+    Prokurilo.authenticate(null, false);
     const proof: Interfaces.GetReserveProofResponse = await (
-      await axios.post(host, proofBody, Constants.I2P_PROXY)
+      await AxiosClients.RPC.post(host, proofBody)
     ).data;
     setValues({ ...values, reserveProof: proof.result.signature });
   };
@@ -196,8 +212,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     proofBody.params.address = values.sendTo;
     proofBody.params.message = values.message;
     proofBody.params.signature = values.reserveProof;
+    Prokurilo.authenticate(null, false);
     const proof: Interfaces.CheckReserveProofResponse = await (
-      await axios.post(host, proofBody, Constants.I2P_PROXY)
+      await AxiosClients.RPC.post(host, proofBody)
     ).data;
     if (proof.result.good) {
       setValues({ ...values, proofValidation: proof.result });
@@ -217,19 +234,20 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     vBody.params.address = values.sendTo.trim();
     const isValidAmt = values.amount < parseFloat(BigDecimal
       .divide(gAccount.unlockedBalance.toString(), Constants.PICO.toString(), 6));
+    Prokurilo.authenticate(null, false);
     const vAddress: Interfaces.ValidateAddressResponse = await (
-      await axios.post(host, vBody, Constants.I2P_PROXY)).data;
+      await AxiosClients.RPC.post(host, vBody, Constants.I2P_PROXY)).data;
     if (vAddress.result.valid && isValidAmt && validPin
       && vAddress.result.nettype !== 'mainnet') {
       const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;
       const destination: Interfaces.Destination = {
         address: values.sendTo.trim(),
-        amount: (BigInt(values.amount) * Constants.PICO).toString(),
+        amount: BigInt(values.amount * Constants.PICO).toString(),
       };
       tBody.params.destinations.push(destination);
       // serialize the destination with big int
-      const tx: Interfaces.TransferResponse = await (
-        await axios.post(host, tBody, Constants.I2P_PROXY)).data;
+      Prokurilo.authenticate(null, false);
+      const tx: Interfaces.TransferResponse = await (await AxiosClients.RPC.post(host, tBody)).data;
       setValues({ ...values, hash: tx.result.tx_hash });
       handleTransferSuccess();
       loadXmrBalance();
@@ -369,7 +387,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 <br />
                 <Button
                   className={classes.send}
-                  disabled={BigInt(values.amount) * Constants.PICO > gAccount.unlockedBalance
+                  disabled={BigInt(values.amount * Constants.PICO) > gAccount.unlockedBalance
                     || values.amount <= 0}
                   onClick={() => { transfer(); }}
                   variant="outlined"
@@ -453,7 +471,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 <br />
                 <Button
                   className={classes.send}
-                  disabled={BigInt(values.amount) * Constants.PICO > gAccount.unlockedBalance
+                  disabled={BigInt(values.amount * Constants.PICO) > gAccount.unlockedBalance
                     || values.amount <= 0}
                   onClick={() => { generateReserveProof(); }}
                   variant="outlined"

@@ -1,0 +1,17 @@
+import axios from 'axios';
+import { environment } from './Environment';
+import * as Constants from '../Config/constants';
+
+export const RPC = axios.create({
+  baseURL: `http://${environment.prokurilo}`,
+  headers: {
+    ...Constants.I2P_PROXY,
+  },
+});
+
+export const MONEROD = axios.create({
+  baseURL: `http://${environment.monerod}`,
+  headers: {
+    ...Constants.I2P_PROXY,
+  },
+});

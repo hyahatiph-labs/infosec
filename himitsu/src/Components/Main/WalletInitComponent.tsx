@@ -14,12 +14,13 @@ import { Visibility } from '@material-ui/icons';
 import {
   Button, CircularProgress, Snackbar, Typography,
 } from '@material-ui/core';
-import axios from 'axios';
 import crypto from 'crypto';
 import { Alert } from '@material-ui/lab';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Interfaces from '../../Config/interfaces';
 import * as Constants from '../../Config/constants';
+import * as Prokurilo from '../../prokurilo';
+import * as AxiosClients from '../../Axios/Clients';
 import { AntSwitch, useStyles } from './styles';
 
 /**
@@ -31,7 +32,6 @@ import { AntSwitch, useStyles } from './styles';
  * @returns WalletInit
  */
 const WalletInitComponent: React.FC = (): ReactElement => {
-  let host: string;
   const classes = useStyles();
   const [gInit] = useGlobalState('init');
   const [gAccount] = useGlobalState('account');
@@ -83,23 +83,22 @@ const WalletInitComponent: React.FC = (): ReactElement => {
   };
 
   /**
-   * Password Management: The password gets temporarily stored
-   * during wallet initialization as UNLOCK_KEY with a timestamp
+   * Password Management: The hash is stored with a timestamp
    * of TIME_HASH. The corresponding password hash is stored as
    * UNLOCK_HASH with the CONFIG_HASH aka wallet name.
-   * TODO: better security without local storage usage.
    * @param f - wallet filename
    * @param p - wallet password
    * @param h - rpc host
+   * @param a - primary address for signing auth requests
    */
-  const setLocalStorage = (f: string, p: string, h: string): void => {
+  const setLocalStorage = (f: string, p: string, h: string, a: string): void => {
     const keyHash = crypto.createHash('sha256');
     keyHash.update(p);
     localStorage.setItem(Constants.TIME_HASH, Date.now().toString());
-    localStorage.setItem(Constants.UNLOCK_KEY, p);
     localStorage.setItem(Constants.CONFIG_HASH, f);
     localStorage.setItem(Constants.UNLOCK_HASH, keyHash.digest('hex'));
     localStorage.setItem(Constants.HIMITSU_RPC_HOST, h);
+    localStorage.setItem(Constants.HIMITSU_ADDRESS, a);
   };
 
   // TODO: refactor createAndOpenWallet to three functions
@@ -110,7 +109,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    * Easy configure will connect to wallet-rpc over i2p.
    */
   const createAndOpenWallet = async (): Promise<void> => {
-    host = `http://${values.isAdvanced ? values.url : gInit.rpcHost}/json_rpc`;
     setValues({ ...values, isInitializing: true });
     const vBody: Interfaces.RequestContext = Constants.GET_VERSION_REQUEST;
     try {
@@ -119,7 +117,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         setValues({ ...values, isInitializing: false });
         handleInvalidRpcHost();
       } else {
-        rpcResult = await axios.post(host, vBody, Constants.I2P_PROXY);
+        rpcResult = await AxiosClients.RPC.post(Constants.JSON_RPC, vBody);
       }
       if (rpcResult !== null && rpcResult.status === Constants.HTTP_OK) {
         const filename = crypto.randomBytes(32).toString('hex');
@@ -136,8 +134,12 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               restore_height: values.height > 0 ? values.height : 0,
             },
           };
-          const dResult = (await axios.post(host, dbody, Constants.I2P_PROXY));
+          const dResult = (await AxiosClients.RPC.post(Constants.JSON_RPC, dbody));
           if (dResult.status === Constants.HTTP_OK) {
+            const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
+            const address: Interfaces.ShowAddressResponse = await (
+              await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
+            );
             setGlobalState('init', {
               ...gInit,
               isWalletInitialized: true,
@@ -148,20 +150,25 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             });
             setGlobalState('account', {
               ...gAccount,
+              primaryAddress: address.result.address,
               mnemonic: '',
             }); // TODO: snackbar with error handling
-            setLocalStorage(filename, values.walletPassword, values.url);
+            setLocalStorage(filename, values.walletPassword, values.url, address.result.address);
           } else {
             handleInvalidRpcHost();
             setValues({ ...values, isInitializing: false });
           }
         } else {
-          await axios.post(host, body, Constants.I2P_PROXY);
-          const result = await axios.post(host, body, Constants.I2P_PROXY);
+          await AxiosClients.RPC.post(Constants.JSON_RPC, body);
+          const result = await AxiosClients.RPC.post(Constants.JSON_RPC, body);
           if (result.status === Constants.HTTP_OK) {
             const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
             const k: Interfaces.QueryKeyResponse = (
-              await axios.post(host, kBody, Constants.I2P_PROXY)).data;
+              await AxiosClients.RPC.post(Constants.JSON_RPC, kBody)).data;
+            const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
+            const address: Interfaces.ShowAddressResponse = await (
+              await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
+            );
             setGlobalState('init', {
               ...gInit,
               isWalletInitialized: true,
@@ -174,7 +181,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               ...gAccount,
               mnemonic: k.result.key,
             }); // TODO: snackbar with error handling
-            setLocalStorage(filename, values.walletPassword, gInit.rpcHost);
+            setLocalStorage(filename, values.walletPassword, gInit.rpcHost, address.result.address);
           }
         }
       }
@@ -182,6 +189,9 @@ const WalletInitComponent: React.FC = (): ReactElement => {
       setValues({ ...values, isInitializing: false });
       handleInvalidRpcHost();
     }
+
+    // initialize prokurilo authentication
+    Prokurilo.authenticate(localStorage.getItem(Constants.HIMITSU_ADDRESS), true);
   };
 
   return (

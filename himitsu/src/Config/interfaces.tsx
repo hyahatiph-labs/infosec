@@ -145,6 +145,10 @@ interface CheckTxProofParams {
   signature: string;
 }
 
+interface SignParams {
+  data: string;
+}
+
 export type ShowAddressParams = ShowBalanceParams;
 
 /* RPC Request Interfaces */
@@ -210,6 +214,10 @@ export interface GetTxProofRequest extends RequestContext {
 
 export interface CheckTxProofRequest extends RequestContext {
   params: CheckTxProofParams;
+}
+
+export interface SignRequest extends RequestContext {
+  params: SignParams;
 }
 
 /* RPC Result Interfaces */
@@ -319,6 +327,8 @@ interface GetReserveProofResult {
   signature: string;
 }
 
+type SignResult = GetReserveProofResult;
+
 export type GetTxProofResult = GetReserveProofResult
 
 export interface CheckReserveProofResult {
@@ -385,4 +395,8 @@ export interface GetTxProofResponse extends RequestContext {
 
 export interface CheckTxProofResponse extends RequestContext {
   result: CheckTxProofResult;
+}
+
+export interface SignResponse extends RequestContext {
+  result: SignResult;
 }

@@ -189,9 +189,9 @@ const ContactsComponent: React.FC = (): ReactElement => {
                 <MUI.Button
                   className={classes.send}
                   disabled={gAccount.unlockedBalance === 0n || isSending
-                    || BigInt(values.amount) * Constants.PICO > gAccount.unlockedBalance}
+                    || BigInt(values.amount * Constants.PICO) > gAccount.unlockedBalance}
                   onClick={() => {
-                    transferToContact(v.address, BigInt(values.amount) * Constants.PICO);
+                    transferToContact(v.address, BigInt(values.amount * Constants.PICO));
                   }}
                   variant="outlined"
                   color="primary"
