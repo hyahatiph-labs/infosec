@@ -46,6 +46,15 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 * on load go in app settings and change host 'DEVICE_IP':'RPC_PORT'
 * start `monero-wallet-rpc` on a local network dedicated for development `./build/Linux/_HEAD_detached_at_pr-review_no_rpc_aco_login_/release/bin/monero-wallet-rpc --stagenet --wallet-dir /path/to/Monero/wallets/dev --rpc-bind-port 38083 --rpc-access-control-origins "*" --disable-rpc-login --rpc-bind-ip <DEVICE_IP> --confirm-external-bind`
 
+### Prokurilo
+
+* himitsu currently requires `--rpc-login-disabled` which prevents public rpc server usage
+* [prokurilo](https://github.com/hyahatiph-labs/infosec/tree/main/prokurilo) is a reverse proxy authentication server that integrates with the wallet
+* it basically performs a handshake when the wallet is created with the signature and primary address of the newly created wallet
+* after that the hash of the address and signature is sent against a new challenge on each request
+* this is experimental, unreleased software so it is not vetted for mainnet usage
+* there will be checks to force this to run over i2p with himitsu client in the future
+
 ## Building
 
 * build browser extension with `npm run build`

@@ -38,12 +38,12 @@ const verifyHimitsuSignature = async (address: string, signature: string): Promi
  * 3. On wallet initialization Himitsu will request the challenge
  *    from prokurilo. It will then take the challenge and use
  *    it as data for signing.
- * 5. On the initial request himitsu fails with 403 and 
+ * 4. On the initial request himitsu fails with 403 and 
  *     challenge response. Next it sends primary address and
  *    signature for validation.
- * 6. Set himitsu configured and challenge address
- * 7. New challenge generated on each request with 403
- * 8. Continue to send signature to match challenge for each additional auth
+ * 5. Set himitsu configured and challenge address
+ * 6. New challenge generated on each request with 403
+ * 7. Continue to send signature to match challenge for each additional auth
  * NOTE: An attacker would somehow need to get the challenge which is
  * not possible because a new 32-byte challenge is generated on each request.
  * Himitsu does not store this challenge, nor does prokurilo store the signature which has yet
@@ -330,8 +330,6 @@ const passThrough = (req: any, res: any, h: Config.Asset) => {
   }
 };
 
-// TODO: implement custom messages update js doc
-
 /**
  * @param {Object} tpat - transaction proof authentication token
  * Object parsed from the www-authenticate header.
@@ -340,6 +338,7 @@ const passThrough = (req: any, res: any, h: Config.Asset) => {
  *  hash="<transaction_hash>", signature="<transaction_proof>", ast="<60>"'
  * @returns
  */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const isValidProof = (req: any, res: any): void => {
   log(`request body: ${JSON.stringify(req.body)}`, LogLevel.DEBUG, false);
   const authHeader = req.headers[Config.Header.AUTHORIZATION];
