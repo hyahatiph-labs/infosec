@@ -21,7 +21,7 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "exclude": ["**/src/monero-javascript-0.6.4/**/*"],
+  "exclude": ["craco.config.js"],
   "include": [
     "src"
   ]
