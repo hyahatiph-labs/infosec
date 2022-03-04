@@ -19,7 +19,8 @@ import { setGlobalState, useGlobalState } from '../../state';
 import * as Constants from '../../Config/constants';
 import * as Interfaces from '../../Config/interfaces';
 import { useStyles } from './styles';
-import busy from '../../Assets/dance.gif';
+import busyDev from '../../Assets/dance.gif';
+import busyProd from '../../Assets/iluvxmrchan.gif';
 
 // load balance once
 let loaded = false;
@@ -285,7 +286,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
               </h2>
               <Typography>{gAccount.mnemonic}</Typography>
               <Button
-                className={classes.send}
+                className={classes.modalButton}
                 onClick={() => { handleSeedConfirmation(); }}
                 variant="outlined"
                 color="primary"
@@ -318,12 +319,12 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   label="subaddress label"
                   id="standard-start-adornment"
                   required
-                  className={clsx(classes.margin, classes.textField)}
+                  className={clsx(classes.textField)}
                   onChange={handleChange('label')}
                 />
                 <br />
                 <Button
-                  className={classes.send}
+                  className={classes.modalButton}
                   disabled={values.label === ''}
                   onClick={() => { generateSubAddress(); }}
                   variant="outlined"
@@ -333,7 +334,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 </Button>
                 {' '}
                 <Button
-                  className={classes.send}
+                  className={classes.modalButton}
                   onClick={() => { setIsGeneratingSubAddress(false); }}
                   variant="outlined"
                   color="primary"
@@ -366,7 +367,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   label="address"
                   required
                   id="standard-start-adornment"
-                  className={clsx(classes.margin, classes.textField)}
+                  className={clsx(classes.textField)}
                   onChange={handleChange('sendTo')}
                 />
                 <TextField
@@ -374,19 +375,19 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   type="number"
                   required
                   id="standard-start-adornment"
-                  className={clsx(classes.margin, classes.textField)}
+                  className={clsx(classes.textField)}
                   onChange={handleChange('amount')}
                 />
                 <TextField
                   label="pin (optional)"
                   type="password"
                   id="standard-start-adornment"
-                  className={clsx(classes.margin, classes.textField)}
+                  className={clsx(classes.textField)}
                   onChange={handleChange('pin')}
                 />
                 <br />
                 <Button
-                  className={classes.send}
+                  className={classes.modalButton}
                   disabled={BigInt(values.amount * Constants.PICO) > gAccount.unlockedBalance
                     || values.amount <= 0}
                   onClick={() => { transfer(); }}
@@ -397,7 +398,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 </Button>
                 {' '}
                 <Button
-                  className={classes.send}
+                  className={classes.modalButton}
                   onClick={() => { handleTransfer(); }}
                   variant="outlined"
                   color="primary"
@@ -430,9 +431,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 <div>
                   <CopyToClipboard text={values.reserveProof}>
                     <button type="button" onClick={handleCopy}>
-                      <code className={classes.proof}>
+                      <p className={classes.proof}>
                         {`${values.reserveProof.slice(0, 19)}...`}
-                      </code>
+                      </p>
                     </button>
                   </CopyToClipboard>
                 </div>
@@ -441,7 +442,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   type="text"
                   required
                   id="standard-start-adornment"
-                  className={clsx(classes.margin, classes.textField)}
+                  className={clsx(classes.textField)}
                   onChange={handleChange('message')}
                 />
                 <TextField
@@ -449,7 +450,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   type="number"
                   required
                   id="standard-start-adornment"
-                  className={clsx(classes.margin, classes.textField)}
+                  className={clsx(classes.textField)}
                   onChange={handleChange('amount')}
                 />
                 <TextField
@@ -457,7 +458,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   type="text"
                   required
                   id="standard-start-adornment"
-                  className={clsx(classes.margin, classes.textField)}
+                  className={clsx(classes.textField)}
                   onChange={handleChange('sendTo')}
                 />
                 <TextField
@@ -465,12 +466,12 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   type="text"
                   required
                   id="standard-start-adornment"
-                  className={clsx(classes.margin, classes.textField)}
+                  className={clsx(classes.textField)}
                   onChange={handleChange('reserveProof')}
                 />
                 <br />
                 <Button
-                  className={classes.send}
+                  className={classes.modalButton}
                   disabled={BigInt(values.amount * Constants.PICO) > gAccount.unlockedBalance
                     || values.amount <= 0}
                   onClick={() => { generateReserveProof(); }}
@@ -481,7 +482,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 </Button>
                 {' '}
                 <Button
-                  className={classes.send}
+                  className={classes.modalButton}
                   disabled={values.sendTo === '' || values.reserveProof === ''}
                   onClick={() => { checkReserveProof(); }}
                   variant="outlined"
@@ -491,7 +492,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 </Button>
                 {' '}
                 <Button
-                  className={classes.send}
+                  className={classes.modalButton}
                   onClick={() => { setIsGeneratingProof(false); }}
                   variant="outlined"
                   color="primary"
@@ -502,39 +503,15 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
             </Fade>
           </Modal>
         )}
-      <div className={classes.unlockedBalance}>
-        <MuIcons.LockOpen className={classes.icon} />
-        <h1>
-          {`${BigDecimal.divide((gAccount.walletBalance - pendingBalance).toString(),
-            Constants.PICO.toString(), 3)} XMR`}
-          {' '}
-          <Button
-            className={classes.send}
-            disabled={isBusy}
-            onClick={() => { loadXmrBalance(); }}
-            variant="outlined"
-            color="primary"
-            size="medium"
-          >
-            <MuIcons.RefreshRounded className={classes.icon} />
-          </Button>
-        </h1>
-      </div>
-      <div className={classes.pendingBalance}>
-        {((unlockTime > 5 && unlockTime !== 0) && pendingBalance > 0)
-          && <MuIcons.HourglassEmpty className={classes.icon} />}
-        {((unlockTime <= 5 && unlockTime !== 0) && pendingBalance > 0)
-          && <MuIcons.HourglassFull className={classes.icon} />}
-        <h3>
-          {(pendingBalance > 0 && unlockTime > 0)
-            && ` ${BigDecimal.divide(pendingBalance.toString(),
-              Constants.PICO.toString(), 3)} ~ ${unlockTime} min.`}
-        </h3>
-      </div>
       {isBusy
         && (
           <div className={classes.qr}>
-            <img loading="lazy" src={busy} alt="monero logo" width={100} />
+            <img
+              loading="lazy"
+              src={Constants.IS_DEV ? busyDev : busyProd}
+              alt="monero logo"
+              width={100}
+            />
           </div>
         )}
       {!isBusy
@@ -548,9 +525,28 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
             </CopyToClipboard>
           </div>
         )}
+      <div className={classes.unlockedBalance}>
+        <MuIcons.LockOpen className={classes.icon} />
+        <h1>
+          {`${BigDecimal.divide((gAccount.walletBalance - pendingBalance).toString(),
+            Constants.PICO.toString(), 3)} XMR`}
+          {' '}
+        </h1>
+      </div>
+      <div className={classes.pendingBalance}>
+        {((unlockTime > 5 && unlockTime !== 0) && pendingBalance > 0)
+          && <MuIcons.HourglassEmpty className={classes.icon} />}
+        {((unlockTime <= 5 && unlockTime !== 0) && pendingBalance > 0)
+          && <MuIcons.HourglassFull className={classes.icon} />}
+        <h3>
+          {(pendingBalance > 0 && unlockTime > 0)
+            && ` ${BigDecimal.divide(pendingBalance.toString(),
+              Constants.PICO.toString(), 3)} ~ ${unlockTime} min.`}
+        </h3>
+      </div>
       <div className={classes.buttonRow}>
         <Button
-          className={classes.send}
+          className={classes.mainButton}
           disabled={gAccount.unlockedBalance === 0n}
           onClick={() => { handleTransfer(); }}
           variant="outlined"
@@ -560,7 +556,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           <SendIcon className={classes.icon} />
         </Button>
         <Button
-          className={classes.send}
+          className={classes.mainButton}
           onClick={() => { getSubAddress(); }}
           variant="outlined"
           color="primary"
@@ -569,13 +565,23 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           <CallReceivedIcon className={classes.icon} />
         </Button>
         <Button
-          className={classes.send}
+          className={classes.mainButton}
           onClick={() => { setIsGeneratingProof(true); }}
           variant="outlined"
           color="primary"
           size="medium"
         >
           <MuIcons.Check className={classes.icon} />
+        </Button>
+        <Button
+          className={classes.mainButton}
+          disabled={isBusy}
+          onClick={() => { loadXmrBalance(); }}
+          variant="outlined"
+          color="primary"
+          size="medium"
+        >
+          <MuIcons.RefreshRounded className={classes.icon} />
         </Button>
       </div>
       {/* food court! */}

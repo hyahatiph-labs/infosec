@@ -144,7 +144,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
   });
 
   return (
-    <div>
+    <div className={classes.root}>
       {(loaded && gContact.contactList.length === 0)
       && <p className={classes.nofrens}>Create contact</p>}
       <div className={classes.addButton}>
@@ -172,9 +172,9 @@ const ContactsComponent: React.FC = (): ReactElement => {
                 <MUI.Typography>{v.description}</MUI.Typography>
               </MUI.AccordionSummary>
               <MUI.AccordionDetails>
-                <MUI.Typography>
+                <MUI.Typography className={classes.info}>
                   <b>Address:</b>
-                  <code>{` ${v.address.slice(0, 36)}...`}</code>
+                  {` ${v.address.slice(0, 36)}...`}
                 </MUI.Typography>
               </MUI.AccordionDetails>
               <MUI.TextField

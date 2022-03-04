@@ -226,7 +226,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             </p>
             <Typography>{values.mode}</Typography>
             <AntSwitch inputProps={{ 'aria-label': 'ant design' }} onClick={handleWalletMode} />
-            <FormControl className={clsx(classes.margin, classes.textField)}>
+            <FormControl className={clsx(classes.textField)}>
               <InputLabel htmlFor="standard-adornment-password">wallet password</InputLabel>
               <Input
                 id="standard-adornment-password"
@@ -252,7 +252,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
                 label="seed (optional)"
                 type="password"
                 id="standard-start-adornment"
-                className={clsx(classes.margin, classes.textField)}
+                className={clsx(classes.textField)}
                 onChange={handleChange('seed')}
               />
             )}
@@ -261,7 +261,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
                 label="height (optional)"
                 type="number"
                 id="standard-start-adornment"
-                className={clsx(classes.margin, classes.textField)}
+                className={clsx(classes.textField)}
                 onChange={handleChange('height')}
               />
             )}
@@ -270,7 +270,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
                 label="monero-wallet-rpc (host:port)"
                 id="standard-start-adornment"
                 required
-                className={clsx(classes.margin, classes.textField)}
+                className={clsx(classes.textField)}
                 onChange={handleChange('url')}
                 InputProps={{
                   startAdornment: <InputAdornment position="start">http://</InputAdornment>,

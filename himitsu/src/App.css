@@ -1,1 +1,25 @@
 /* TODO: Implement SASS */
+.altBg {
+    background: #ff7522; /* fallback for old browsers */
+    background: -webkit-linear-gradient(right, #ec9a67, #f5670e);
+    background: -webkit-linear-gradient(right, #fa9454, #e66f25);
+    background: -moz-linear-gradient(right, #eb9c6c, #c96628);
+    background: -o-linear-gradient(right, #f09c68, hsl(23, 62%, 42%));
+    background: linear-gradient(to left, #f1e1d7, #aa6235);
+  }
+
+.main {
+  display: flex;
+  flex-direction: column;
+  /* TODO: fix manually having to change size for android vs. extension builds*/
+  /* android */
+  /* width: max-content; */
+  /* browser */
+  width: 500px;
+  height: 600px;
+  align-items: center
+}
+
+body {
+  background-color: #FFF;
+}

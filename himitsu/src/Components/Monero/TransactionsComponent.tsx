@@ -144,15 +144,11 @@ const TransactionsComponent: React.FC = (): ReactElement => {
   });
 
   return (
-    <div>
+    <div className="container-fluid">
       <div className={classes.buttonRow}>
         <MUI.ButtonGroup variant="outlined" aria-label="outlined button group">
           <MUI.Button onClick={() => loadTransactions('failed')}>Failed</MUI.Button>
           <MUI.Button onClick={() => loadTransactions('in')}>In</MUI.Button>
-        </MUI.ButtonGroup>
-      </div>
-      <div className={classes.buttonRow}>
-        <MUI.ButtonGroup variant="outlined" aria-label="outlined button group">
           <MUI.Button onClick={() => loadTransactions('pool')}>Pool</MUI.Button>
           <MUI.Button onClick={() => loadTransactions('pending')}>Pending</MUI.Button>
           <MUI.Button onClick={() => loadTransactions('out')}>Out</MUI.Button>
@@ -161,7 +157,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
       {gTransfer.transferList.length > 0 && (
         <div>
           {gTransfer.transferList.map((v) => (
-            <MUI.Accordion className="altBg" key={`${v.txid}`}>
+            <MUI.Accordion className={clsx('altBg', classes.expanded)} key={`${v.txid}`}>
               <MUI.AccordionSummary
                 expandIcon={<ExpandMore />}
                 aria-controls="panel1a-content"
@@ -170,35 +166,31 @@ const TransactionsComponent: React.FC = (): ReactElement => {
                 <MUI.Typography>
                   <b>{`${v.type.toUpperCase()} - `}</b>
                   <b>TXID: </b>
-                  <code>{` ${v.txid.slice(0, 18)}...`}</code>
+                  {` ${v.txid.slice(0, 18)}...`}
                 </MUI.Typography>
               </MUI.AccordionSummary>
               <MUI.AccordionDetails className={classes.info}>
-                <MUI.Typography className={classes.info}>
+                <MUI.Typography>
                   <b>Date:</b>
-                  <code>{` ${new Date(v.timestamp * 1000).toISOString()}`}</code>
+                  {` ${new Date(v.timestamp * 1000).toISOString()}`}
                 </MUI.Typography>
-                <MUI.Typography className={classes.info}>
+                <MUI.Typography>
                   <b>Address:</b>
-                  <code>{` ${v.address.slice(0, 36)}...`}</code>
+                  {` ${v.address.slice(0, 9)}...`}
                 </MUI.Typography>
-                <MUI.Typography className={classes.info}>
-                  <b>Amt: </b>
-                  <code>
-                    {` ${BigDecimal.divide(v.amount.toString(),
-                      Constants.PICO.toString(), 12)} XMR (`}
-                  </code>
+                <MUI.Typography>
+                  <b>Amt:</b>
+                  {` ${BigDecimal.divide(v.amount.toString(),
+                    Constants.PICO.toString(), 12)} XMR `}
                 </MUI.Typography>
-                <MUI.Typography className={classes.info}>
+                <MUI.Typography>
                   <b>Fee:</b>
-                  <code>
-                    {` ${BigDecimal.divide(v.fee.toString(),
-                      Constants.PICO.toString(), 12)} XMR)`}
-                  </code>
+                  {` ${BigDecimal.divide(v.fee.toString(),
+                    Constants.PICO.toString(), 12)} XMR `}
                 </MUI.Typography>
-                <MUI.Typography className={classes.info}>
+                <MUI.Typography>
                   <b>Confirmations:</b>
-                  <code>{` ${v.confirmations ? v.confirmations : 0}`}</code>
+                  {` ${v.confirmations ? v.confirmations : 0}`}
                 </MUI.Typography>
                 <MUI.Button onClick={() => {
                   generateTxProof(v.txid, v.address);
@@ -226,9 +218,9 @@ const TransactionsComponent: React.FC = (): ReactElement => {
                           This tx:
                           <CopyToClipboard text={values.txProof}>
                             <button type="button" onClick={handleCopy}>
-                              <code className={classes.proof}>
+                              <div className={classes.proof}>
                                 {` ${values.txProof.slice(0, 32)}...`}
-                              </code>
+                              </div>
                             </button>
                           </CopyToClipboard>
                         </div>
@@ -237,7 +229,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
                           type="text"
                           required
                           id="standard-start-adornment"
-                          className={clsx(classes.margin, classes.textField)}
+                          className={clsx(classes.textField)}
                           onChange={handleChange('message')}
                         />
                         <MUI.TextField
@@ -245,7 +237,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
                           type="text"
                           required
                           id="standard-start-adornment"
-                          className={clsx(classes.margin, classes.textField)}
+                          className={clsx(classes.textField)}
                           onChange={handleChange('txid')}
                         />
                         <MUI.TextField
@@ -253,7 +245,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
                           type="text"
                           required
                           id="standard-start-adornment"
-                          className={clsx(classes.margin, classes.textField)}
+                          className={clsx(classes.textField)}
                           onChange={handleChange('address')}
                         />
                         <MUI.TextField
@@ -261,13 +253,13 @@ const TransactionsComponent: React.FC = (): ReactElement => {
                           type="text"
                           required
                           id="standard-start-adornment"
-                          className={clsx(classes.margin, classes.textField)}
+                          className={clsx(classes.textField)}
                           onChange={handleChange('txProof')}
                         />
                         <br />
                         {' '}
                         <MUI.Button
-                          className={classes.send}
+                          className={classes.modalButton}
                           disabled={values.address === '' || values.txProof === ''
                           || values.txid === ''}
                           onClick={() => {
@@ -280,7 +272,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
                         </MUI.Button>
                         {' '}
                         <MUI.Button
-                          className={classes.send}
+                          className={classes.modalButton}
                           onClick={() => {
                             setIsGeneratingProof(false);
                           }}

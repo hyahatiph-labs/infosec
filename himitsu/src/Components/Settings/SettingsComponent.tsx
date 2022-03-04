@@ -4,6 +4,7 @@ import { Alert } from '@material-ui/lab';
 import axios from 'axios';
 import { UpdateRounded } from '@material-ui/icons';
 import crypto from 'crypto';
+import clsx from 'clsx';
 import { setGlobalState, useGlobalState } from '../../state';
 import { useStyles } from './styles';
 import * as Constants from '../../Config/constants';
@@ -70,7 +71,7 @@ const SettingsComponent: React.FC = (): ReactElement => {
   };
 
   return (
-    <div className={classes.settings}>
+    <div className={clsx(classes.settings, 'container-fluid col')}>
       <MUI.TextField
         label={Constants.IS_DEV ? 'monero-wallet-rpc (host:port)' : 'host.b32.i2p'}
         id="standard-start-adornment"
@@ -94,6 +95,7 @@ const SettingsComponent: React.FC = (): ReactElement => {
       >
         <UpdateRounded />
       </MUI.Button>
+      <br />
       <MUI.TextField
         label="current pin (optional)"
         value={values.oldPin}

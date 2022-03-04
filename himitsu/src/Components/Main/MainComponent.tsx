@@ -29,7 +29,6 @@ import ContactsComponent from '../Contacts/ContactsComponent';
 import * as Constants from '../../Config/constants';
 
 // TODO: Refactor all modals to separate components
-// TODO: Android styling
 // TODO: rpc over i2p
 // TODO: view only wallet creation
 // TODO: network stats and monerod connection
@@ -135,7 +134,7 @@ const MainComponent: React.FC = (): ReactElement => {
     || Constants.IS_DEV);
 
   return (
-    <div>
+    <div className="main">
       <CssBaseline />
       <AppBar position="fixed" className={clsx(classes.appBar, 'altBg')}>
         <Toolbar>
@@ -216,7 +215,7 @@ const MainComponent: React.FC = (): ReactElement => {
                   type="password"
                   required
                   id="standard-start-adornment"
-                  className={clsx(classes.margin, classes.textField)}
+                  className={clsx(classes.textField)}
                   onChange={handleChange('password')}
                 />
                 <br />
