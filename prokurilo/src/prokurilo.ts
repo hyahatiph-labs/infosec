@@ -55,7 +55,7 @@ setup();
 Util.i2pCheck();
 setInterval(() => { 
   Util.i2pCheck();
-});
+}, Config.I2P_CHECK_INTERVAL);
 
 if (Config.HIMITSU_RESTRICTED) {
   log(`/sign API is open until himitsu configures`, LogLevel.WARN, true);

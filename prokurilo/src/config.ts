@@ -160,7 +160,7 @@ export const DEFAULT_CONFIG: ConfigFile = {
 export const INDENT = 2;
 export const LOCAL_HOSTS: string[] = ["::ffff:127.0.0.1", "127.0.0.1", "::1"];
 
-export const I2P_CHECK_INTERVAL = 600000;
+export const I2P_CHECK_INTERVAL = 60000;
 
 // set cmd line args
 export const PORT: number = ARGS["port"];
