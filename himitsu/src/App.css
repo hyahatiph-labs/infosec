@@ -13,8 +13,8 @@
   flex-direction: column;
   /* TODO: fix manually having to change size for android vs. extension builds*/
   /* android */
-  /* width: max-content; */
-  /* browser */
+  /* width: 100%; */
+  /* browser extension */
   width: 500px;
   height: 600px;
   align-items: center

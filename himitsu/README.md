@@ -45,6 +45,7 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 * get device ip with a command like `ip a` (Linux)
 * on load go in app settings and change host 'DEVICE_IP':'RPC_PORT'
 * start `monero-wallet-rpc` on a local network dedicated for development `./build/Linux/_HEAD_detached_at_pr-review_no_rpc_aco_login_/release/bin/monero-wallet-rpc --stagenet --wallet-dir /path/to/Monero/wallets/dev --rpc-bind-port 38083 --rpc-access-control-origins "*" --disable-rpc-login --rpc-bind-ip <DEVICE_IP> --confirm-external-bind`
+* dont' forget to run `npm run build` before running on the android emulator
 
 ### Prokurilo
 
