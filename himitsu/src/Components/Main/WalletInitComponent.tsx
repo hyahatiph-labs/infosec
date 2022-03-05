@@ -21,7 +21,6 @@ import { setGlobalState, useGlobalState } from '../../state';
 import * as Interfaces from '../../Config/interfaces';
 import * as Constants from '../../Config/constants';
 import * as Prokurilo from '../../prokurilo';
-import * as AxiosClients from '../../Axios/Clients';
 import { AntSwitch, useStyles } from './styles';
 
 /**
@@ -92,7 +91,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    * @param h - rpc host
    * @param a - primary address for signing auth requests
    */
-  const setLocalStorage = (f: string, p: string, h: string, a: string): void => {
+  const setLocalStorage = async (f: string, p: string, h: string, a: string): Promise<void> => {
     const keyHash = crypto.createHash('sha256');
     keyHash.update(p);
     localStorage.setItem(Constants.TIME_HASH, Date.now().toString());
@@ -118,7 +117,8 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         setValues({ ...values, isInitializing: false });
         handleInvalidRpcHost();
       } else {
-        rpcResult = await axios.post(values.url, vBody);
+        rpcResult = await axios.post(`${values.url}${Constants.JSON_RPC}`,
+          vBody, { proxy: Constants.I2P_PROXY });
       }
       if (rpcResult !== null && rpcResult.status === Constants.HTTP_OK) {
         const filename = crypto.randomBytes(32).toString('hex');
@@ -135,11 +135,13 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               restore_height: values.height > 0 ? values.height : 0,
             },
           };
-          const dResult = (await axios.post(Constants.JSON_RPC, dbody));
+          const dResult = (await axios.post(`${values.url}${Constants.JSON_RPC}`,
+            dbody, { proxy: Constants.I2P_PROXY }));
           if (dResult.status === Constants.HTTP_OK) {
             const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
             const address: Interfaces.ShowAddressResponse = await (
-              await axios.post(Constants.JSON_RPC, aBody)
+              await axios.post(`${values.url}${Constants.JSON_RPC}`,
+                aBody, { proxy: Constants.I2P_PROXY })
             );
             setGlobalState('init', {
               ...gInit,
@@ -160,15 +162,19 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             setValues({ ...values, isInitializing: false });
           }
         } else {
-          await axios.post(Constants.JSON_RPC, body);
-          const result = await AxiosClients.RPC.post(Constants.JSON_RPC, body);
+          await axios.post(`${values.url}${Constants.JSON_RPC}`,
+            body);
+          const result = await axios.post(`${values.url}${Constants.JSON_RPC}`,
+            body);
           if (result.status === Constants.HTTP_OK) {
             const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
             const k: Interfaces.QueryKeyResponse = (
-              await axios.post(Constants.JSON_RPC, kBody)).data;
+              await axios.post(`${values.url}${Constants.JSON_RPC}`,
+                kBody, { proxy: Constants.I2P_PROXY })).data;
             const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
             const address: Interfaces.ShowAddressResponse = await (
-              await axios.post(Constants.JSON_RPC, aBody)
+              await axios.post(`${values.url}${Constants.JSON_RPC}`,
+                aBody, { proxy: Constants.I2P_PROXY })
             );
             setGlobalState('init', {
               ...gInit,
@@ -182,7 +188,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               ...gAccount,
               mnemonic: k.result.key,
             }); // TODO: snackbar with error handling
-            setLocalStorage(filename, values.walletPassword, gInit.rpcHost, address.result.address);
+            setLocalStorage(filename, values.walletPassword, values.url, address.result.address);
           }
         }
       }
@@ -268,7 +274,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               />
             )}
             <TextField
-              label="monero-wallet-rpc (host:port)"
+              label={Constants.IS_DEV ? 'monero-wallet-rpc (host:port)' : '.b32.i2p address'}
               id="standard-start-adornment"
               required
               className={clsx(classes.textField)}

@@ -20,7 +20,7 @@ export const authenticate = async (address: string | null, isInitial: boolean): 
         const authHeader: string = JSON.parse(JSON.stringify(e)).config.headers['www-authenticate'];
         const challenge = authHeader.split('challenge=')[1];
         const sBody: Interfaces.SignRequest = Constants.SIGN_REQUEST;
-        sBody.params.data = challenge;
+        sBody.params.data = challenge || '';
         const sign: Interfaces.SignResponse = await (
           await Axios.RPC.post(Constants.JSON_RPC, sBody)
         ).data;

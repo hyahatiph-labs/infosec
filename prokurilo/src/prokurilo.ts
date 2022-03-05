@@ -8,10 +8,20 @@ import setup from "./setup";
 import log, { LogLevel } from "./logging";
 import https from 'https';
 import fs from 'fs';
+import cors from 'cors';
+
 
 const NODE_ENV = process.env.NODE_ENV || "";
 
 const APP = express();
+
+const corsOptions = {
+    origin: "*",
+    method: ["OPTIONS","POST"],
+    optionsSuccessStatus: 200
+  };
+APP.use(cors(corsOptions));
+
 APP.use(express.json());
 APP.use(express.urlencoded({ extended: true }));
 // disable x-powered-by headers

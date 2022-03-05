@@ -13,8 +13,8 @@ export const HIMITSU_ADDRESS = 'HIMITSU_ADDRESS';
 export const LOCK_LIMIT = 360000;
 export const IS_DEV = process.env.REACT_APP_HIMITSU_DEV === 'DEV'
   || process.env.REACT_APP_HIMITSU_DEV === 'ANDROID';
-export const I2P_PROXY = IS_DEV ? {} : { proxy: { host: 'localhost', port: 4444 } };
-export const JSON_RPC = 'json_rpc';
+export const I2P_PROXY = { host: 'localhost', port: 4444 };
+export const JSON_RPC = '/json_rpc';
 
 /* RPC Request constants */
 const context: Interfaces.RequestContext = {

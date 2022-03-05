@@ -64,7 +64,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
   const loadContacts = async (): Promise<void> => {
     const bookBody: Interfaces.GetAddressBookRequest = Constants.GET_ADDRESS_BOOK_REQUEST;
     const book: Interfaces.GetAddressBookResponse = await (
-      await axios.post(host, bookBody, Constants.I2P_PROXY)).data;
+      await axios.post(host, bookBody, { proxy: Constants.I2P_PROXY })).data;
     if (book.result.entries) {
       setGlobalState('contact', { ...gContact, contactList: book.result.entries });
     } else {
@@ -81,12 +81,12 @@ const ContactsComponent: React.FC = (): ReactElement => {
     const vBody: Interfaces.ValidateAddressRequest = Constants.VALIDATE_ADDRESS_REQUEST;
     vBody.params.address = values.address;
     const address: Interfaces.ValidateAddressResponse = await (
-      await axios.post(host, vBody, Constants.I2P_PROXY)).data;
+      await axios.post(host, vBody, { proxy: Constants.I2P_PROXY })).data;
     if (!address.result.valid) {
       handleInvalidAddress();
     } else {
       const contact: Interfaces.AddAddressBookResponse = await (
-        await axios.post(host, addBody, Constants.I2P_PROXY)
+        await axios.post(host, addBody, { proxy: Constants.I2P_PROXY })
       ).data;
       loadContacts();
       setIsAdding(false);
@@ -99,7 +99,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
   const deleteContact = async (index: number): Promise<void> => {
     const deleteBody: Interfaces.DeleteAddressBookRequest = Constants.DELETE_ADDRESS_BOOK_REQUEST;
     deleteBody.params.index = index;
-    const result = await axios.post(host, deleteBody, Constants.I2P_PROXY);
+    const result = await axios.post(host, deleteBody, { proxy: Constants.I2P_PROXY });
     if (result.status === Constants.HTTP_OK) {
       loadContacts();
     } else {
@@ -113,11 +113,11 @@ const ContactsComponent: React.FC = (): ReactElement => {
     const d: Interfaces.Destination = { address: recipient, amount: amount.toString() };
     // disable send and notify user it is in progress
     tBody.params.destinations.push(d);
-    const transfer = await (await axios.post(host, tBody, Constants.I2P_PROXY)).data;
+    const transfer = await (await axios.post(host, tBody, { proxy: Constants.I2P_PROXY })).data;
     if (transfer.result.tx_hash) {
       const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
       const balance: Interfaces.ShowBalanceResponse = await (
-        await axios.post(host, bBody, Constants.I2P_PROXY)).data;
+        await axios.post(host, bBody, { proxy: Constants.I2P_PROXY })).data;
       setGlobalState('account', {
         ...gAccount,
         unlockedBalance: balance.result.unlocked_balance,

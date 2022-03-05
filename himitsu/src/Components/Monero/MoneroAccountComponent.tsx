@@ -236,7 +236,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       .divide(gAccount.unlockedBalance.toString(), Constants.PICO.toString(), 6));
     Prokurilo.authenticate(hAddress, false);
     const vAddress: Interfaces.ValidateAddressResponse = await (
-      await AxiosClients.RPC.post(Constants.JSON_RPC, vBody, Constants.I2P_PROXY)).data;
+      await AxiosClients.RPC.post(Constants.JSON_RPC, vBody)).data;
     if (vAddress.result.valid && isValidAmt && validPin
       && vAddress.result.nettype !== 'mainnet') {
       const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;

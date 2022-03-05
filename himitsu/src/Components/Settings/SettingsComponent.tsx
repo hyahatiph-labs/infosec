@@ -40,7 +40,7 @@ const SettingsComponent: React.FC = (): ReactElement => {
     const rBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
     const host = `http://${values.rpcHost}/json_rpc`;
     try {
-      const result = await axios.post(host, rBody, Constants.I2P_PROXY);
+      const result = await axios.post(host, rBody, { proxy: Constants.I2P_PROXY });
       if (result.status === Constants.HTTP_OK) {
         setGlobalState('init', { ...gInit, rpcHost: values.rpcHost });
         localStorage.setItem(Constants.HIMITSU_RPC_HOST, values.rpcHost);

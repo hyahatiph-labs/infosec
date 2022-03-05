@@ -340,7 +340,6 @@ const passThrough = (req: any, res: any, h: Config.Asset) => {
  */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const isValidProof = (req: any, res: any): void => {
-  log(`request body: ${JSON.stringify(req.body)}`, LogLevel.DEBUG, false);
   const authHeader = req.headers[Config.Header.AUTHORIZATION];
   // check for bypass, always bypass home (login?) page
   if (bypassAsset(req) || req.url === "/") {
