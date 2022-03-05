@@ -5,15 +5,24 @@ import log, { LogLevel } from "./logging";
 import { getConfigs, getDemoStaticFiles } from "./setup";
 import crypto from "crypto";
 import path from 'path';
+import { i2pJanitor } from "./prokurilo";
 
 export const jail: Config.JailedToken[] = [];
+
+const ACCEPTING_TUNNELS = 'Accepting tunnels'
+const REJECTING_TUNNELS = 'Rejecting tunnels: Starting up'
+const setLastKnownSignature = (s: string) => { lastKnownSignature = s; }
 const NODE_ENV = process.env.NODE_ENV || "";
+
 let himitsuConfigured = false;
 let addressIsSet = false;
 let himitsuAddress = '';
 let data = crypto.randomBytes(32).toString('hex');
 let lastKnownSignature = '';
-const setLastKnownSignature = (s: string) => { lastKnownSignature = s; }
+let i2pKillSwitchCheck = 0;
+let i2pStatus = '';
+let i2pReconnect = false;
+let utilI2pJanitor = setInterval(() => {/* initialize reconnect janitor for event loop*/}, 0);
 
 const verifyHimitsuSignature = async (address: string, signature: string): Promise<boolean> => {
   const body = {
@@ -423,20 +432,53 @@ export const isValidProof = (req: any, res: any): void => {
  * if it is not running over i2p.
  */
 export const i2pCheck = (): void => {
-  axios.get('http://localhost:7657/tunnels')
-      .then(v => {
-          const status = v.data.split('<h4><span class="tunnelBuildStatus">')[1].split('</span></h4>')[0]
-          const ACCEPTING_TUNNELS = 'Accepting tunnels'
-          const REJECTING_TUNNELS = 'Rejecting tunnels: Starting up'
-          if (status === ACCEPTING_TUNNELS) {
-              log('i2p is active', LogLevel.INFO, true);
-          } else if (status === REJECTING_TUNNELS) {
-              log('i2p is starting up', LogLevel.INFO, true);
-          } else {
-              log('no i2p connection', LogLevel.INFO, true);
-          }
+    getI2pStatus()
+      .catch(() => { 
+        // kill the currently running janitor
+        clearInterval(i2pJanitor);
+        if (i2pReconnect) {
+          clearInterval(utilI2pJanitor);
+        }
+        log(`i2p is connection lost`, LogLevel.ERROR, true );
+        log(
+          `prokurilo will disconnect in ${(Config.I2P_KILL_SWITCH_LIMIT - 1) - i2pKillSwitchCheck} minutes`,
+          LogLevel.WARN, true
+        );
+        log(`please restart i2p`, LogLevel.INFO, true );
+        // this is some kind of quasi-task executor that kill the server
+        // if i2p is down for more than twenty minutes
+        if (i2pKillSwitchCheck === 0) {
+          const i2pKillSwitch = setInterval(() => {
+            getI2pStatus(); // the kill switch logic needs to get its own status
+            i2pKillSwitchCheck += 1;
+            log(`executing i2p check ${i2pKillSwitchCheck}/${Config.I2P_KILL_SWITCH_LIMIT - 1}`, LogLevel.INFO, true);
+            if (i2pKillSwitchCheck === Config.I2P_KILL_SWITCH_LIMIT) {
+              process.exit(Config.I2P_OFFLINE_ERROR);
+            }
+            if (i2pStatus === ACCEPTING_TUNNELS) {
+              log(`i2p connection re-established`, LogLevel.INFO, true);
+              i2pKillSwitchCheck = 0; // back on-line reset the check
+              i2pReconnect = true;
+              log(`initialized new i2p janitor`, LogLevel.INFO, true);
+              // start a new janitor
+              utilI2pJanitor = setInterval(() => { i2pCheck(); }, Config.I2P_CHECK_INTERVAL);
+              clearInterval(i2pKillSwitch);
+            }
+          }, Config.I2P_CHECK_INTERVAL)
+        }
       })
-      .catch(() => { throw new Error('I2P check failed. Are you sure, it is running?') })
 };
+
+const getI2pStatus = () => axios.get('http://localhost:7657/tunnels')
+.then(v => {
+  i2pStatus = v.data.split('<h4><span class="tunnelBuildStatus">')[1].split('</span></h4>')[0]
+  if (i2pStatus === ACCEPTING_TUNNELS) {
+    log('i2p is active', LogLevel.INFO, true);
+  } else if (i2pStatus === REJECTING_TUNNELS) {
+    log('i2p is starting up', LogLevel.INFO, true);
+  } else {
+      log('no i2p connection', LogLevel.INFO, true);
+  }
+})
 
 export default isValidProof;

@@ -17,8 +17,9 @@ export const authenticate = async (address: string | null, isInitial: boolean): 
   if (!Constants.IS_DEV) {
     await Axios.RPC.post(Constants.JSON_RPC, {})
       .catch(async (e) => {
-        const authHeader: string = JSON.parse(JSON.stringify(e)).config.headers['www-authenticate'];
-        console.log(JSON.parse(JSON.stringify(e)));
+        const authHeader: string = JSON.parse(JSON.stringify(e))
+          .config.headers['www-authenticate'] || '';
+        console.log(`${JSON.stringify(e)}`);
         const challenge = authHeader.split('challenge=')[1];
         const sBody: Interfaces.SignRequest = Constants.SIGN_REQUEST;
         sBody.params.data = challenge || '';

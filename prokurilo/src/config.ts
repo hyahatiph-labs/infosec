@@ -161,6 +161,8 @@ export const INDENT = 2;
 export const LOCAL_HOSTS: string[] = ["::ffff:127.0.0.1", "127.0.0.1", "::1"];
 
 export const I2P_CHECK_INTERVAL = 60000;
+export const I2P_KILL_SWITCH_LIMIT = 21;
+export const I2P_OFFLINE_ERROR = 2;
 
 // set cmd line args
 export const PORT: number = ARGS["port"];

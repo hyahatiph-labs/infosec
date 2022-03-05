@@ -63,7 +63,7 @@ setup();
 
 // only stay online if i2p is online as well
 Util.i2pCheck();
-setInterval(() => { 
+export const i2pJanitor = setInterval(() => { 
   Util.i2pCheck();
 }, Config.I2P_CHECK_INTERVAL);
 
@@ -80,14 +80,14 @@ if (Config.HIMITSU_RESTRICTED) {
  */
 if (!Config.HIMITSU_RESTRICTED) {
   setInterval(() => {
-    log('checking jail to free tokens...', LogLevel.INFO, false);
-    Util.jail.forEach((j,i) => {
-      if ((Date.now() - j.timestamp) > Config.ANTI_SPAM_THRESHOLD) {
-        log(`free token at index: ${i}`, LogLevel.DEBUG, false);
-        delete Util.jail[i]
-      }
-    })
-  }, Config.JAIL_JANITOR_INTERVAL)
+  log('checking jail to free tokens...', LogLevel.INFO, false);
+  Util.jail.forEach((j,i) => {
+    if ((Date.now() - j.timestamp) > Config.ANTI_SPAM_THRESHOLD) {
+      log(`free token at index: ${i}`, LogLevel.DEBUG, false);
+      delete Util.jail[i]
+    }
+  })
+}, Config.JAIL_JANITOR_INTERVAL)
 }
 
 // start the server

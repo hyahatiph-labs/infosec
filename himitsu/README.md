@@ -54,7 +54,6 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 * it basically performs a handshake when the wallet is created with the signature and primary address of the newly created wallet
 * after that the hash of the address and signature is sent against a new challenge on each request
 * this is experimental, unreleased software so it is not vetted for mainnet usage
-* there will be checks to force this to run over i2p with himitsu client in the future
 * Major con of prokurilo is losing local host login. Mitigate by having rpc on a locked down pi or android device on an isolated network with hardened ACL of necessary connections (monerod, i2p port, etc.) 
 
 ## Building
