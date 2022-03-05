@@ -29,9 +29,9 @@ import ContactsComponent from '../Contacts/ContactsComponent';
 import * as Constants from '../../Config/constants';
 
 // TODO: Refactor all modals to separate components
-// TODO: rpc over i2p
 // TODO: view only wallet creation
 // TODO: network stats and monerod connection
+// TODO: sync status indicator and i2p status indicator
 // TODO: fee estimate
 // TODO: webxmr integration
 

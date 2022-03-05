@@ -78,15 +78,17 @@ if (Config.HIMITSU_RESTRICTED) {
  * reject requests from jailed proofs
  * create janitor interval to sweep cache and reset tokens
  */
-setInterval(() => {
-  log('checking jail to free tokens...', LogLevel.INFO, false);
-  Util.jail.forEach((j,i) => {
-    if ((Date.now() - j.timestamp) > Config.ANTI_SPAM_THRESHOLD) {
-      log(`free token at index: ${i}`, LogLevel.DEBUG, false);
-      delete Util.jail[i]
-    }
-  })
-}, Config.JAIL_JANITOR_INTERVAL)
+if (!Config.HIMITSU_RESTRICTED) {
+  setInterval(() => {
+    log('checking jail to free tokens...', LogLevel.INFO, false);
+    Util.jail.forEach((j,i) => {
+      if ((Date.now() - j.timestamp) > Config.ANTI_SPAM_THRESHOLD) {
+        log(`free token at index: ${i}`, LogLevel.DEBUG, false);
+        delete Util.jail[i]
+      }
+    })
+  }, Config.JAIL_JANITOR_INTERVAL)
+}
 
 // start the server
 if (NODE_ENV === 'test' || Config.HIMITSU_RESTRICTED) {

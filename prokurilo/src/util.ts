@@ -11,7 +11,7 @@ const NODE_ENV = process.env.NODE_ENV || "";
 let himitsuConfigured = false;
 let addressIsSet = false;
 let himitsuAddress = '';
-let data = crypto.randomBytes(32).toString();
+let data = crypto.randomBytes(32).toString('hex');
 let lastKnownSignature = '';
 const setLastKnownSignature = (s: string) => { lastKnownSignature = s; }
 

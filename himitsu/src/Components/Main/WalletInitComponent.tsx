@@ -16,7 +16,7 @@ import {
 } from '@material-ui/core';
 import crypto from 'crypto';
 import { Alert } from '@material-ui/lab';
-import axios from 'axios';
+import * as AxiosClients from '../../Axios/Clients';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Interfaces from '../../Config/interfaces';
 import * as Constants from '../../Config/constants';
@@ -110,6 +110,8 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    */
   const createAndOpenWallet = async (): Promise<void> => {
     setValues({ ...values, isInitializing: true });
+    // set the framework host
+    await setLocalStorage('', '', values.url, '');
     const vBody: Interfaces.RequestContext = Constants.GET_VERSION_REQUEST;
     try {
       let rpcResult = null;
@@ -117,8 +119,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         setValues({ ...values, isInitializing: false });
         handleInvalidRpcHost();
       } else {
-        rpcResult = await axios.post(`${values.url}${Constants.JSON_RPC}`,
-          vBody, { proxy: Constants.I2P_PROXY });
+        rpcResult = await AxiosClients.RPC.post(Constants.JSON_RPC, vBody);
       }
       if (rpcResult !== null && rpcResult.status === Constants.HTTP_OK) {
         const filename = crypto.randomBytes(32).toString('hex');
@@ -135,14 +136,11 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               restore_height: values.height > 0 ? values.height : 0,
             },
           };
-          const dResult = (await axios.post(`${values.url}${Constants.JSON_RPC}`,
-            dbody, { proxy: Constants.I2P_PROXY }));
+          const dResult = (await AxiosClients.RPC.post(Constants.JSON_RPC, dbody));
           if (dResult.status === Constants.HTTP_OK) {
             const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
             const address: Interfaces.ShowAddressResponse = await (
-              await axios.post(`${values.url}${Constants.JSON_RPC}`,
-                aBody, { proxy: Constants.I2P_PROXY })
-            );
+              await AxiosClients.RPC.post(Constants.JSON_RPC, aBody));
             setGlobalState('init', {
               ...gInit,
               isWalletInitialized: true,
@@ -156,26 +154,22 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               primaryAddress: address.result.address,
               mnemonic: '',
             }); // TODO: snackbar with error handling
-            setLocalStorage(filename, values.walletPassword, values.url, address.result.address);
+            await setLocalStorage(filename, values.walletPassword,
+              values.url, address.result.address);
           } else {
             handleInvalidRpcHost();
             setValues({ ...values, isInitializing: false });
           }
         } else {
-          await axios.post(`${values.url}${Constants.JSON_RPC}`,
-            body);
-          const result = await axios.post(`${values.url}${Constants.JSON_RPC}`,
-            body);
+          await AxiosClients.RPC.post(Constants.JSON_RPC, body);
+          const result = await AxiosClients.RPC.post(Constants.JSON_RPC, body);
           if (result.status === Constants.HTTP_OK) {
             const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
             const k: Interfaces.QueryKeyResponse = (
-              await axios.post(`${values.url}${Constants.JSON_RPC}`,
-                kBody, { proxy: Constants.I2P_PROXY })).data;
+              await AxiosClients.RPC.post(Constants.JSON_RPC, kBody)).data;
             const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
             const address: Interfaces.ShowAddressResponse = await (
-              await axios.post(`${values.url}${Constants.JSON_RPC}`,
-                aBody, { proxy: Constants.I2P_PROXY })
-            );
+              await AxiosClients.RPC.post(Constants.JSON_RPC, aBody));
             setGlobalState('init', {
               ...gInit,
               isWalletInitialized: true,
@@ -188,7 +182,8 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               ...gAccount,
               mnemonic: k.result.key,
             }); // TODO: snackbar with error handling
-            setLocalStorage(filename, values.walletPassword, values.url, address.result.address);
+            await setLocalStorage(filename, values.walletPassword,
+              values.url, address.result.address);
           }
         }
       }
@@ -199,7 +194,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
 
     // initialize prokurilo authentication
     const lAddress = localStorage.getItem(Constants.HIMITSU_ADDRESS);
-    Prokurilo.authenticate(lAddress, true);
+    await Prokurilo.authenticate(lAddress, true);
     // replace plain address with hash for subsequent prokurilo authentication
     localStorage.setItem(Constants.HIMITSU_ADDRESS, crypto.createHash('sha256')
       .update(lAddress || '').digest('hex'));
