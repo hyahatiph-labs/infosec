@@ -4,6 +4,7 @@ import * as Axios from './Axios/Clients';
 import * as Constants from './Config/constants';
 import * as Interfaces from './Config/interfaces';
 
+let retry = 0;
 /**
  * Wrapper to authenticate with prokurilo and set the signature for
  * all rpc requests.
@@ -29,6 +30,16 @@ export const authenticate = async (address: string | null, isInitial: boolean): 
         const basic = isInitial ? `${address}:${sig}` : `${hash.digest('hex')}:${sig}`;
         // set the auth globally;
         axios.defaults.headers.post.Authorization = `basic ${basic}`;
+        // trigger initial handshake
+        if (isInitial) {
+          const vBody = Constants.GET_VERSION_REQUEST;
+          const result = await Axios.RPC.post(Constants.JSON_RPC, vBody);
+          if (result.status !== Constants.HTTP_OK && retry < 1) {
+            // retry logic
+            authenticate(address, true);
+            retry += 1;
+          }
+        }
       });
   }
 };
