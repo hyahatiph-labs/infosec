@@ -89,7 +89,7 @@ setInterval(() => {
 }, Config.JAIL_JANITOR_INTERVAL)
 
 // start the server
-if (NODE_ENV === 'test') {
+if (NODE_ENV === 'test' || Config.HIMITSU_RESTRICTED) {
   APP.listen(Config.PORT,  () => {
     log(`Prokurilo DEV running on ${os.hostname()}`, LogLevel.INFO, false);
   })
