@@ -4,7 +4,10 @@ const drawerWidth = 240;
 export const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
-    backgroundColor: '#FFF',
+    flexDirection: 'column',
+    width: '100%',
+    alignItems: 'center',
+    marginTop: theme.spacing(10),
   },
   appBar: {
     backgroundColor: '#FF5722',
@@ -34,10 +37,12 @@ export const useStyles = makeStyles((theme) => ({
   menuButton: {
     cursor: 'pointer',
     backgroundColor: '#212D36',
+    marginRight: theme.spacing(1),
   },
   modal: {
-    overflow: 'scroll',
     display: 'flex',
+    wrap: 'wrap',
+    overflow: 'scroll',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -56,6 +61,7 @@ export const useStyles = makeStyles((theme) => ({
     marginRight: theme.spacing(0.1),
     backgroundColor: '#212D362',
     color: '#FF5277',
+    margin: theme.spacing(1),
   },
 }));
 

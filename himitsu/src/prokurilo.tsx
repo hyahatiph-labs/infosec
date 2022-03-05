@@ -1,4 +1,5 @@
 import axios from 'axios';
+import crypto from 'crypto';
 import * as Axios from './Axios/Clients';
 import * as Constants from './Config/constants';
 import * as Interfaces from './Config/interfaces';
@@ -13,6 +14,7 @@ export const authenticate = async (address: string | null, isInitial: boolean): 
   // use challenge to generate signature
   // retry with signature
   if (!Constants.IS_DEV) {
+    const hash = crypto.createHash('sha256');
     await Axios.RPC.post(Constants.JSON_RPC, {})
       .catch(async (e) => {
         const authHeader: string = JSON.parse(JSON.stringify(e)).config.headers['www-authenticate'];
@@ -23,7 +25,8 @@ export const authenticate = async (address: string | null, isInitial: boolean): 
           await Axios.RPC.post(Constants.JSON_RPC, sBody)
         ).data;
         const sig = sign.result.signature;
-        const basic = isInitial ? `${address}:${sig}` : `himitsu:${sig}`;
+        hash.update(sig);
+        const basic = isInitial ? `${address}:${sig}` : `${hash.digest('hex')}:${sig}`;
         // set the auth globally;
         axios.defaults.headers.post.Authorization = `basic ${basic}`;
       });

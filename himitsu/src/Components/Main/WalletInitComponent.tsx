@@ -16,6 +16,7 @@ import {
 } from '@material-ui/core';
 import crypto from 'crypto';
 import { Alert } from '@material-ui/lab';
+import axios from 'axios';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Interfaces from '../../Config/interfaces';
 import * as Constants from '../../Config/constants';
@@ -117,7 +118,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         setValues({ ...values, isInitializing: false });
         handleInvalidRpcHost();
       } else {
-        rpcResult = await AxiosClients.RPC.post(Constants.JSON_RPC, vBody);
+        rpcResult = await axios.post(values.url, vBody);
       }
       if (rpcResult !== null && rpcResult.status === Constants.HTTP_OK) {
         const filename = crypto.randomBytes(32).toString('hex');
@@ -134,11 +135,11 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               restore_height: values.height > 0 ? values.height : 0,
             },
           };
-          const dResult = (await AxiosClients.RPC.post(Constants.JSON_RPC, dbody));
+          const dResult = (await axios.post(Constants.JSON_RPC, dbody));
           if (dResult.status === Constants.HTTP_OK) {
             const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
             const address: Interfaces.ShowAddressResponse = await (
-              await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
+              await axios.post(Constants.JSON_RPC, aBody)
             );
             setGlobalState('init', {
               ...gInit,
@@ -159,15 +160,15 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             setValues({ ...values, isInitializing: false });
           }
         } else {
-          await AxiosClients.RPC.post(Constants.JSON_RPC, body);
+          await axios.post(Constants.JSON_RPC, body);
           const result = await AxiosClients.RPC.post(Constants.JSON_RPC, body);
           if (result.status === Constants.HTTP_OK) {
             const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
             const k: Interfaces.QueryKeyResponse = (
-              await AxiosClients.RPC.post(Constants.JSON_RPC, kBody)).data;
+              await axios.post(Constants.JSON_RPC, kBody)).data;
             const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
             const address: Interfaces.ShowAddressResponse = await (
-              await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
+              await axios.post(Constants.JSON_RPC, aBody)
             );
             setGlobalState('init', {
               ...gInit,
@@ -191,11 +192,15 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     }
 
     // initialize prokurilo authentication
-    Prokurilo.authenticate(localStorage.getItem(Constants.HIMITSU_ADDRESS), true);
+    const lAddress = localStorage.getItem(Constants.HIMITSU_ADDRESS);
+    Prokurilo.authenticate(lAddress, true);
+    // replace plain address with hash for subsequent prokurilo authentication
+    localStorage.setItem(Constants.HIMITSU_ADDRESS, crypto.createHash('sha256')
+      .update(lAddress || '').digest('hex'));
   };
 
   return (
-    <div>
+    <div className={clsx(classes.root, 'container-fluid')}>
       <Modal
         aria-labelledby="transition-modal-title"
         aria-describedby="transition-modal-description"
@@ -208,14 +213,10 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         }}
       >
         <Fade in={open}>
-          <div className={classes.paper}>
+          <div className={clsx(classes.paper, 'container-fluid')}>
             <h2 id="transition-modal-title">Wallet Initialization</h2>
             <p id="transition-modal-description">
-              Welcome to the himitsu prototype wallet. If you have a remote node configure it below.
-            </p>
-            <p id="transition-modal-description">
-              If not, leave blank, one will be configured for you. Also, set a strong password
-              below.
+              Welcome to the himitsu prototype wallet.
             </p>
             <p id="transition-modal-description">
               Once the wallet is created your mnemonic phrase will be presented.
@@ -256,6 +257,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
                 onChange={handleChange('seed')}
               />
             )}
+            <br />
             {values.isAdvanced && (
               <TextField
                 label="height (optional)"
@@ -265,18 +267,16 @@ const WalletInitComponent: React.FC = (): ReactElement => {
                 onChange={handleChange('height')}
               />
             )}
-            {values.isAdvanced && (
-              <TextField
-                label="monero-wallet-rpc (host:port)"
-                id="standard-start-adornment"
-                required
-                className={clsx(classes.textField)}
-                onChange={handleChange('url')}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">http://</InputAdornment>,
-                }}
-              />
-            )}
+            <TextField
+              label="monero-wallet-rpc (host:port)"
+              id="standard-start-adornment"
+              required
+              className={clsx(classes.textField)}
+              onChange={handleChange('url')}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">http://</InputAdornment>,
+              }}
+            />
             <br />
             <Button
               className={classes.send}
