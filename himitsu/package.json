@@ -33,7 +33,7 @@
     "web-vitals": "^1.1.2"
   },
   "scripts": {
-    "start": "BROWSER=none REACT_APP_PROXY_HOST=http://localhost:4444 craco start",
+    "start": "BROWSER=none craco start",
     "build": "craco build",
     "test": "craco test",
     "eject": "react-scripts eject",
