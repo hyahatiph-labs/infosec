@@ -58,8 +58,8 @@ const verifyHimitsuSignature = async (address: string, signature: string): Promi
  * @param auth - basic auth for himitsu
  */
 const configureHimitsu = async (auth: string, req: any, res: any) => {
-  const address = auth.split("basic ")[1].split(":")[0];
-  const signature = auth.split("basic ")[1].split(":")[1];
+  const address = auth ? auth.split("basic ")[1].split(":")[0] : '';
+  const signature = auth ? auth.split("basic ")[1].split(":")[1] : '';
   if (await verifyHimitsuSignature(address, signature) && addressIsSet) {
     log(`configuring himitsu instance`, LogLevel.INFO, true);
     himitsuAddress = address;
@@ -268,7 +268,7 @@ const passThrough = (req: any, res: any, h: Config.Asset) => {
     res.sendFile(path.join(__dirname, "../examples/static", h.file));
   } else if (NODE_ENV === "test" && req.url === "/") {
     res.sendFile(path.join(__dirname, "../examples/static", "login.html"));
-  } else if (NODE_ENV === "test" && req.url !== "/" && !h) {
+  } else if (NODE_ENV === "test" && req.url !== "/" && !h && !Config.HIMITSU_RESTRICTED) {
     res.sendFile(path.join(__dirname, "../examples/static", req.url.replace("/", "")));
   } else if ((!h || h.static) || (h && h.static)) { // static or redirects
     if (req.method === "GET") {

@@ -53,7 +53,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     message: '',
     proofValidation: { good: false, spent: 0n, total: 0n },
   });
-  const host = `http://${gInit.rpcHost}/json_rpc`;
+  const hAddress = localStorage.getItem(Constants.HIMITSU_ADDRESS);
 
   const handleCopy = (): void => { setCopy(!copy); };
 
@@ -110,25 +110,25 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       body.params.password = gInit.walletPassword;
     }
     try {
-      await Prokurilo.authenticate(null, false);
-      const oResult = await AxiosClients.RPC.post(host, body);
+      await Prokurilo.authenticate(hAddress, false);
+      const oResult = await AxiosClients.RPC.post(Constants.JSON_RPC, body);
       if (oResult.status === Constants.HTTP_OK) {
         const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
         const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
-        await Prokurilo.authenticate(null, false);
+        await Prokurilo.authenticate(hAddress, false);
         const a: Interfaces.ShowAddressResponse = await (
-          await AxiosClients.RPC.post(host, aBody)
+          await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
         ).data;
-        await Prokurilo.authenticate(null, false);
+        await Prokurilo.authenticate(hAddress, false);
         const b: Interfaces.ShowBalanceResponse = await (
-          await AxiosClients.RPC.post(host, bBody)
+          await AxiosClients.RPC.post(Constants.JSON_RPC, bBody)
         ).data;
         const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
-        await Prokurilo.authenticate(null, false);
+        await Prokurilo.authenticate(hAddress, false);
         // dont query the key after wallet initialized
         let k: Interfaces.QueryKeyResponse | null = null;
         if (!gInit.isSeedConfirmed) {
-          k = (await AxiosClients.RPC.post(host, kBody)).data;
+          k = (await AxiosClients.RPC.post(Constants.JSON_RPC, kBody)).data;
         }
         const aResult = a.result.addresses;
         const aLength = aResult.length;
@@ -177,14 +177,13 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     const aBody: Interfaces.CreateAddressRequest = Constants.CREATE_ADDRESS_REQUEST;
     const sBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
     aBody.params.label = values.label;
-    await Prokurilo.authenticate(null, false);
-    Prokurilo.authenticate(null, false);
+    await Prokurilo.authenticate(hAddress, false);
     const create: Interfaces.CreateAddressResponse = await (
-      await AxiosClients.RPC.post(host, aBody)
+      await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
     ).data;
-    Prokurilo.authenticate(null, false);
+    Prokurilo.authenticate(hAddress, false);
     const show: Interfaces.ShowAddressResponse = await (
-      await AxiosClients.RPC.post(host, sBody)
+      await AxiosClients.RPC.post(Constants.JSON_RPC, sBody)
     ).data;
     const newAddress = create.result.address;
     const showResult = show.result.addresses;
@@ -201,9 +200,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     const proofBody: Interfaces.GetReserveProofRequest = Constants.GET_RESERVE_PROOF_REQUEST;
     proofBody.params.amount = BigInt(values.amount * Constants.PICO).toString();
     proofBody.params.message = values.message;
-    Prokurilo.authenticate(null, false);
+    Prokurilo.authenticate(hAddress, false);
     const proof: Interfaces.GetReserveProofResponse = await (
-      await AxiosClients.RPC.post(host, proofBody)
+      await AxiosClients.RPC.post(Constants.JSON_RPC, proofBody)
     ).data;
     setValues({ ...values, reserveProof: proof.result.signature });
   };
@@ -213,9 +212,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     proofBody.params.address = values.sendTo;
     proofBody.params.message = values.message;
     proofBody.params.signature = values.reserveProof;
-    Prokurilo.authenticate(null, false);
+    Prokurilo.authenticate(hAddress, false);
     const proof: Interfaces.CheckReserveProofResponse = await (
-      await AxiosClients.RPC.post(host, proofBody)
+      await AxiosClients.RPC.post(Constants.JSON_RPC, proofBody)
     ).data;
     if (proof.result.good) {
       setValues({ ...values, proofValidation: proof.result });
@@ -235,9 +234,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     vBody.params.address = values.sendTo.trim();
     const isValidAmt = values.amount < parseFloat(BigDecimal
       .divide(gAccount.unlockedBalance.toString(), Constants.PICO.toString(), 6));
-    Prokurilo.authenticate(null, false);
+    Prokurilo.authenticate(hAddress, false);
     const vAddress: Interfaces.ValidateAddressResponse = await (
-      await AxiosClients.RPC.post(host, vBody, Constants.I2P_PROXY)).data;
+      await AxiosClients.RPC.post(Constants.JSON_RPC, vBody, Constants.I2P_PROXY)).data;
     if (vAddress.result.valid && isValidAmt && validPin
       && vAddress.result.nettype !== 'mainnet') {
       const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;
@@ -247,8 +246,10 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       };
       tBody.params.destinations.push(destination);
       // serialize the destination with big int
-      Prokurilo.authenticate(null, false);
-      const tx: Interfaces.TransferResponse = await (await AxiosClients.RPC.post(host, tBody)).data;
+      Prokurilo.authenticate(hAddress, false);
+      const tx: Interfaces.TransferResponse = await (
+        await AxiosClients.RPC.post(Constants.JSON_RPC, tBody)
+      ).data;
       setValues({ ...values, hash: tx.result.tx_hash });
       handleTransferSuccess();
       loadXmrBalance();
