@@ -1,4 +1,5 @@
 import React, { ReactElement, useState } from 'react';
+import { useCookies } from 'react-cookie';
 import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
@@ -36,10 +37,12 @@ const WalletInitComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
   const [gAccount] = useGlobalState('account');
   const [open] = useState(!gInit.isWalletInitialized);
+  const [cookies, setCookie] = useCookies(['himitsu']);
   const [invalidRpcHost, setInvalidRpcHost] = useState(false);
   const [isUpdatedRpcHost, setUpdatedRpcHost] = useState(false);
   const [values, setValues] = React.useState<Interfaces.WalletInitState>({
-    url: '',
+    monerodHost: '',
+    rpcHost: '',
     walletPassword: '',
     walletName: '',
     showPassword: false,
@@ -91,10 +94,14 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    */
   const createAndOpenWallet = async (): Promise<void> => {
     setValues({ ...values, isInitializing: true });
+    // TODO: these will eventually become an environment variable for
+    // public thread-safe secure rpc / monerod instances
+    localStorage.setItem(Constants.HIMITSU_RPC_HOST, values.rpcHost);
+    localStorage.setItem(Constants.HIMITSU_MONEROD_HOST, values.monerodHost);
     const vBody: Interfaces.RequestContext = Constants.GET_VERSION_REQUEST;
     try {
       let rpcResult = null;
-      if (values.isAdvanced && values.url === '') {
+      if (values.isAdvanced && values.rpcHost === '') {
         setValues({ ...values, isInitializing: false });
         handleInvalidRpcHost();
       } else {
@@ -122,19 +129,23 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
             const address: Interfaces.ShowAddressResponse = await (
               await AxiosClients.RPC.post(Constants.JSON_RPC, aBody));
-            setGlobalState('init', {
-              ...gInit,
-              isWalletInitialized: true,
-              isRestoringFromSeed: true,
-              walletName: filename,
-              walletPassword: values.walletPassword,
-              network: values.networkType,
-            });
-            setGlobalState('account', {
-              ...gAccount,
-              primaryAddress: address.result.address,
-              mnemonic: '',
-            }); // TODO: snackbar with error handling
+            // initialize prokurilo authentication
+            const expire = await Prokurilo.authenticate(address.result.address);
+            const expires = new Date(expire);
+            setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu, { path: '/', expires });
+            if (cookies.himitsu) {
+              setGlobalState('init', {
+                ...gInit,
+                isWalletInitialized: true,
+                isRestoringFromSeed: true,
+                network: values.networkType,
+              });
+              setGlobalState('account', {
+                ...gAccount,
+                primaryAddress: address.result.address,
+                mnemonic: '',
+              }); // TODO: snackbar with error handling
+            }
           } else {
             handleInvalidRpcHost();
             setValues({ ...values, isInitializing: false });
@@ -152,23 +163,22 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             const address: Interfaces.ShowAddressResponse = await (
               await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
             ).data;
-            setGlobalState('init', {
-              ...gInit,
-              isWalletInitialized: true,
-              isRestoringFromSeed: false,
-              walletName: filename,
-              walletPassword: values.walletPassword,
-              network: values.networkType,
-            }); // TODO: snackbar with error handling
-            setGlobalState('account', {
-              ...gAccount,
-              mnemonic: k.result.key,
-            }); // TODO: snackbar with error handling
             // initialize prokurilo authentication
-            await Prokurilo.authenticate(address.result.address);
-            // TODO: these will eventually become an environment variable for
-            // public thread-safe secure rpc / monerod instances
-            localStorage.setItem(Constants.HIMITSU_RPC_HOST, values.url);
+            const expire = await Prokurilo.authenticate(address.result.address);
+            const expires = new Date(expire);
+            setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu, { path: '/', expires });
+            if (cookies.himitsu) {
+              setGlobalState('init', {
+                ...gInit,
+                isWalletInitialized: true,
+                isRestoringFromSeed: false,
+                network: values.networkType,
+              }); // TODO: snackbar with error handling
+              setGlobalState('account', {
+                ...gAccount,
+                mnemonic: k.result.key,
+              }); // TODO: snackbar with error handling
+            }
           }
         }
       }
@@ -251,7 +261,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               id="standard-start-adornment"
               required
               className={clsx(classes.textField)}
-              onChange={handleChange('url')}
+              onChange={handleChange('rpcHost')}
               InputProps={{
                 startAdornment: <InputAdornment position="start">http://</InputAdornment>,
               }}
@@ -278,12 +288,12 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         onClose={handleUpdateRpcHostSuccess}
       >
         <Alert onClose={handleUpdateRpcHostSuccess} severity="success">
-          {`${values.url} is now connected.`}
+          {`${values.rpcHost} is now connected.`}
         </Alert>
       </Snackbar>
       <Snackbar open={invalidRpcHost} autoHideDuration={2000} onClose={handleInvalidRpcHost}>
         <Alert onClose={handleInvalidRpcHost} severity="error">
-          {`url ${values.url} is not valid`}
+          {`rpc host ${values.rpcHost} is not valid`}
         </Alert>
       </Snackbar>
     </div>

@@ -30,8 +30,6 @@ export const {
     isWalletInitialized: false,
     isRestoringFromSeed: false,
     isSeedConfirmed: false,
-    walletName: '',
-    walletPassword: '',
     network: '', // TODO: add MAINNET, STAGENET enum / flags
     rpcHost: host || 'localhost:38083',
   },

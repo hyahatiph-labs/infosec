@@ -2,7 +2,9 @@ import * as Interfaces from './interfaces';
 
 export {};
 export const PICO = 1000000000000;
+export const COOKIE_LIMIT = 600000;
 export const HTTP_OK = 200;
+export const HIMITSU_INIT = 'HIMITSU_INIT';
 export const HIMITSU_RPC_HOST = 'HIMITSU_RPC_HOST';
 export const HIMITSU_MONEROD_HOST = 'HIMITSU_MONEROD_HOST';
 export const IS_DEV = process.env.REACT_APP_HIMITSU_DEV === 'DEV'

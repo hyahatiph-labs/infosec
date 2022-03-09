@@ -9,7 +9,6 @@ import log, { LogLevel } from "./logging";
 import https from 'https';
 import fs from 'fs';
 import cors from 'cors';
-import bake from 'cookie-parser';
 
 const NODE_ENV = process.env.NODE_ENV || "";
 
@@ -18,14 +17,15 @@ const APP = express();
 if (Config.HIMITSU_RESTRICTED) {
   const corsOptions = {
     origin: "*",
-    exposedHeaders: ["www-authenticate", "authorization"], // we need this to expose challenge to himitsu client
+    exposedHeaders: [
+      "www-authenticate", "authorization"
+    ], // we need this to expose challenge to himitsu client
     method: ["OPTIONS","POST"],
     optionsSuccessStatus: 200
   };
-  APP.use(cors(corsOptions));
+  APP.use(cors({ ...corsOptions, credentials: true}));
 }
 
-APP.use(bake());
 APP.use(express.json());
 APP.use(express.urlencoded({ extended: true }));
 // disable x-powered-by headers
@@ -46,25 +46,22 @@ APP.use(helmet({
 }));
 
 // entry
-try {
-  APP.get('/*', (req: any, res: any) => {
-    Util.isValidProof(req, res);
-  })
-  
-  APP.post('/*', (req: any, res: any) => {
-    Util.isValidProof(req, res);
-  })
-  
-  APP.delete('/*', (req: any, res: any) => {
-    Util.isValidProof(req, res);
-  })
-  
-  APP.patch('/*', (req: any, res: any) => {
-    Util.isValidProof(req, res);
-  })
-} catch {
-  log(`unknown error`, LogLevel.ERROR, true)
-}
+APP.get("/*", (req: any, res: any) => {
+  Util.isValidProof(req, res);
+});
+
+APP.post("/*", (req: any, res: any) => {
+  Util.isValidProof(req, res);
+});
+
+APP.delete("/*", (req: any, res: any) => {
+  Util.isValidProof(req, res);
+});
+
+APP.patch("/*", (req: any, res: any) => {
+  Util.isValidProof(req, res);
+});
+
 
 // initialize the config
 setup();

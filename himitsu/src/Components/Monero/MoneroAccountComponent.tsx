@@ -100,7 +100,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       await AxiosClients.RPC.post(Constants.JSON_RPC, body);
     }
     try {
-      if (gInit.isSeedConfirmed || Constants.IS_DEV) {
+      if (gInit.isSeedConfirmed || Constants.IS_DEV
+        || parseInt(localStorage.getItem(Constants.HIMITSU_INIT)
+        || `${Number.MAX_SAFE_INTEGER - Date.now()}`, 10) < Date.now() || Constants.IS_DEV) {
         const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
         const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
         const a: Interfaces.ShowAddressResponse = await (

@@ -1,4 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
+import { useCookies } from 'react-cookie';
 import clsx from 'clsx';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
@@ -25,7 +26,10 @@ import { useStyles } from './styles';
 import SettingsComponent from '../Settings/SettingsComponent';
 import TransactionsComponent from '../Monero/TransactionsComponent';
 import ContactsComponent from '../Contacts/ContactsComponent';
+import * as Interfaces from '../../Config/interfaces';
 import * as Constants from '../../Config/constants';
+import * as AxiosClients from '../../Axios/Clients';
+import * as Prokurilo from '../../prokurilo';
 
 // TODO: Refactor all modals to separate components
 // TODO: view only wallet creation
@@ -35,6 +39,7 @@ import * as Constants from '../../Config/constants';
 // TODO: webxmr integration
 
 interface UnlockState {
+  walletName: string;
   password: string;
 }
 
@@ -42,9 +47,10 @@ let locked = false;
 const MainComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
   const [isDrawerOpen, setDrawer] = useState(false);
+  const [cookies, setCookie] = useCookies(['himitsu']);
   const [isScreenLocked, setScreenLocked] = useState(false);
   const [invalidPassword, setInvalidPassword] = useState(false);
-  const [values, setValues] = React.useState<UnlockState>({ password: '' });
+  const [values, setValues] = React.useState<UnlockState>({ walletName: '', password: '' });
   const classes = useStyles();
 
   const handleChange = (prop: keyof UnlockState) => (event:
@@ -97,20 +103,43 @@ const MainComponent: React.FC = (): ReactElement => {
 
   /**
    * Lock screen will be dependent on cookies
+   * The expiration is set by prokurilo so even if
+   * an attacker wanted to reset the expire time it wouldn't
+   * work. User must set a strong password. This is what drives
+   * prokurilo generating a new challenge. During screen lock
+   * the wallet is closed temporarily. If chooses not to unlock
+   * the screen the session will stop syncing until the next unlock.
    */
   const lockScreen = async (): Promise<void> => {
-    // TODO: check for expired cookie
     setScreenLocked(false);
-    locked = false;
+    // trigger get version, set wallet name
     if (!Constants.IS_DEV) {
-      setScreenLocked(true);
-      locked = true;
+      const vBody: Interfaces.RequestContext = Constants.GET_VERSION_REQUEST;
+      await AxiosClients.RPC.post(Constants.JSON_RPC, vBody)
+        .catch((e) => {
+          setValues({ ...values, walletName: e.response.data.himitsuName });
+          setScreenLocked(true);
+        });
     }
+    locked = true;
   };
 
   const unlockScreen = async (): Promise<void> => {
-    // TODO: check for expired cookie and re-bake
-    setScreenLocked(false);
+    // use the password from user input to open the wallet
+    const oBody: Interfaces.CreateWalletRequest = Constants.CREATE_WALLET_REQUEST;
+    const o = await AxiosClients.RPC.post(Constants.JSON_RPC, oBody);
+    if (o.status === Constants.HTTP_OK) {
+      // prokurilo needs the address because it is wiped from the state
+      const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
+      const a = await (await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)).data;
+      const expire = await Prokurilo.authenticate(a);
+      const expires = new Date(expire);
+      setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu, { path: '/', expires });
+      if (cookies.himitsu) {
+        setScreenLocked(false);
+      }
+    }
+    if (Constants.IS_DEV) { setScreenLocked(false); }
   };
 
   useEffect(() => {
@@ -122,7 +151,10 @@ const MainComponent: React.FC = (): ReactElement => {
     then set REACT_APP_HIMITSU_DEV=DEV in .env.local
     This will override wallet initialization.
   */
-  const isWalletInitialized = gInit.isWalletInitialized || Constants.IS_DEV;
+  const isWalletInitialized = ((gInit.isWalletInitialized
+    || parseInt(localStorage.getItem(Constants.HIMITSU_INIT)
+    || `${Number.MAX_SAFE_INTEGER - Date.now()}`, 10))
+      < Date.now() || Constants.IS_DEV);
 
   return (
     <div className="main">
@@ -179,7 +211,7 @@ const MainComponent: React.FC = (): ReactElement => {
         )}
       <main className={classes.content}>
         <Toolbar />
-        {(!gInit.isWalletInitialized && !locked) && !Constants.IS_DEV && <WalletInitComponent />}
+        {!isWalletInitialized && <WalletInitComponent />}
         {isWalletInitialized && isViewingContacts && <ContactsComponent />}
         {isWalletInitialized && isViewingWallet && !isScreenLocked && <MoneroAccountComponent />}
         {isWalletInitialized && isViewingTxs && <TransactionsComponent />}

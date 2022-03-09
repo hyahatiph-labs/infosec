@@ -6,11 +6,13 @@ import * as Interfaces from './Config/interfaces';
  * Wrapper to authenticate with prokurilo and set the signature for
  * all rpc requests.
  * @param address - primary address
+ * @returns expire - the expiration time of the cookie in milliseconds
  */
-export const authenticate = async (address: string | null): Promise<void> => {
+export const authenticate = async (address: string | null): Promise<number> => {
   // use challenge to generate signature
   if (!Constants.IS_DEV) {
-    Axios.RPC.post(Constants.JSON_RPC, {})
+    return Axios.RPC.post(Constants.JSON_RPC, {})
+      .then(() => '')
       .catch(async (e) => {
         const parseChallenge = e.response.headers['www-authenticate'];
         const challenge = parseChallenge ? parseChallenge.split('challenge=')[1] : '';
@@ -24,7 +26,13 @@ export const authenticate = async (address: string | null): Promise<void> => {
         // trigger initial handshake
         const headers = { authorization: auth };
         const vBody = Constants.GET_VERSION_REQUEST;
-        await Axios.RPC.post(Constants.JSON_RPC, vBody, { headers });
+        const expire = await (
+          await Axios.RPC.post(Constants.JSON_RPC, vBody, { headers })
+        ).data.expire;
+        Axios.RPC.defaults.headers.himitsu = `${address}:${sig}`;
+        localStorage.setItem(Constants.HIMITSU_INIT, `${Date.now()}`);
+        return expire;
       });
   }
+  return 0;
 };

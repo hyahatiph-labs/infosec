@@ -13,10 +13,13 @@ const ACCEPTING_TUNNELS = 'Accepting tunnels'
 const REJECTING_TUNNELS = 'Rejecting tunnels: Starting up'
 const NODE_ENV = process.env.NODE_ENV || "";
 
-let walletIsSet = false;
-let himitsuAuth = '';
+/* himitsu specific */
+let himitsuName = '';
+let addressIsSet = false;
 let himitsuConfigured = false;
+let himitsuExpiration = 0;
 let data = crypto.randomBytes(32).toString('hex');
+/* himitsu specific */
 let i2pKillSwitchCheck = 0;
 let i2pStatus = '';
 let i2pReconnect = false;
@@ -48,16 +51,16 @@ const verifyHimitsuSignature = async (address: string, signature: string): Promi
  *     challenge response. Next it sends primary address and
  *    signature for validation.
  * 5. Set himitsu configured and challenge address
- * 6. New challenge generated on each request with 403
+ * 6. New challenge generated after cookie expiration with 401
  * 7. Continue to send signature to match challenge for each additional auth
  * NOTE: An attacker would somehow need to get the challenge which is
- * not possible because a new 32-byte challenge is generated on each request.
+ * not possible because a new 32-byte challenge is generated on each session.
  * Himitsu does not store this challenge, and the signature is place in a
- * cryptographically signed cookie with the password to maintain the user session. 
+ * cryptographically signed cookie with the address to maintain the user session. 
  * Himitsu has a password lock screen which with a secure enough
  * password makes the wallet inaccessible.
  * basic <address:signature> on the first request "handshake"
- * * last known signature is kept for re-signings
+ * verify the custom himitsu cookie on each request
  * @param auth - basic auth for himitsu
  */
 const configureHimitsu = async (auth: string, req: any, res: any) => {
@@ -65,17 +68,13 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
   const parseIt = auth && auth.length > 0 && auth.indexOf(":") > 0 ? auth.split("basic ")[1] : '';
   const address = parseIt !== '' ? parseIt.split(":")[0] : '';
   const signature = parseIt !== '' ? parseIt.split(":")[1] : '';
-  if (walletIsSet && address.length > 0 && signature.length > 0) {
+  if (addressIsSet && address.length > 0 && signature.length > 0) {
     log(`checking signature for configuration`, LogLevel.DEBUG, true);
     if (await verifyHimitsuSignature(address, signature)){
       log(`configuring himitsu instance`, LogLevel.INFO, true);
       himitsuConfigured = true;
-      himitsuAuth = signature;
-      // clear the challenge to start the regeneration process on subsequent verifications
-      data = null;
-      // set the himitsu cookie
-      res.cookie("himitsu", himitsuAuth);
-      res.status(Config.Http.OK).send(); 
+      himitsuExpiration = Date.now() + Config.HIMITSU_TTL;
+      res.status(Config.Http.OK).send({ expire: himitsuExpiration}); 
     } else {
       log(`himitsu configuration failure`, LogLevel.ERROR, true);
       res
@@ -83,13 +82,15 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
         .header("www-authenticate", `challenge=${data}`)
         .send();
     }
-  } else if (!walletIsSet || req.body.method === 'sign') {
+  } else if (!addressIsSet || req.body.method === 'sign') {
     log(`bypass for signing only`, LogLevel.WARN, true);
     if (req.body.method === 'create_wallet') {
+      himitsuName = req.body.params.filename;
       log(`wallet is set`, LogLevel.DEBUG, true);
-      // set the user cookie
-      res.cookie("wallet", req.body);
-      walletIsSet = true;
+    }
+    if (req.body.method === 'get_address') {
+      log(`address is set`, LogLevel.DEBUG, true);
+      addressIsSet = true;
     }
     passThrough(req, res, null); // one time deal for the handshake
   } else {
@@ -101,9 +102,28 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
   }
 };
 
-const verifyHimitsu = async (auth:string, req: any, res: any) => {
-  log(`cooke: ${req.cookie.wallet}`, LogLevel.DEBUG, true);
-  passThrough(req, res, null);
+/**
+ * Entry point post-cofiguration. After the himitsu custom cookie
+ * expires the client will return for the wallet name, re-open
+ * the wallet and sign a new challenge.
+ * @param req request
+ * @param res response
+ */
+const verifyHimitsu = async (req: any, res: any) => {
+  const address = req.headers.himitsu.split(':')[0];
+  const signature = req.headers.himitsu.split(':')[1];
+  if (await verifyHimitsuSignature(address, signature) && himitsuExpiration > Date.now()) {
+    log(`welcome back himitsu!`, LogLevel.INFO, true);
+    passThrough(req, res, null);
+  } else {
+    // a new challenge has arrived!
+    addressIsSet = false;
+    himitsuConfigured = false;
+    data = crypto.randomBytes(32).toString('hex');
+    const body = { jsonrpc: Config.RPC.VERSION, id: Config.RPC.ID, method: Config.RPC.CLOSE };
+    await axios.post(`http://${Config.XMR_RPC_HOST}/json_rpc`, body);
+    res.status(Config.Http.UNAUTHORIZED).send({ himitsuName });
+  }
 };
 
 /**
@@ -349,7 +369,7 @@ export const isValidProof = async (req: any, res: any): Promise<void> => {
   } else if (Config.HIMITSU_RESTRICTED && !himitsuConfigured) {
     await configureHimitsu(authHeader, req, res);
   } else if (Config.HIMITSU_RESTRICTED && himitsuConfigured) {
-    verifyHimitsu(authHeader, req, res);
+    verifyHimitsu(req, res);
   } else {
     // check the proof
     const h = validateAsset(req.url);

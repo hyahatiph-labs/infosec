@@ -9,7 +9,8 @@ export interface RequestContext {
 
 // Complex Component State
 export interface WalletInitState {
-  url: string;
+  monerodHost: string;
+  rpcHost: string;
   walletPassword: string;
   walletName: string;
   showPassword: boolean;
