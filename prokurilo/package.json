@@ -26,8 +26,9 @@
   "license": "MIT",
   "dependencies": {
     "axios": "^0.26.0",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "express": "^4.17.2",
+    "express": "^4.17.3",
     "helmet": "^5.0.2",
     "ts-node": "^9.1.1",
     "yargs": "^16.2.0"

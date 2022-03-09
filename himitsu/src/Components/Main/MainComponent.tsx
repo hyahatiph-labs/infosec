@@ -1,5 +1,4 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import crypto from 'crypto';
 import clsx from 'clsx';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
@@ -101,23 +100,14 @@ const MainComponent: React.FC = (): ReactElement => {
    *  user must enter the password matching the hash which remains in local storage.
    */
   const lockScreen = async (): Promise<void> => {
-    const tLock = localStorage.getItem(Constants.TIME_HASH);
-    if (tLock && Date.now() - parseInt(tLock, 10) > Constants.LOCK_LIMIT) {
-      setScreenLocked(true);
-    }
+    // TODO: check for expired cookie
+    setScreenLocked(true);
     locked = true;
   };
 
   const unlockScreen = async (): Promise<void> => {
-    const localHash = localStorage.getItem(Constants.UNLOCK_HASH);
-    const userHash = crypto.createHash('sha256');
-    userHash.update(values.password);
-    if (localHash === userHash.digest('hex')) {
-      localStorage.setItem(Constants.TIME_HASH, Date.now().toString());
-      setScreenLocked(false);
-    } else {
-      setInvalidPassword(true);
-    }
+    // TODO: check for expired cookie and re-bake
+    setScreenLocked(false);
   };
 
   useEffect(() => {
@@ -129,9 +119,7 @@ const MainComponent: React.FC = (): ReactElement => {
     then set REACT_APP_HIMITSU_DEV=DEV in .env.local
     This will override wallet initialization.
   */
-  const isWalletConfigured = gInit.walletName !== '';
-  const isWalletInitialized = ((gInit.isWalletInitialized || isWalletConfigured)
-    || Constants.IS_DEV);
+  const isWalletInitialized = gInit.isWalletInitialized || Constants.IS_DEV;
 
   return (
     <div className="main">
@@ -188,7 +176,7 @@ const MainComponent: React.FC = (): ReactElement => {
         )}
       <main className={classes.content}>
         <Toolbar />
-        {(!gInit.isWalletInitialized && !isWalletConfigured)
+        {(!gInit.isWalletInitialized && !locked)
           && !Constants.IS_DEV && <WalletInitComponent />}
         {isWalletInitialized && isViewingContacts && <ContactsComponent />}
         {isWalletInitialized && isViewingWallet && !isScreenLocked && <MoneroAccountComponent />}

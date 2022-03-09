@@ -45,7 +45,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     showPassword: false,
     isInitializing: false,
     isAdvanced: false,
-    networkType: 'STAGENET',
+    networkType: 'STAGENET', // TODO: set network type after reading address
     rpcUserName: null,
     rpcPassword: null,
     seed: '',
@@ -82,25 +82,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     setUpdatedRpcHost(!isUpdatedRpcHost);
   };
 
-  /**
-   * Password Management: The hash is stored with a timestamp
-   * of TIME_HASH. The corresponding password hash is stored as
-   * UNLOCK_HASH with the CONFIG_HASH aka wallet name.
-   * @param f - wallet filename
-   * @param p - wallet password
-   * @param h - rpc host
-   * @param a - primary address for signing auth requests
-   */
-  const setLocalStorage = async (f: string, p: string, h: string, a: string): Promise<void> => {
-    const keyHash = crypto.createHash('sha256');
-    keyHash.update(p);
-    localStorage.setItem(Constants.TIME_HASH, Date.now().toString());
-    localStorage.setItem(Constants.CONFIG_HASH, f);
-    localStorage.setItem(Constants.UNLOCK_HASH, keyHash.digest('hex'));
-    localStorage.setItem(Constants.HIMITSU_RPC_HOST, h);
-    localStorage.setItem(Constants.HIMITSU_ADDRESS, a);
-  };
-
   // TODO: refactor createAndOpenWallet to three functions
 
   /**
@@ -110,8 +91,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    */
   const createAndOpenWallet = async (): Promise<void> => {
     setValues({ ...values, isInitializing: true });
-    // set the framework host
-    await setLocalStorage('', '', values.url, '');
     const vBody: Interfaces.RequestContext = Constants.GET_VERSION_REQUEST;
     try {
       let rpcResult = null;
@@ -127,7 +106,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         body.params.filename = filename;
         body.params.password = values.walletPassword;
         if (values.seed !== '') {
-          const dbody: Interfaces.RestoreDeterministicRequest = {
+          const dBody: Interfaces.RestoreDeterministicRequest = {
             ...body,
             method: 'restore_deterministic_wallet',
             params: {
@@ -136,8 +115,10 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               restore_height: values.height > 0 ? values.height : 0,
             },
           };
-          const dResult = (await AxiosClients.RPC.post(Constants.JSON_RPC, dbody));
+          const dResult = (await AxiosClients.RPC.post(Constants.JSON_RPC, dBody));
           if (dResult.status === Constants.HTTP_OK) {
+            dBody.method = 'open_wallet';
+            await AxiosClients.RPC.post(Constants.JSON_RPC, dBody); // dont forget to open
             const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
             const address: Interfaces.ShowAddressResponse = await (
               await AxiosClients.RPC.post(Constants.JSON_RPC, aBody));
@@ -154,22 +135,23 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               primaryAddress: address.result.address,
               mnemonic: '',
             }); // TODO: snackbar with error handling
-            await setLocalStorage(filename, values.walletPassword,
-              values.url, address.result.address);
           } else {
             handleInvalidRpcHost();
             setValues({ ...values, isInitializing: false });
           }
         } else {
-          await AxiosClients.RPC.post(Constants.JSON_RPC, body);
           const result = await AxiosClients.RPC.post(Constants.JSON_RPC, body);
           if (result.status === Constants.HTTP_OK) {
+            // wallet created now open it
+            body.method = 'open_wallet';
+            await AxiosClients.RPC.post(Constants.JSON_RPC, body);
             const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
             const k: Interfaces.QueryKeyResponse = (
               await AxiosClients.RPC.post(Constants.JSON_RPC, kBody)).data;
             const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
             const address: Interfaces.ShowAddressResponse = await (
-              await AxiosClients.RPC.post(Constants.JSON_RPC, aBody));
+              await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
+            ).data;
             setGlobalState('init', {
               ...gInit,
               isWalletInitialized: true,
@@ -182,8 +164,11 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               ...gAccount,
               mnemonic: k.result.key,
             }); // TODO: snackbar with error handling
-            await setLocalStorage(filename, values.walletPassword,
-              values.url, address.result.address);
+            // initialize prokurilo authentication
+            await Prokurilo.authenticate(address.result.address);
+            // TODO: these will eventually become an environment variable for
+            // public thread-safe secure rpc / monerod instances
+            localStorage.setItem(Constants.HIMITSU_RPC_HOST, values.url);
           }
         }
       }
@@ -191,13 +176,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
       setValues({ ...values, isInitializing: false });
       handleInvalidRpcHost();
     }
-
-    // initialize prokurilo authentication
-    const lAddress = localStorage.getItem(Constants.HIMITSU_ADDRESS);
-    await Prokurilo.authenticate(lAddress, true);
-    // replace plain address with hash for subsequent prokurilo authentication
-    localStorage.setItem(Constants.HIMITSU_ADDRESS, crypto.createHash('sha256')
-      .update(lAddress || '').digest('hex'));
   };
 
   return (

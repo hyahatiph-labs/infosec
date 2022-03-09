@@ -11,18 +11,15 @@ export const jail: Config.JailedToken[] = [];
 
 const ACCEPTING_TUNNELS = 'Accepting tunnels'
 const REJECTING_TUNNELS = 'Rejecting tunnels: Starting up'
-const setLastKnownSignature = (s: string) => { lastKnownSignature = s; }
 const NODE_ENV = process.env.NODE_ENV || "";
 
+let userIsSet = false;
 let himitsuConfigured = false;
-let addressIsSet = false;
-let himitsuAddress = '';
 let data = crypto.randomBytes(32).toString('hex');
-let lastKnownSignature = '';
 let i2pKillSwitchCheck = 0;
 let i2pStatus = '';
 let i2pReconnect = false;
-let utilI2pJanitor = setInterval(() => {/* initialize reconnect janitor for event loop*/}, 0);
+let utilI2pJanitor = setInterval(() => {/* initialize reconnect janitor for event loop */}, 0);
 
 const verifyHimitsuSignature = async (address: string, signature: string): Promise<boolean> => {
   const body = {
@@ -31,13 +28,12 @@ const verifyHimitsuSignature = async (address: string, signature: string): Promi
     method: Config.RPC.VERIFY,
     params: { address, data, signature },
   };
-  return await axios
-    .post(`http://${Config.XMR_RPC_HOST}/json_rpc`, body)
-    .then((v) => { return v.data.result.good; })
-    .catch(() => {
-      log(`rpc failure`, LogLevel.ERROR, true);
-      return false;
-    });
+  try {
+    const sResponse = await (await axios.post(`http://${Config.XMR_RPC_HOST}/json_rpc`, body)).data;
+    return sResponse.result.good;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -55,32 +51,43 @@ const verifyHimitsuSignature = async (address: string, signature: string): Promi
  * 7. Continue to send signature to match challenge for each additional auth
  * NOTE: An attacker would somehow need to get the challenge which is
  * not possible because a new 32-byte challenge is generated on each request.
- * Himitsu does not store this challenge, nor does prokurilo store the signature which has yet
- * to be generated*. The only way to gain access to the new signature is to 
- * gain physical access to the device on which himitsu is running.
- * To mitigate, himitsu has a password lock screen which with a secure enough
- * password makes the wallet inaccessible. There is also an additional pin-to-send
- * feature in which the pin is not stored on the device. Only the hash of it.
+ * Himitsu does not store this challenge, and the signature is place in a
+ * cryptographically signed cookie with the password to maintain the user session. 
+ * Himitsu has a password lock screen which with a secure enough
+ * password makes the wallet inaccessible.
  * basic <address:signature> on the first request "handshake"
- * basic <h(address):signature> SHA-256 hash of address on all subsequent requests
  * * last known signature is kept for re-signings
  * @param auth - basic auth for himitsu
  */
 const configureHimitsu = async (auth: string, req: any, res: any) => {
-  const address = auth ? auth.split("basic ")[1].split(":")[0] : '';
-  const signature = auth ? auth.split("basic ")[1].split(":")[1] : '';
-  if (await verifyHimitsuSignature(address, signature) && addressIsSet) {
-    log(`configuring himitsu instance`, LogLevel.INFO, true);
-    himitsuAddress = address;
-    himitsuConfigured = true;
-    // clear the challenge to start the regeneration process on subsequent verifications
-    data = null;
-    setLastKnownSignature(signature);
-    res.status(Config.Http.OK).send();
-  } else if (!addressIsSet || req.body.method === 'sign') {
+  log(`auth header: ${auth}`, LogLevel.DEBUG, true);
+  const parseIt = auth && auth.length > 0 && auth.indexOf(":") > 0 ? auth.split("basic ")[1] : '';
+  const address = parseIt !== '' ? parseIt.split(":")[0] : '';
+  const signature = parseIt !== '' ? parseIt.split(":")[1] : '';
+  if (userIsSet && address.length > 0 && signature.length > 0) {
+    log(`checking signature for configuration`, LogLevel.DEBUG, true);
+    if (await verifyHimitsuSignature(address, signature)){
+      log(`configuring himitsu instance`, LogLevel.INFO, true);
+      himitsuConfigured = true;
+      // clear the challenge to start the regeneration process on subsequent verifications
+      data = null;
+      // set the himitsu cookie
+      res.status(Config.Http.OK).send(); 
+    } else {
+      log(`himitsu configuration failure`, LogLevel.ERROR, true);
+      res
+        .status(Config.Http.FORBIDDEN)
+        .header("www-authenticate", `challenge=${data}`)
+        .send();
+    }
+  } else if (!userIsSet || req.body.method === 'sign') {
     log(`bypass for signing only`, LogLevel.WARN, true);
     passThrough(req, res, null); // one time deal for the handshake
-    addressIsSet = !addressIsSet ? req.body.method === 'get_address' : addressIsSet;
+    if (req.body.method === 'create_wallet') {
+      log(`himitsu is set`, LogLevel.DEBUG, true);
+      // set the user cookie
+      userIsSet = true;
+    }
   } else {
     log(`himitsu configuration failure`, LogLevel.ERROR, true);
     res
@@ -91,26 +98,8 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
 };
 
 const verifyHimitsu = async (auth:string, req: any, res: any) => {
-  const address = auth.split("basic ")[1].split(":")[0];
-  const signature = auth.split("basic ")[1].split(":")[1];
-  const hAddress = crypto.createHash('sha256');
-  hAddress.update(himitsuAddress);
-  const isKnown = address === hAddress.digest('hex') && lastKnownSignature === signature;
-  log(`verifying himitsu instance`, LogLevel.INFO, true);
-  if (await verifyHimitsuSignature(himitsuAddress, signature) && data !== null) {
-    passThrough(req, res, null);
-    data = null; // reset challenge
-  } else if (req.body.method === 'sign' && isKnown && data !== null) {
-      // pass through to sign after challenge set
-      passThrough(req, res, null);
-  } else {
-    log(`himitsu verification failure`, LogLevel.ERROR, true);
-    data = crypto.randomBytes(32).toString(); // create new challenge
-    res
-      .status(Config.Http.FORBIDDEN)
-      .header("www-authenticate", `challenge=${isKnown ? data : ''}`)
-      .send();
-  }
+  
+  // check cookie for passthrough or screen unlock
 };
 
 /**
@@ -279,7 +268,7 @@ const passThrough = (req: any, res: any, h: Config.Asset) => {
     res.sendFile(path.join(__dirname, "../examples/static", "login.html"));
   } else if (NODE_ENV === "test" && req.url !== "/" && !h && !Config.HIMITSU_RESTRICTED) {
     res.sendFile(path.join(__dirname, "../examples/static", req.url.replace("/", "")));
-  } else if ((!h || h.static) || (h && h.static)) { // static or redirects
+  } else if ((h && h.static)) { // static or redirects
     if (req.method === "GET") {
       axios
         .get(`http://${Config.ASSET_HOST}${req.url}`, req.body)
@@ -348,13 +337,13 @@ const passThrough = (req: any, res: any, h: Config.Asset) => {
  * @returns
  */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export const isValidProof = (req: any, res: any): void => {
+export const isValidProof = async (req: any, res: any): Promise<void> => {
   const authHeader = req.headers[Config.Header.AUTHORIZATION];
   // check for bypass, always bypass home (login?) page
   if (bypassAsset(req) || req.url === "/") {
     passThrough(req, res, null);
   } else if (Config.HIMITSU_RESTRICTED && !himitsuConfigured) {
-    configureHimitsu(authHeader, req, res);
+    await configureHimitsu(authHeader, req, res);
   } else if (Config.HIMITSU_RESTRICTED && himitsuConfigured) {
     verifyHimitsu(authHeader, req, res);
   } else {

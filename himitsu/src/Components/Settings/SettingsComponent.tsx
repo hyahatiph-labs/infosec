@@ -3,7 +3,6 @@ import * as MUI from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import axios from 'axios';
 import { UpdateRounded } from '@material-ui/icons';
-import crypto from 'crypto';
 import clsx from 'clsx';
 import { setGlobalState, useGlobalState } from '../../state';
 import { useStyles } from './styles';
@@ -18,8 +17,6 @@ const SettingsComponent: React.FC = (): ReactElement => {
   const [updatedPin, setUpdatedPin] = useState(false);
   const [isUpdatedRpcHost, setUpdatedRpcHost] = useState(false);
   const [values, setValues] = React.useState<Interfaces.SettingsState>({
-    oldPin: '',
-    pin: 0,
     rpcHost: '',
   });
 
@@ -51,25 +48,6 @@ const SettingsComponent: React.FC = (): ReactElement => {
     }
   };
 
-  const updatePin = async (): Promise<void> => {
-    // check for set pin
-    const pinRequired = gInit.pinHash !== null;
-    const hUserPin = crypto.createHash('sha256');
-    hUserPin.update(values.oldPin.toString());
-    const validPin = pinRequired ? gInit.pinHash === hUserPin.digest('hex') : true;
-    if (values.pin <= 99999 || values.pin > 999999 || !validPin) {
-      handleInvalidPin();
-      setValues({ ...values, pin: 0, oldPin: '' });
-    } else {
-      const hash = crypto.createHash('sha256');
-      hash.update(values.pin.toString());
-      const hPin = hash.digest('hex');
-      localStorage.setItem(Constants.PIN_HASH, hPin);
-      handleUpdatedPin();
-      setValues({ ...values, pin: 0, oldPin: '' });
-    }
-  };
-
   return (
     <div className={clsx(classes.settings, 'container-fluid col')}>
       <MUI.TextField
@@ -89,31 +67,6 @@ const SettingsComponent: React.FC = (): ReactElement => {
         className={classes.uButton}
         onClick={() => {
           updateRpcHost();
-        }}
-        variant="outlined"
-        color="primary"
-      >
-        <UpdateRounded />
-      </MUI.Button>
-      <br />
-      <MUI.TextField
-        label="current pin (optional)"
-        value={values.oldPin}
-        id="standard-start-adornment"
-        className={classes.paper}
-        onChange={handleChange('oldPin')}
-      />
-      <MUI.TextField
-        label="pin-to-send (6-digit pin)"
-        value={values.pin}
-        id="standard-start-adornment"
-        className={classes.paper}
-        onChange={handleChange('pin')}
-      />
-      <MUI.Button
-        className={classes.uButton}
-        onClick={() => {
-          updatePin();
         }}
         variant="outlined"
         color="primary"

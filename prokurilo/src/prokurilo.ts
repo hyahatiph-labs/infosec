@@ -15,12 +15,15 @@ const NODE_ENV = process.env.NODE_ENV || "";
 
 const APP = express();
 
-const corsOptions = {
+if (Config.HIMITSU_RESTRICTED) {
+  const corsOptions = {
     origin: "*",
+    exposedHeaders: ["www-authenticate", "authorization"], // we need this to expose challenge to himitsu client
     method: ["OPTIONS","POST"],
     optionsSuccessStatus: 200
   };
-APP.use(cors(corsOptions));
+  APP.use(cors(corsOptions));
+}
 
 APP.use(express.json());
 APP.use(express.urlencoded({ extended: true }));
@@ -42,21 +45,25 @@ APP.use(helmet({
 }));
 
 // entry
-APP.get('/*', (req: any, res: any) => {
-  Util.isValidProof(req, res);
-})
-
-APP.post('/*', (req: any, res: any) => {
-  Util.isValidProof(req, res);
-})
-
-APP.delete('/*', (req: any, res: any) => {
-  Util.isValidProof(req, res);
-})
-
-APP.patch('/*', (req: any, res: any) => {
-  Util.isValidProof(req, res);
-})
+try {
+  APP.get('/*', (req: any, res: any) => {
+    Util.isValidProof(req, res);
+  })
+  
+  APP.post('/*', (req: any, res: any) => {
+    Util.isValidProof(req, res);
+  })
+  
+  APP.delete('/*', (req: any, res: any) => {
+    Util.isValidProof(req, res);
+  })
+  
+  APP.patch('/*', (req: any, res: any) => {
+    Util.isValidProof(req, res);
+  })
+} catch {
+  log(`unknown error`, LogLevel.ERROR, true)
+}
 
 // initialize the config
 setup();

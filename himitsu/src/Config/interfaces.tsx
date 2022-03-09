@@ -49,8 +49,6 @@ export interface ContactState {
 }
 
 export interface SettingsState {
-  oldPin: string;
-  pin: number;
   rpcHost: string;
 }
 

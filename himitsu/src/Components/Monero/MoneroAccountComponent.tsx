@@ -1,5 +1,4 @@
 import React, { ReactElement, useState, useEffect } from 'react';
-import crypto from 'crypto';
 import BigDecimal from 'js-big-decimal';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import QRCode from 'qrcode.react';
@@ -14,7 +13,6 @@ import SendIcon from '@material-ui/icons/Send';
 import CallReceivedIcon from '@material-ui/icons/CallReceived';
 import * as MuIcons from '@material-ui/icons';
 import * as AxiosClients from '../../Axios/Clients';
-import * as Prokurilo from '../../prokurilo';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Constants from '../../Config/constants';
 import * as Interfaces from '../../Config/interfaces';
@@ -30,7 +28,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
   const [isBusy, setIsBusy] = useState(false);
   const [copy, setCopy] = useState(false);
-  const [invalidPin, setInvalidPin] = useState(false);
   const [subAddressUpdated, setSubAddressUpdated] = useState(false);
   const [invalidAddress, setIsInvalidAddress] = useState(false);
   const [unusedAddressAlert, setUnusedAddressAlert] = useState(false);
@@ -42,7 +39,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [rpcConnectionFailure, setRpcConnectionFailure] = useState(false);
   const [proofGenerated, setProofGenerated] = useState(false);
   const [showProofValidation, setShowProofValidation] = useState(false);
-  const [showPinWarning, setShowPinWarning] = useState(false);
   const [values, setValues] = React.useState<Interfaces.AccountState>({
     label: '',
     pin: 0,
@@ -53,7 +49,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     message: '',
     proofValidation: { good: false, spent: 0n, total: 0n },
   });
-  const hAddress = localStorage.getItem(Constants.HIMITSU_ADDRESS);
 
   const handleCopy = (): void => { setCopy(!copy); };
 
@@ -63,9 +58,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   };
 
   const handleTransfer = (): void => {
-    const lHash = localStorage.getItem(Constants.PIN_HASH);
-    const pinRequired = lHash !== null;
-    if (!pinRequired) { setShowPinWarning(true); }
     setIsTransferring(!isTransferring);
   };
 
@@ -100,36 +92,23 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
 
   const loadXmrBalance = async (): Promise<void> => {
     setIsBusy(true);
-    const body: Constants.OpenWalletRequest = Constants.CREATE_WALLET_REQUEST;
-    body.method = 'open_wallet';
     if (Constants.IS_DEV) {
+      const body: Constants.OpenWalletRequest = Constants.CREATE_WALLET_REQUEST;
+      body.method = 'open_wallet';
       body.params.filename = 'himitsu';
       body.params.password = 'himitsu';
-    } else {
-      body.params.filename = gInit.walletName;
-      body.params.password = gInit.walletPassword;
+      await AxiosClients.RPC.post(Constants.JSON_RPC, body);
     }
     try {
-      await Prokurilo.authenticate(hAddress, false);
-      const oResult = await AxiosClients.RPC.post(Constants.JSON_RPC, body);
-      if (oResult.status === Constants.HTTP_OK) {
+      if (gInit.isSeedConfirmed || Constants.IS_DEV) {
         const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
         const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
-        await Prokurilo.authenticate(hAddress, false);
         const a: Interfaces.ShowAddressResponse = await (
           await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
         ).data;
-        await Prokurilo.authenticate(hAddress, false);
         const b: Interfaces.ShowBalanceResponse = await (
           await AxiosClients.RPC.post(Constants.JSON_RPC, bBody)
         ).data;
-        const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
-        await Prokurilo.authenticate(hAddress, false);
-        // dont query the key after wallet initialized
-        let k: Interfaces.QueryKeyResponse | null = null;
-        if (!gInit.isSeedConfirmed) {
-          k = (await AxiosClients.RPC.post(Constants.JSON_RPC, kBody)).data;
-        }
         const aResult = a.result.addresses;
         const aLength = aResult.length;
         // display the latest unused subaddress, warn if all addresses are used
@@ -143,15 +122,12 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           unlockTime: b.result.blocks_to_unlock,
           unlockedBalance,
           subAddresses: a.result.addresses,
-          mnemonic: k ? k.result.key : '',
         });
         let unusedAddress = false;
         aResult.forEach((v) => { if (!v.used && v.address_index !== 0) { unusedAddress = true; } });
         if (!unusedAddress) { handleUnusedAddressAlert(); }
         setIsBusy(false);
         loaded = true;
-      } else {
-        handleRpcConnectionFailure();
       }
     } catch {
       loaded = true;
@@ -177,11 +153,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     const aBody: Interfaces.CreateAddressRequest = Constants.CREATE_ADDRESS_REQUEST;
     const sBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
     aBody.params.label = values.label;
-    await Prokurilo.authenticate(hAddress, false);
     const create: Interfaces.CreateAddressResponse = await (
       await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
     ).data;
-    Prokurilo.authenticate(hAddress, false);
     const show: Interfaces.ShowAddressResponse = await (
       await AxiosClients.RPC.post(Constants.JSON_RPC, sBody)
     ).data;
@@ -200,7 +174,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     const proofBody: Interfaces.GetReserveProofRequest = Constants.GET_RESERVE_PROOF_REQUEST;
     proofBody.params.amount = BigInt(values.amount * Constants.PICO).toString();
     proofBody.params.message = values.message;
-    Prokurilo.authenticate(hAddress, false);
     const proof: Interfaces.GetReserveProofResponse = await (
       await AxiosClients.RPC.post(Constants.JSON_RPC, proofBody)
     ).data;
@@ -212,7 +185,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     proofBody.params.address = values.sendTo;
     proofBody.params.message = values.message;
     proofBody.params.signature = values.reserveProof;
-    Prokurilo.authenticate(hAddress, false);
     const proof: Interfaces.CheckReserveProofResponse = await (
       await AxiosClients.RPC.post(Constants.JSON_RPC, proofBody)
     ).data;
@@ -223,21 +195,13 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   };
 
   const transfer = async (): Promise<void> => {
-    // pin set
-    setInvalidPin(false);
-    const pinRequired = gInit.pinHash !== null;
-    const hUserPin = crypto.createHash('sha256');
-    hUserPin.update(values.pin.toString());
-    const hUserHash = hUserPin.digest('hex');
-    const validPin = pinRequired ? gInit.pinHash === hUserHash : true;
     const vBody: Interfaces.ValidateAddressRequest = Constants.VALIDATE_ADDRESS_REQUEST;
     vBody.params.address = values.sendTo.trim();
     const isValidAmt = values.amount < parseFloat(BigDecimal
       .divide(gAccount.unlockedBalance.toString(), Constants.PICO.toString(), 6));
-    Prokurilo.authenticate(hAddress, false);
     const vAddress: Interfaces.ValidateAddressResponse = await (
       await AxiosClients.RPC.post(Constants.JSON_RPC, vBody)).data;
-    if (vAddress.result.valid && isValidAmt && validPin
+    if (vAddress.result.valid && isValidAmt
       && vAddress.result.nettype !== 'mainnet') {
       const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;
       const destination: Interfaces.Destination = {
@@ -246,7 +210,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       };
       tBody.params.destinations.push(destination);
       // serialize the destination with big int
-      Prokurilo.authenticate(hAddress, false);
       const tx: Interfaces.TransferResponse = await (
         await AxiosClients.RPC.post(Constants.JSON_RPC, tBody)
       ).data;
@@ -258,7 +221,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       handleInvalidAddress();
     }
     if (!isValidAmt) { handleInvalidAmount(); }
-    if (pinRequired && !validPin) { setInvalidPin(true); }
   };
 
   useEffect(() => {
@@ -687,30 +649,6 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
             Constants.PICO.toString(), 3)} spent and
             ${BigDecimal.divide(values.proofValidation.total.toString(),
             Constants.PICO.toString(), 3)} total`}
-        </Alert>
-      </Snackbar>
-      <Snackbar
-        open={showPinWarning}
-        autoHideDuration={2000}
-        onClose={() => { setShowPinWarning(false); }}
-      >
-        <Alert
-          onClose={() => { setShowPinWarning(false); }}
-          severity="warning"
-        >
-          No pin set. Go to settings to enable.
-        </Alert>
-      </Snackbar>
-      <Snackbar
-        open={invalidPin}
-        autoHideDuration={2000}
-        onClose={() => { setInvalidPin(false); }}
-      >
-        <Alert
-          onClose={() => { setInvalidPin(false); }}
-          severity="error"
-        >
-          Invalid pin. Enter a valid 6-digit pin
         </Alert>
       </Snackbar>
     </div>
