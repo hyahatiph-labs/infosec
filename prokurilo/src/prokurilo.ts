@@ -9,7 +9,7 @@ import log, { LogLevel } from "./logging";
 import https from 'https';
 import fs from 'fs';
 import cors from 'cors';
-
+import bake from 'cookie-parser';
 
 const NODE_ENV = process.env.NODE_ENV || "";
 
@@ -25,6 +25,7 @@ if (Config.HIMITSU_RESTRICTED) {
   APP.use(cors(corsOptions));
 }
 
+APP.use(bake());
 APP.use(express.json());
 APP.use(express.urlencoded({ extended: true }));
 // disable x-powered-by headers

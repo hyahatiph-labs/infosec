@@ -13,7 +13,8 @@ const ACCEPTING_TUNNELS = 'Accepting tunnels'
 const REJECTING_TUNNELS = 'Rejecting tunnels: Starting up'
 const NODE_ENV = process.env.NODE_ENV || "";
 
-let userIsSet = false;
+let walletIsSet = false;
+let himitsuAuth = '';
 let himitsuConfigured = false;
 let data = crypto.randomBytes(32).toString('hex');
 let i2pKillSwitchCheck = 0;
@@ -64,14 +65,16 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
   const parseIt = auth && auth.length > 0 && auth.indexOf(":") > 0 ? auth.split("basic ")[1] : '';
   const address = parseIt !== '' ? parseIt.split(":")[0] : '';
   const signature = parseIt !== '' ? parseIt.split(":")[1] : '';
-  if (userIsSet && address.length > 0 && signature.length > 0) {
+  if (walletIsSet && address.length > 0 && signature.length > 0) {
     log(`checking signature for configuration`, LogLevel.DEBUG, true);
     if (await verifyHimitsuSignature(address, signature)){
       log(`configuring himitsu instance`, LogLevel.INFO, true);
       himitsuConfigured = true;
+      himitsuAuth = signature;
       // clear the challenge to start the regeneration process on subsequent verifications
       data = null;
       // set the himitsu cookie
+      res.cookie("himitsu", himitsuAuth);
       res.status(Config.Http.OK).send(); 
     } else {
       log(`himitsu configuration failure`, LogLevel.ERROR, true);
@@ -80,14 +83,15 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
         .header("www-authenticate", `challenge=${data}`)
         .send();
     }
-  } else if (!userIsSet || req.body.method === 'sign') {
+  } else if (!walletIsSet || req.body.method === 'sign') {
     log(`bypass for signing only`, LogLevel.WARN, true);
-    passThrough(req, res, null); // one time deal for the handshake
     if (req.body.method === 'create_wallet') {
-      log(`himitsu is set`, LogLevel.DEBUG, true);
+      log(`wallet is set`, LogLevel.DEBUG, true);
       // set the user cookie
-      userIsSet = true;
+      res.cookie("wallet", req.body);
+      walletIsSet = true;
     }
+    passThrough(req, res, null); // one time deal for the handshake
   } else {
     log(`himitsu configuration failure`, LogLevel.ERROR, true);
     res
@@ -98,8 +102,8 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
 };
 
 const verifyHimitsu = async (auth:string, req: any, res: any) => {
-  
-  // check cookie for passthrough or screen unlock
+  log(`cooke: ${req.cookie.wallet}`, LogLevel.DEBUG, true);
+  passThrough(req, res, null);
 };
 
 /**

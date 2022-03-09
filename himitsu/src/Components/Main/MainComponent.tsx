@@ -96,13 +96,16 @@ const MainComponent: React.FC = (): ReactElement => {
   };
 
   /**
-   * Defines the logic for the lock screen. After 360 seconds the
-   *  user must enter the password matching the hash which remains in local storage.
+   * Lock screen will be dependent on cookies
    */
   const lockScreen = async (): Promise<void> => {
     // TODO: check for expired cookie
-    setScreenLocked(true);
-    locked = true;
+    setScreenLocked(false);
+    locked = false;
+    if (!Constants.IS_DEV) {
+      setScreenLocked(true);
+      locked = true;
+    }
   };
 
   const unlockScreen = async (): Promise<void> => {
@@ -176,8 +179,7 @@ const MainComponent: React.FC = (): ReactElement => {
         )}
       <main className={classes.content}>
         <Toolbar />
-        {(!gInit.isWalletInitialized && !locked)
-          && !Constants.IS_DEV && <WalletInitComponent />}
+        {(!gInit.isWalletInitialized && !locked) && !Constants.IS_DEV && <WalletInitComponent />}
         {isWalletInitialized && isViewingContacts && <ContactsComponent />}
         {isWalletInitialized && isViewingWallet && !isScreenLocked && <MoneroAccountComponent />}
         {isWalletInitialized && isViewingTxs && <TransactionsComponent />}
