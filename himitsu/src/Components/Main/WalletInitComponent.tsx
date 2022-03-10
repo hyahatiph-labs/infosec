@@ -133,19 +133,18 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             const expire = await Prokurilo.authenticate(address.result.address);
             const expires = new Date(expire);
             setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu, { path: '/', expires });
-            if (cookies.himitsu) {
-              setGlobalState('init', {
-                ...gInit,
-                isWalletInitialized: true,
-                isRestoringFromSeed: true,
-                network: values.networkType,
-              });
-              setGlobalState('account', {
-                ...gAccount,
-                primaryAddress: address.result.address,
-                mnemonic: '',
-              }); // TODO: snackbar with error handling
-            }
+            if (!cookies.himitsu) { /* */ }
+            setGlobalState('init', {
+              ...gInit,
+              isWalletInitialized: true,
+              isRestoringFromSeed: true,
+              network: values.networkType,
+            });
+            setGlobalState('account', {
+              ...gAccount,
+              primaryAddress: address.result.address,
+              mnemonic: '',
+            }); // TODO: snackbar with error handling
           } else {
             handleInvalidRpcHost();
             setValues({ ...values, isInitializing: false });
@@ -166,22 +165,22 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             // initialize prokurilo authentication
             const expire = await Prokurilo.authenticate(address.result.address);
             const expires = new Date(expire);
-            setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu, { path: '/', expires });
-            if (cookies.himitsu) {
-              setGlobalState('init', {
-                ...gInit,
-                isWalletInitialized: true,
-                isRestoringFromSeed: false,
-                network: values.networkType,
-              }); // TODO: snackbar with error handling
-              setGlobalState('account', {
-                ...gAccount,
-                mnemonic: k.result.key,
-              }); // TODO: snackbar with error handling
-            }
+            setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu,
+              { path: '/', expires, sameSite: 'lax' });
+            setGlobalState('init', {
+              ...gInit,
+              isWalletInitialized: true,
+              isRestoringFromSeed: false,
+              network: values.networkType,
+            }); // TODO: snackbar with error handling
+            setGlobalState('account', {
+              ...gAccount,
+              mnemonic: k.result.key,
+            }); // TODO: snackbar with error handling
           }
         }
       }
+      localStorage.setItem(Constants.HIMITSU_INIT, `${Date.now()}`);
     } catch {
       setValues({ ...values, isInitializing: false });
       handleInvalidRpcHost();

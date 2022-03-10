@@ -64,7 +64,6 @@ const verifyHimitsuSignature = async (address: string, signature: string): Promi
  * @param auth - basic auth for himitsu
  */
 const configureHimitsu = async (auth: string, req: any, res: any) => {
-  log(`auth header: ${auth}`, LogLevel.DEBUG, true);
   const parseIt = auth && auth.length > 0 && auth.indexOf(":") > 0 ? auth.split("basic ")[1] : '';
   const address = parseIt !== '' ? parseIt.split(":")[0] : '';
   const signature = parseIt !== '' ? parseIt.split(":")[1] : '';
@@ -110,13 +109,15 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
  * @param res response
  */
 const verifyHimitsu = async (req: any, res: any) => {
-  const address = req.headers.himitsu.split(':')[0];
-  const signature = req.headers.himitsu.split(':')[1];
+  const himitsu = req.headers.himitsu;
+  const address = himitsu ? himitsu.split(':')[0] : '';
+  const signature = himitsu ? himitsu.split(':')[1] : '';
   if (await verifyHimitsuSignature(address, signature) && himitsuExpiration > Date.now()) {
     log(`welcome back himitsu!`, LogLevel.INFO, true);
     passThrough(req, res, null);
   } else {
     // a new challenge has arrived!
+    log(`invalid himitsu session detected`, LogLevel.DEBUG, true);
     addressIsSet = false;
     himitsuConfigured = false;
     data = crypto.randomBytes(32).toString('hex');

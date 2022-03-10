@@ -55,7 +55,7 @@ const MainComponent: React.FC = (): ReactElement => {
 
   const setCookieInHeader = async (): Promise<void> => {
     if (cookies.himitsu) {
-      AxiosClients.RPC.defaults.headers.himitsu = `${cookies.himitsu.value}`;
+      AxiosClients.RPC.defaults.headers.himitsu = `${cookies.himitsu}`;
     }
   };
 
@@ -117,18 +117,20 @@ const MainComponent: React.FC = (): ReactElement => {
    * the screen the session will stop syncing until the next unlock.
    */
   const lockScreen = async (): Promise<void> => {
-    setScreenLocked(false);
-    // trigger get version, set wallet name
-    if (!Constants.IS_DEV) {
-      const vBody: Interfaces.RequestContext = Constants.GET_VERSION_REQUEST;
-      await AxiosClients.RPC.post(Constants.JSON_RPC, vBody)
-        .catch((e) => {
-          setValues({ ...values, walletName: e.response.data.himitsuName });
-          setScreenLocked(true);
-        });
+    if (cookies.himitsu) { // wait until first cookie is set
+      setScreenLocked(false);
+      // trigger get version, set wallet name
+      if (!Constants.IS_DEV) {
+        const vBody: Interfaces.RequestContext = Constants.GET_VERSION_REQUEST;
+        await AxiosClients.RPC.post(Constants.JSON_RPC, vBody)
+          .catch((e) => {
+            setValues({ ...values, walletName: e.response.data.himitsuName });
+            setScreenLocked(true);
+          });
+        await setCookieInHeader();
+      }
+      locked = true;
     }
-    await setCookieInHeader();
-    locked = true;
   };
 
   const unlockScreen = async (): Promise<void> => {
@@ -142,12 +144,14 @@ const MainComponent: React.FC = (): ReactElement => {
       const a = await (await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)).data;
       const expire = await Prokurilo.authenticate(a);
       const expires = new Date(expire);
-      setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu, { path: '/', expires });
+      setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu,
+        { path: '/', expires, sameSite: 'lax' });
       if (cookies.himitsu) {
         setScreenLocked(false);
       }
     }
     if (Constants.IS_DEV) { setScreenLocked(false); }
+    locked = true;
   };
 
   useEffect(() => {
@@ -219,7 +223,7 @@ const MainComponent: React.FC = (): ReactElement => {
         )}
       <main className={classes.content}>
         <Toolbar />
-        {!isWalletInitialized && <WalletInitComponent />}
+        {(!gInit.isWalletInitialized && !locked) && !Constants.IS_DEV && <WalletInitComponent />}
         {isWalletInitialized && isViewingContacts && <ContactsComponent />}
         {isWalletInitialized && isViewingWallet && !isScreenLocked && <MoneroAccountComponent />}
         {isWalletInitialized && isViewingTxs && <TransactionsComponent />}

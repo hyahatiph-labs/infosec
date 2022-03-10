@@ -166,7 +166,7 @@ export const I2P_CHECK_INTERVAL = 60000;
 export const I2P_KILL_SWITCH_LIMIT = 21;
 export const I2P_OFFLINE_ERROR = 2;
 
-export const HIMITSU_TTL = 60000 * 20
+export const HIMITSU_TTL = 60000 //600000 * 20
 // set cmd line args
 export const PORT: number = ARGS["port"];
 export const KEY_PATH: string = ARGS["key-path"];

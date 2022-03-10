@@ -30,7 +30,6 @@ export const authenticate = async (address: string | null): Promise<number> => {
           await Axios.RPC.post(Constants.JSON_RPC, vBody, { headers })
         ).data.expire;
         Axios.RPC.defaults.headers.himitsu = `${address}:${sig}`;
-        localStorage.setItem(Constants.HIMITSU_INIT, `${Date.now()}`);
         return expire;
       });
   }

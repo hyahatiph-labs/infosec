@@ -6,6 +6,7 @@ const subAddressInit: Interfaces.Address[] = [];
 const contactInit: Interfaces.Contact[] = [];
 const transferInit: Interfaces.Transfer[] = [];
 const host = localStorage.getItem(Constants.HIMITSU_RPC_HOST);
+const walletInit = localStorage.getItem(Constants.HIMITSU_INIT) !== null;
 
 /**
  * Global state management
@@ -27,7 +28,7 @@ export const {
     contactList: contactInit,
   },
   init: {
-    isWalletInitialized: false,
+    isWalletInitialized: walletInit,
     isRestoringFromSeed: false,
     isSeedConfirmed: false,
     network: '', // TODO: add MAINNET, STAGENET enum / flags
