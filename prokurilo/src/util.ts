@@ -124,6 +124,10 @@ const verifyHimitsu = async (req: any, res: any) => {
     await axios.post(`http://${Config.XMR_RPC_HOST}/json_rpc`, body);
     res.status(Config.Http.UNAUTHORIZED).send({ himitsuName });
   }
+  // TODO: there is an edge case here where an attacker could attempt to access the wallet and
+  // acquire the wallet name. Himitsu configuration is reset and password is needed. Still there
+  // is something to be desired such as presentation of expired cookie. But then attacker could
+  // have that if they get access to the machine of the wallet.
 };
 
 /**

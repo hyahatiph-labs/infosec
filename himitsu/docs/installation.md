@@ -30,7 +30,7 @@ Example i2p proxy in Firefox (Settings => Network Settings)
 
  ![performance](tunnel_performance.png)
 
-* start monero-wallet-rpc `./path/to/monero-wallet-rpc --stagenet --wallet-dir /home/rimuru/Monero/wallets/dev --rpc-bind-port 38083 --disable-rpc-login`
+* start monero-wallet-rpc `./path/to/monero-wallet-rpc --stagenet --wallet-dir /path/to/Monero/wallets/dev --rpc-bind-port 38083 --disable-rpc-login`
 * connect prokurilo to the local rpc instance
     * `git clone http://github./com/hyahatiph-labs/infosec.git && cd infosec/prokurilo`
     * `npm run clean && npm run build`

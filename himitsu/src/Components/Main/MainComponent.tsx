@@ -53,6 +53,12 @@ const MainComponent: React.FC = (): ReactElement => {
   const [values, setValues] = React.useState<UnlockState>({ walletName: '', password: '' });
   const classes = useStyles();
 
+  const setCookieInHeader = async (): Promise<void> => {
+    if (cookies.himitsu) {
+      AxiosClients.RPC.defaults.headers.himitsu = `${cookies.himitsu.value}`;
+    }
+  };
+
   const handleChange = (prop: keyof UnlockState) => (event:
     React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [prop]: event.target.value });
@@ -121,12 +127,14 @@ const MainComponent: React.FC = (): ReactElement => {
           setScreenLocked(true);
         });
     }
+    await setCookieInHeader();
     locked = true;
   };
 
   const unlockScreen = async (): Promise<void> => {
     // use the password from user input to open the wallet
     const oBody: Interfaces.CreateWalletRequest = Constants.CREATE_WALLET_REQUEST;
+    oBody.method = 'open_wallet';
     const o = await AxiosClients.RPC.post(Constants.JSON_RPC, oBody);
     if (o.status === Constants.HTTP_OK) {
       // prokurilo needs the address because it is wiped from the state
