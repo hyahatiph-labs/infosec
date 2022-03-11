@@ -6,10 +6,10 @@ import {
   CheckCircleRounded, CloseRounded, ExpandMore,
 } from '@material-ui/icons';
 import clsx from 'clsx';
-import axios from 'axios';
 import CopyToClipboard from 'react-copy-to-clipboard';
 import * as Constants from '../../Config/constants';
 import * as Interfaces from '../../Config/interfaces';
+import * as AxiosClients from '../../Axios/Clients';
 import { setGlobalState, useGlobalState } from '../../state';
 import { useStyles } from './styles';
 
@@ -83,7 +83,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
       tBody = filterTransactions(type);
     }
     const transfers: Interfaces.ShowTransfersResponse = await (
-      await axios.post(host, tBody, { proxy: Constants.I2P_PROXY })).data;
+      await AxiosClients.RPC.post(host, tBody)).data;
     const r = transfers.result;
     const hasTransfers = r.failed || r.in || r.out || r.pending || r.pool;
     if (hasTransfers) {
@@ -119,7 +119,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
     proofBody.params.address = address;
     proofBody.params.txid = txid;
     const proof: Interfaces.GetTxProofResponse = await (
-      await axios.post(host, proofBody, { proxy: Constants.I2P_PROXY })).data;
+      await AxiosClients.RPC.post(host, proofBody)).data;
     setValues({ ...values, txProof: proof.result.signature });
   };
 
@@ -130,7 +130,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
     proofBody.params.signature = values.txProof;
     proofBody.params.txid = values.txid;
     const proof: Interfaces.CheckTxProofResponse = await (
-      await axios.post(host, proofBody, { proxy: Constants.I2P_PROXY })).data;
+      await AxiosClients.RPC.post(host, proofBody)).data;
     if (proof.result.good) {
       setValues({ ...values, proofValidation: proof.result });
       setShowProofValidation(true);

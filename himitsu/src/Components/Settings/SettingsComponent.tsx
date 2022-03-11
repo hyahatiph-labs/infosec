@@ -1,13 +1,13 @@
 import React, { ReactElement, useState } from 'react';
 import * as MUI from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
-import axios from 'axios';
 import { UpdateRounded } from '@material-ui/icons';
 import clsx from 'clsx';
 import { setGlobalState, useGlobalState } from '../../state';
 import { useStyles } from './styles';
 import * as Constants from '../../Config/constants';
 import * as Interfaces from '../../Config/interfaces';
+import * as AxiosClients from '../../Axios/Clients';
 
 const SettingsComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
@@ -31,7 +31,7 @@ const SettingsComponent: React.FC = (): ReactElement => {
     const rBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
     const host = `http://${values.rpcHost}/json_rpc`;
     try {
-      const result = await axios.post(host, rBody);
+      const result = await AxiosClients.RPC.post(host, rBody);
       if (result.status === Constants.HTTP_OK) {
         setGlobalState('init', { ...gInit, rpcHost: values.rpcHost });
         localStorage.setItem(Constants.HIMITSU_RPC_HOST, values.rpcHost);

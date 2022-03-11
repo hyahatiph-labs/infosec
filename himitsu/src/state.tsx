@@ -40,5 +40,6 @@ export const {
   lock: {
     isProcessing: true,
     isScreenLocked: false,
+    walletName: '',
   },
 });

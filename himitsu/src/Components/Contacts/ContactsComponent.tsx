@@ -1,37 +1,46 @@
 import * as MUI from '@material-ui/core';
+import { useCookies } from 'react-cookie';
 import {
   AddCircle, CloseRounded, ContactMailRounded, DeleteForeverOutlined, ExpandMore,
 } from '@material-ui/icons';
 import SendIcon from '@material-ui/icons/Send';
 import React, { ReactElement, useEffect, useState } from 'react';
 import clsx from 'clsx';
-import axios from 'axios';
 import { Alert } from '@material-ui/lab';
 import { useStyles } from './styles';
 import { setGlobalState, useGlobalState } from '../../state';
-import * as Interfaces from '../../Config/interfaces';
 import * as Constants from '../../Config/constants';
+import * as Interfaces from '../../Config/interfaces';
+import * as AxiosClients from '../../Axios/Clients';
+import LockScreenComponent from '../Modals/LockScreenComponent';
 
 let loaded = false;
 const ContactsComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
+  const [gLock] = useGlobalState('lock');
   const [gAccount] = useGlobalState('account');
   const [gContact] = useGlobalState('contact');
-  const [gInit] = useGlobalState('init');
   const [noContacts, setNoContacts] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [cookies] = useCookies(['himitsu']);
   const [invalidAddress, setIsInvalidAddress] = useState(false);
   const [deleteFailure, setDeleteFailure] = useState(false);
   const [transferFailure, setTransferFailure] = useState(false);
   const [transferSuccess, setTransferSuccess] = useState(false);
+  const [unlockState, setUnlockState] = React
+    .useState<Interfaces.UnlockState>({ walletName: '', password: '' });
   const [values, setValues] = React.useState<Interfaces.ContactState>({
     address: '',
     amount: 0,
     name: '',
   });
 
-  const host = `http://${gInit.rpcHost}/json_rpc`;
+  const setCookieInHeader = async (): Promise<void> => {
+    if (cookies.himitsu) {
+      AxiosClients.RPC.defaults.headers.himitsu = `${cookies.himitsu}`;
+    }
+  };
 
   const handleNoContacts = (): void => {
     setNoContacts(!noContacts);
@@ -62,16 +71,28 @@ const ContactsComponent: React.FC = (): ReactElement => {
   };
 
   const loadContacts = async (): Promise<void> => {
+    await setCookieInHeader();
     const bookBody: Interfaces.GetAddressBookRequest = Constants.GET_ADDRESS_BOOK_REQUEST;
-    const book: Interfaces.GetAddressBookResponse = await (
-      await axios.post(host, bookBody)).data;
-    if (book.result.entries) {
-      setGlobalState('contact', { ...gContact, contactList: book.result.entries });
-    } else {
-      setGlobalState('contact', { ...gContact, contactList: [] });
-      handleNoContacts();
-    }
-    if (!loaded) { loaded = true; }
+    await AxiosClients.RPC.post(Constants.JSON_RPC, bookBody)
+      .then((cResponse) => {
+        const book: Interfaces.GetAddressBookResponse = cResponse.data;
+        if (book.result.entries) {
+          setGlobalState('contact', { ...gContact, contactList: book.result.entries });
+        } else {
+          setGlobalState('contact', { ...gContact, contactList: [] });
+          handleNoContacts();
+        }
+        if (!loaded) { loaded = true; }
+      })
+      .catch((e: Interfaces.ReAuthState) => {
+        setUnlockState({
+          ...unlockState,
+          walletName: e.response.data.himitsuName
+            ? e.response.data.himitsuName : unlockState.walletName,
+        });
+        setGlobalState('lock', { ...gLock, isScreenLocked: true, isProcessing: true });
+        loaded = true;
+      });
   };
 
   const addContact = async (): Promise<void> => {
@@ -81,12 +102,12 @@ const ContactsComponent: React.FC = (): ReactElement => {
     const vBody: Interfaces.ValidateAddressRequest = Constants.VALIDATE_ADDRESS_REQUEST;
     vBody.params.address = values.address;
     const address: Interfaces.ValidateAddressResponse = await (
-      await axios.post(host, vBody, { proxy: Constants.I2P_PROXY })).data;
+      await AxiosClients.RPC.post(Constants.JSON_RPC, vBody)).data;
     if (!address.result.valid) {
       handleInvalidAddress();
     } else {
       const contact: Interfaces.AddAddressBookResponse = await (
-        await axios.post(host, addBody, { proxy: Constants.I2P_PROXY })
+        await AxiosClients.RPC.post(Constants.JSON_RPC, addBody)
       ).data;
       loadContacts();
       setIsAdding(false);
@@ -99,7 +120,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
   const deleteContact = async (index: number): Promise<void> => {
     const deleteBody: Interfaces.DeleteAddressBookRequest = Constants.DELETE_ADDRESS_BOOK_REQUEST;
     deleteBody.params.index = index;
-    const result = await axios.post(host, deleteBody, { proxy: Constants.I2P_PROXY });
+    const result = await AxiosClients.RPC.post(Constants.JSON_RPC, deleteBody);
     if (result.status === Constants.HTTP_OK) {
       loadContacts();
     } else {
@@ -113,11 +134,11 @@ const ContactsComponent: React.FC = (): ReactElement => {
     const d: Interfaces.Destination = { address: recipient, amount: amount.toString() };
     // disable send and notify user it is in progress
     tBody.params.destinations.push(d);
-    const transfer = await (await axios.post(host, tBody, { proxy: Constants.I2P_PROXY })).data;
+    const transfer = await (await AxiosClients.RPC.post(Constants.JSON_RPC, tBody)).data;
     if (transfer.result.tx_hash) {
       const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
       const balance: Interfaces.ShowBalanceResponse = await (
-        await axios.post(host, bBody, { proxy: Constants.I2P_PROXY })).data;
+        await AxiosClients.RPC.post(Constants.JSON_RPC, bBody)).data;
       setGlobalState('account', {
         ...gAccount,
         unlockedBalance: balance.result.unlocked_balance,
@@ -213,6 +234,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
           ))}
         </div>
       )}
+      <LockScreenComponent refresh={() => loadContacts()} />
       {/* Create contact modal */}
       {isAdding && (
         <MUI.Modal

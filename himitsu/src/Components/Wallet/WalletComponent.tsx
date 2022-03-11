@@ -17,28 +17,11 @@ import * as AxiosClients from '../../Axios/Clients';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Constants from '../../Config/constants';
 import * as Interfaces from '../../Config/interfaces';
-import * as Prokurilo from '../../prokurilo';
 import { useStyles } from './styles';
 import busyDev from '../../Assets/dance.gif';
 import busyProd from '../../Assets/iluvxmrchan.gif';
+import LockScreenComponent from '../Modals/LockScreenComponent';
 
-interface UnlockState {
-  walletName: string;
-  password: string;
-}
-
-interface ReAuthData {
-  himitsuName: string;
-}
-
-interface ReAuthResponse {
-  data: ReAuthData;
-}
-interface ReAuthState {
-  response: ReAuthResponse;
-}
-
-// load balance once
 let loaded = false;
 const WalletComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
@@ -47,7 +30,7 @@ const WalletComponent: React.FC = (): ReactElement => {
   const [gLock] = useGlobalState('lock');
   const [isBusy, setIsBusy] = useState(false);
   const [copy, setCopy] = useState(false);
-  const [cookies, setCookie] = useCookies(['himitsu']);
+  const [cookies] = useCookies(['himitsu']);
   const [subAddressUpdated, setSubAddressUpdated] = useState(false);
   const [invalidAddress, setIsInvalidAddress] = useState(false);
   const [unusedAddressAlert, setUnusedAddressAlert] = useState(false);
@@ -60,7 +43,7 @@ const WalletComponent: React.FC = (): ReactElement => {
   const [proofGenerated, setProofGenerated] = useState(false);
   const [showProofValidation, setShowProofValidation] = useState(false);
   const [unlockState, setUnlockState] = React
-    .useState<UnlockState>({ walletName: '', password: '' });
+    .useState<Interfaces.UnlockState>({ walletName: '', password: '' });
   const [accountState, setAccountState] = React.useState<Interfaces.AccountState>({
     label: '',
     pin: 0,
@@ -111,11 +94,6 @@ const WalletComponent: React.FC = (): ReactElement => {
   const handleAccountChange = (prop: keyof Interfaces.AccountState) => (event:
     React.ChangeEvent<HTMLInputElement>) => {
     setAccountState({ ...accountState, [prop]: event.target.value });
-  };
-
-  const handleUnlockChange = (prop: keyof UnlockState) => (event:
-    React.ChangeEvent<HTMLInputElement>) => {
-    setUnlockState({ ...unlockState, [prop]: event.target.value });
   };
 
   const handleSeedConfirmation = (): void => {
@@ -169,20 +147,36 @@ const WalletComponent: React.FC = (): ReactElement => {
                   setGlobalState('lock', { ...gLock, isScreenLocked: false, isProcessing: false });
                   setIsBusy(false);
                 })
-                .catch((e: ReAuthState) => {
-                  setUnlockState({ ...unlockState, walletName: e.response.data.himitsuName });
-                  setGlobalState('lock', { ...gLock, isScreenLocked: true, isProcessing: true });
+                .catch((e: Interfaces.ReAuthState) => {
+                  setUnlockState({
+                    ...unlockState,
+                    walletName: e.response.data.himitsuName
+                      ? e.response.data.himitsuName : unlockState.walletName,
+                  });
+                  setGlobalState('lock', {
+                    ...gLock,
+                    isScreenLocked: true,
+                    isProcessing: true,
+                    walletName: e.response.data.himitsuName || '',
+                  });
+                  setIsBusy(false);
                   loaded = true;
                 });
             }
           })
-          .catch((e: ReAuthState) => {
+          .catch((e: Interfaces.ReAuthState) => {
             setUnlockState({
               ...unlockState,
               walletName: e.response.data.himitsuName
                 ? e.response.data.himitsuName : unlockState.walletName,
             });
-            setGlobalState('lock', { ...gLock, isScreenLocked: true, isProcessing: true });
+            setGlobalState('lock', {
+              ...gLock,
+              isScreenLocked: true,
+              isProcessing: true,
+              walletName: e.response.data.himitsuName || '',
+            });
+            setIsBusy(false);
             loaded = true;
           });
       }
@@ -278,33 +272,6 @@ const WalletComponent: React.FC = (): ReactElement => {
       handleInvalidAddress();
     }
     if (!isValidAmt) { handleInvalidAmount(); }
-  };
-
-  const unlockScreen = async (): Promise<void> => {
-    // use the password from user input to open the wallet
-    const oBody: Interfaces.CreateWalletRequest = Constants.CREATE_WALLET_REQUEST;
-    oBody.params.filename = unlockState.walletName;
-    oBody.params.password = unlockState.password;
-    oBody.method = 'open_wallet';
-    const o = await AxiosClients.RPC.post(Constants.JSON_RPC, oBody);
-    if (o.status === Constants.HTTP_OK) {
-      // prokurilo needs the address because it is wiped from the state
-      const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
-      const a: Interfaces.ShowAddressResponse = await (
-        await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
-      ).data;
-      const expire = await Prokurilo.authenticate(a.result.address);
-      const expires = new Date(expire);
-      setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu,
-        { path: '/', expires, sameSite: 'lax' });
-      setGlobalState('lock', { ...gLock, isScreenLocked: false, isProcessing: false });
-      loadXmrBalance();
-    }
-    if (Constants.IS_DEV) {
-      setGlobalState('lock', { ...gLock, isScreenLocked: false, isProcessing: false });
-    }
-    setIsBusy(false);
-    loaded = true;
   };
 
   useEffect(() => {
@@ -550,43 +517,7 @@ const WalletComponent: React.FC = (): ReactElement => {
             </Fade>
           </Modal>
         )}
-      {/* Screen lock modal */}
-      { gLock.isScreenLocked
-        && (
-          <Modal
-            aria-labelledby="transition-modal-title"
-            aria-describedby="transition-modal-description"
-            className={classes.modal}
-            open={gLock.isScreenLocked}
-            closeAfterTransition
-          >
-            <Fade in={gLock.isScreenLocked}>
-              <div className={clsx(classes.paper, 'altBg')}>
-                <h2 id="transition-modal-title">
-                  Enter password:
-                </h2>
-                <TextField
-                  label="password"
-                  type="password"
-                  required
-                  id="standard-start-adornment"
-                  className={clsx(classes.textField)}
-                  onChange={handleUnlockChange('password')}
-                />
-                <br />
-                <Button
-                  className={classes.send}
-                  disabled={unlockState.password === ''}
-                  onClick={() => { unlockScreen(); }}
-                  variant="outlined"
-                  color="primary"
-                >
-                  <MuIcons.CheckRounded />
-                </Button>
-              </div>
-            </Fade>
-          </Modal>
-        )}
+      <LockScreenComponent refresh={() => loadXmrBalance()} />
       {isBusy
         && (
           <div className={classes.qr}>

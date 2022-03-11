@@ -53,6 +53,23 @@ export interface SettingsState {
   rpcHost: string;
 }
 
+export interface UnlockState {
+  walletName: string;
+  password: string;
+}
+
+interface ReAuthData {
+  himitsuName: string;
+}
+
+interface ReAuthResponse {
+  data: ReAuthData;
+}
+
+export interface ReAuthState {
+  response: ReAuthResponse;
+}
+
 /* RPC Request Parameter Interfaces */
 interface CreateWalletParams {
   filename: string;
