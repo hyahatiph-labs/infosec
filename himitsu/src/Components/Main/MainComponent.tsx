@@ -1,5 +1,4 @@
-import React, { ReactElement, useEffect, useState } from 'react';
-import { useCookies } from 'react-cookie';
+import React, { ReactElement, useState } from 'react';
 import clsx from 'clsx';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
@@ -13,56 +12,25 @@ import SettingsIcon from '@material-ui/icons/Settings';
 import AccountBalanceWalletIcon from '@material-ui/icons/AccountBalanceWallet';
 import ListItemText from '@material-ui/core/ListItemText';
 import ImportExportIcon from '@material-ui/icons/ImportExport';
-import { CheckRounded, ContactMail } from '@material-ui/icons';
-import {
-  Button, Fade, Modal, Snackbar, TextField,
-} from '@material-ui/core';
+import { ContactMail } from '@material-ui/icons';
+import { Snackbar } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import logo from '../../Assets/logo.png';
-import MoneroAccountComponent from '../Monero/MoneroAccountComponent';
 import { useGlobalState } from '../../state';
 import WalletInitComponent from './WalletInitComponent';
 import { useStyles } from './styles';
 import SettingsComponent from '../Settings/SettingsComponent';
-import TransactionsComponent from '../Monero/TransactionsComponent';
+import TransactionsComponent from '../Wallet/TransactionsComponent';
 import ContactsComponent from '../Contacts/ContactsComponent';
-import * as Interfaces from '../../Config/interfaces';
 import * as Constants from '../../Config/constants';
-import * as AxiosClients from '../../Axios/Clients';
-import * as Prokurilo from '../../prokurilo';
+import WalletComponent from '../Wallet/WalletComponent';
 
-// TODO: Refactor all modals to separate components
-// TODO: view only wallet creation
-// TODO: network stats and monerod connection
-// TODO: sync status indicator and i2p status indicator
-// TODO: fee estimate
-// TODO: webxmr integration
-
-interface UnlockState {
-  walletName: string;
-  password: string;
-}
-
-let locked = false;
 const MainComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
+  const [gLock] = useGlobalState('lock');
   const [isDrawerOpen, setDrawer] = useState(false);
-  const [cookies, setCookie] = useCookies(['himitsu']);
-  const [isScreenLocked, setScreenLocked] = useState(false);
   const [invalidPassword, setInvalidPassword] = useState(false);
-  const [values, setValues] = React.useState<UnlockState>({ walletName: '', password: '' });
   const classes = useStyles();
-
-  const setCookieInHeader = async (): Promise<void> => {
-    if (cookies.himitsu) {
-      AxiosClients.RPC.defaults.headers.himitsu = `${cookies.himitsu}`;
-    }
-  };
-
-  const handleChange = (prop: keyof UnlockState) => (event:
-    React.ChangeEvent<HTMLInputElement>) => {
-    setValues({ ...values, [prop]: event.target.value });
-  };
 
   // panel injection drivers
   const [viewingWallet, setWalletView] = useState(true);
@@ -107,57 +75,6 @@ const MainComponent: React.FC = (): ReactElement => {
     setDrawer(false);
   };
 
-  /**
-   * Lock screen will be dependent on cookies
-   * The expiration is set by prokurilo so even if
-   * an attacker wanted to reset the expire time it wouldn't
-   * work. User must set a strong password. This is what drives
-   * prokurilo generating a new challenge. During screen lock
-   * the wallet is closed temporarily. If chooses not to unlock
-   * the screen the session will stop syncing until the next unlock.
-   */
-  const lockScreen = async (): Promise<void> => {
-    if (cookies.himitsu) { // wait until first cookie is set
-      setScreenLocked(false);
-      // trigger get version, set wallet name
-      if (!Constants.IS_DEV) {
-        const vBody: Interfaces.RequestContext = Constants.GET_VERSION_REQUEST;
-        await AxiosClients.RPC.post(Constants.JSON_RPC, vBody)
-          .catch((e) => {
-            setValues({ ...values, walletName: e.response.data.himitsuName });
-            setScreenLocked(true);
-          });
-        await setCookieInHeader();
-      }
-      locked = true;
-    }
-  };
-
-  const unlockScreen = async (): Promise<void> => {
-    // use the password from user input to open the wallet
-    const oBody: Interfaces.CreateWalletRequest = Constants.CREATE_WALLET_REQUEST;
-    oBody.method = 'open_wallet';
-    const o = await AxiosClients.RPC.post(Constants.JSON_RPC, oBody);
-    if (o.status === Constants.HTTP_OK) {
-      // prokurilo needs the address because it is wiped from the state
-      const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
-      const a = await (await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)).data;
-      const expire = await Prokurilo.authenticate(a);
-      const expires = new Date(expire);
-      setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu,
-        { path: '/', expires, sameSite: 'lax' });
-      if (cookies.himitsu) {
-        setScreenLocked(false);
-      }
-    }
-    if (Constants.IS_DEV) { setScreenLocked(false); }
-    locked = true;
-  };
-
-  useEffect(() => {
-    if (!locked) { lockScreen(); }
-  });
-
   /*
     If you want to use an existing wallet in development
     then set REACT_APP_HIMITSU_DEV=DEV in .env.local
@@ -173,7 +90,12 @@ const MainComponent: React.FC = (): ReactElement => {
       <CssBaseline />
       <AppBar position="fixed" className={clsx(classes.appBar, 'altBg')}>
         <Toolbar>
-          <button className={classes.menuButton} onClick={handleMoveDrawer} type="button">
+          <button
+            disabled={gLock.isProcessing}
+            className={classes.menuButton}
+            onClick={handleMoveDrawer}
+            type="button"
+          >
             <img src={logo} alt="monero logo" width={50} />
           </button>
           <Typography variant="h6" noWrap>
@@ -223,49 +145,12 @@ const MainComponent: React.FC = (): ReactElement => {
         )}
       <main className={classes.content}>
         <Toolbar />
-        {(!gInit.isWalletInitialized && !locked) && !Constants.IS_DEV && <WalletInitComponent />}
+        {(!gInit.isWalletInitialized) && !Constants.IS_DEV && <WalletInitComponent />}
         {isWalletInitialized && isViewingContacts && <ContactsComponent />}
-        {isWalletInitialized && isViewingWallet && !isScreenLocked && <MoneroAccountComponent />}
+        {isWalletInitialized && isViewingWallet && <WalletComponent />}
         {isWalletInitialized && isViewingTxs && <TransactionsComponent />}
         {isWalletInitialized && isViewingSettings && <SettingsComponent />}
       </main>
-      {/* Screen lock modal */}
-      { isScreenLocked
-        && (
-          <Modal
-            aria-labelledby="transition-modal-title"
-            aria-describedby="transition-modal-description"
-            className={classes.modal}
-            open={isScreenLocked}
-            closeAfterTransition
-          >
-            <Fade in={isScreenLocked}>
-              <div className={clsx(classes.paper, 'altBg')}>
-                <h2 id="transition-modal-title">
-                  Enter password:
-                </h2>
-                <TextField
-                  label="password"
-                  type="password"
-                  required
-                  id="standard-start-adornment"
-                  className={clsx(classes.textField)}
-                  onChange={handleChange('password')}
-                />
-                <br />
-                <Button
-                  className={classes.send}
-                  disabled={values.password === ''}
-                  onClick={() => { unlockScreen(); }}
-                  variant="outlined"
-                  color="primary"
-                >
-                  <CheckRounded />
-                </Button>
-              </div>
-            </Fade>
-          </Modal>
-        )}
       <Snackbar
         open={invalidPassword}
         autoHideDuration={2000}

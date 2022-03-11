@@ -12,7 +12,7 @@ export const authenticate = async (address: string | null): Promise<number> => {
   // use challenge to generate signature
   if (!Constants.IS_DEV) {
     return Axios.RPC.post(Constants.JSON_RPC, {})
-      .then(() => '')
+      .then(() => new Error('expected error'))
       .catch(async (e) => {
         const parseChallenge = e.response.headers['www-authenticate'];
         const challenge = parseChallenge ? parseChallenge.split('challenge=')[1] : '';

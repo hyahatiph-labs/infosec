@@ -7,7 +7,7 @@ const contactInit: Interfaces.Contact[] = [];
 const transferInit: Interfaces.Transfer[] = [];
 const host = localStorage.getItem(Constants.HIMITSU_RPC_HOST);
 const walletInit = localStorage.getItem(Constants.HIMITSU_INIT) !== null;
-
+const seedConfirmationInit = localStorage.getItem(Constants.SEED_CONFIRMED) !== null;
 /**
  * Global state management
  */
@@ -30,11 +30,15 @@ export const {
   init: {
     isWalletInitialized: walletInit,
     isRestoringFromSeed: false,
-    isSeedConfirmed: false,
+    isSeedConfirmed: seedConfirmationInit,
     network: '', // TODO: add MAINNET, STAGENET enum / flags
     rpcHost: host || 'localhost:38083',
   },
   transfer: {
     transferList: transferInit,
+  },
+  lock: {
+    isProcessing: true,
+    isScreenLocked: false,
   },
 });

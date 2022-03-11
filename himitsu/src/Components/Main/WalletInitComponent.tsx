@@ -128,14 +128,14 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             await AxiosClients.RPC.post(Constants.JSON_RPC, dBody); // dont forget to open
             const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
             const address: Interfaces.ShowAddressResponse = await (
-              await AxiosClients.RPC.post(Constants.JSON_RPC, aBody));
+              await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)).data;
             // initialize prokurilo authentication
             const expire = await Prokurilo.authenticate(address.result.address);
             const expires = new Date(expire);
             setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu, { path: '/', expires });
-            if (!cookies.himitsu) { /* */ }
             setGlobalState('init', {
               ...gInit,
+              isSeedConfirmed: true,
               isWalletInitialized: true,
               isRestoringFromSeed: true,
               network: values.networkType,
@@ -145,6 +145,10 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               primaryAddress: address.result.address,
               mnemonic: '',
             }); // TODO: snackbar with error handling
+            localStorage.setItem(Constants.SEED_CONFIRMED, `${Date.now()}`);
+            if (cookies.himitsu) {
+              localStorage.setItem(Constants.HIMITSU_INIT, `${Date.now()}`);
+            }
           } else {
             handleInvalidRpcHost();
             setValues({ ...values, isInitializing: false });

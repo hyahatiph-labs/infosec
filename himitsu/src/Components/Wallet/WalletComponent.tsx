@@ -1,4 +1,5 @@
 import React, { ReactElement, useState, useEffect } from 'react';
+import { useCookies } from 'react-cookie';
 import BigDecimal from 'js-big-decimal';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import QRCode from 'qrcode.react';
@@ -16,18 +17,37 @@ import * as AxiosClients from '../../Axios/Clients';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Constants from '../../Config/constants';
 import * as Interfaces from '../../Config/interfaces';
+import * as Prokurilo from '../../prokurilo';
 import { useStyles } from './styles';
 import busyDev from '../../Assets/dance.gif';
 import busyProd from '../../Assets/iluvxmrchan.gif';
 
+interface UnlockState {
+  walletName: string;
+  password: string;
+}
+
+interface ReAuthData {
+  himitsuName: string;
+}
+
+interface ReAuthResponse {
+  data: ReAuthData;
+}
+interface ReAuthState {
+  response: ReAuthResponse;
+}
+
 // load balance once
 let loaded = false;
-const MoneroAccountComponent: React.FC = (): ReactElement => {
+const WalletComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
   const [gAccount] = useGlobalState('account');
   const [gInit] = useGlobalState('init');
+  const [gLock] = useGlobalState('lock');
   const [isBusy, setIsBusy] = useState(false);
   const [copy, setCopy] = useState(false);
+  const [cookies, setCookie] = useCookies(['himitsu']);
   const [subAddressUpdated, setSubAddressUpdated] = useState(false);
   const [invalidAddress, setIsInvalidAddress] = useState(false);
   const [unusedAddressAlert, setUnusedAddressAlert] = useState(false);
@@ -39,7 +59,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const [rpcConnectionFailure, setRpcConnectionFailure] = useState(false);
   const [proofGenerated, setProofGenerated] = useState(false);
   const [showProofValidation, setShowProofValidation] = useState(false);
-  const [values, setValues] = React.useState<Interfaces.AccountState>({
+  const [unlockState, setUnlockState] = React
+    .useState<UnlockState>({ walletName: '', password: '' });
+  const [accountState, setAccountState] = React.useState<Interfaces.AccountState>({
     label: '',
     pin: 0,
     amount: 0,
@@ -49,6 +71,12 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     message: '',
     proofValidation: { good: false, spent: 0n, total: 0n },
   });
+
+  const setCookieInHeader = async (): Promise<void> => {
+    if (cookies.himitsu) {
+      AxiosClients.RPC.defaults.headers.himitsu = `${cookies.himitsu}`;
+    }
+  };
 
   const handleCopy = (): void => { setCopy(!copy); };
 
@@ -80,18 +108,25 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
     setProofGenerated(!proofGenerated);
   };
 
-  const handleChange = (prop: keyof Interfaces.AccountState) => (event:
+  const handleAccountChange = (prop: keyof Interfaces.AccountState) => (event:
     React.ChangeEvent<HTMLInputElement>) => {
-    setValues({ ...values, [prop]: event.target.value });
+    setAccountState({ ...accountState, [prop]: event.target.value });
+  };
+
+  const handleUnlockChange = (prop: keyof UnlockState) => (event:
+    React.ChangeEvent<HTMLInputElement>) => {
+    setUnlockState({ ...unlockState, [prop]: event.target.value });
   };
 
   const handleSeedConfirmation = (): void => {
     setGlobalState('init', { ...gInit, isSeedConfirmed: true });
     setGlobalState('account', { ...gAccount, mnemonic: '' });
+    localStorage.setItem(Constants.SEED_CONFIRMED, `${Date.now()}`);
   };
 
   const loadXmrBalance = async (): Promise<void> => {
     setIsBusy(true);
+    await setCookieInHeader();
     if (Constants.IS_DEV) {
       const body: Constants.OpenWalletRequest = Constants.CREATE_WALLET_REQUEST;
       body.method = 'open_wallet';
@@ -100,34 +135,56 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       await AxiosClients.RPC.post(Constants.JSON_RPC, body);
     }
     try {
-      if (gInit.isSeedConfirmed || Constants.IS_DEV) {
+      if ((gInit.isSeedConfirmed || Constants.IS_DEV)) {
         const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
         const bBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
-        const a: Interfaces.ShowAddressResponse = await (
-          await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
-        ).data;
-        const b: Interfaces.ShowBalanceResponse = await (
-          await AxiosClients.RPC.post(Constants.JSON_RPC, bBody)
-        ).data;
-        const aResult = a.result.addresses;
-        const aLength = aResult.length;
-        // display the latest unused subaddress, warn if all addresses are used
-        const primaryAddress = aLength <= 1 ? a.result.address : aResult[aLength - 1].address;
-        const { balance } = b.result;
-        const unlockedBalance = b.result.unlocked_balance;
-        setGlobalState('account', {
-          ...gAccount,
-          primaryAddress,
-          walletBalance: balance,
-          unlockTime: b.result.blocks_to_unlock,
-          unlockedBalance,
-          subAddresses: a.result.addresses,
-        });
-        let unusedAddress = false;
-        aResult.forEach((v) => { if (!v.used && v.address_index !== 0) { unusedAddress = true; } });
-        if (!unusedAddress) { handleUnusedAddressAlert(); }
-        setIsBusy(false);
-        loaded = true;
+        await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
+          .then(async (aResponse) => {
+            loaded = true;
+            const a: Interfaces.ShowAddressResponse = await aResponse.data;
+            if (a.result) {
+              await AxiosClients.RPC.post(Constants.JSON_RPC, bBody)
+                .then(async (bResponse) => {
+                  const b: Interfaces.ShowBalanceResponse = await bResponse.data;
+                  const aResult = a.result.addresses;
+                  const aLength = aResult.length;
+                  // display the latest unused subaddress, warn if all addresses are used
+                  const primaryAddress = aLength <= 1
+                    ? a.result.address : aResult[aLength - 1].address;
+                  const { balance } = b.result;
+                  const unlockedBalance = b.result.unlocked_balance;
+                  setGlobalState('account', {
+                    ...gAccount,
+                    primaryAddress,
+                    walletBalance: balance,
+                    unlockTime: b.result.blocks_to_unlock,
+                    unlockedBalance,
+                    subAddresses: a.result.addresses,
+                  });
+                  let unusedAddress = false;
+                  aResult.forEach((v) => {
+                    if (!v.used && v.address_index !== 0) { unusedAddress = true; }
+                  });
+                  if (!unusedAddress) { handleUnusedAddressAlert(); }
+                  setGlobalState('lock', { ...gLock, isScreenLocked: false, isProcessing: false });
+                  setIsBusy(false);
+                })
+                .catch((e: ReAuthState) => {
+                  setUnlockState({ ...unlockState, walletName: e.response.data.himitsuName });
+                  setGlobalState('lock', { ...gLock, isScreenLocked: true, isProcessing: true });
+                  loaded = true;
+                });
+            }
+          })
+          .catch((e: ReAuthState) => {
+            setUnlockState({
+              ...unlockState,
+              walletName: e.response.data.himitsuName
+                ? e.response.data.himitsuName : unlockState.walletName,
+            });
+            setGlobalState('lock', { ...gLock, isScreenLocked: true, isProcessing: true });
+            loaded = true;
+          });
       }
     } catch {
       loaded = true;
@@ -152,7 +209,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const generateSubAddress = async (): Promise<void> => {
     const aBody: Interfaces.CreateAddressRequest = Constants.CREATE_ADDRESS_REQUEST;
     const sBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
-    aBody.params.label = values.label;
+    aBody.params.label = accountState.label;
     const create: Interfaces.CreateAddressResponse = await (
       await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
     ).data;
@@ -172,32 +229,32 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   const generateReserveProof = async (): Promise<void> => {
     setProofGenerated(true);
     const proofBody: Interfaces.GetReserveProofRequest = Constants.GET_RESERVE_PROOF_REQUEST;
-    proofBody.params.amount = BigInt(values.amount * Constants.PICO).toString();
-    proofBody.params.message = values.message;
+    proofBody.params.amount = BigInt(accountState.amount * Constants.PICO).toString();
+    proofBody.params.message = accountState.message;
     const proof: Interfaces.GetReserveProofResponse = await (
       await AxiosClients.RPC.post(Constants.JSON_RPC, proofBody)
     ).data;
-    setValues({ ...values, reserveProof: proof.result.signature });
+    setAccountState({ ...accountState, reserveProof: proof.result.signature });
   };
 
   const checkReserveProof = async (): Promise<void> => {
     const proofBody: Interfaces.CheckReserveProofRequest = Constants.CHECK_RESERVE_PROOF_REQUEST;
-    proofBody.params.address = values.sendTo;
-    proofBody.params.message = values.message;
-    proofBody.params.signature = values.reserveProof;
+    proofBody.params.address = accountState.sendTo;
+    proofBody.params.message = accountState.message;
+    proofBody.params.signature = accountState.reserveProof;
     const proof: Interfaces.CheckReserveProofResponse = await (
       await AxiosClients.RPC.post(Constants.JSON_RPC, proofBody)
     ).data;
     if (proof.result.good) {
-      setValues({ ...values, proofValidation: proof.result });
+      setAccountState({ ...accountState, proofValidation: proof.result });
       setShowProofValidation(true);
     }
   };
 
   const transfer = async (): Promise<void> => {
     const vBody: Interfaces.ValidateAddressRequest = Constants.VALIDATE_ADDRESS_REQUEST;
-    vBody.params.address = values.sendTo.trim();
-    const isValidAmt = values.amount < parseFloat(BigDecimal
+    vBody.params.address = accountState.sendTo.trim();
+    const isValidAmt = accountState.amount < parseFloat(BigDecimal
       .divide(gAccount.unlockedBalance.toString(), Constants.PICO.toString(), 6));
     const vAddress: Interfaces.ValidateAddressResponse = await (
       await AxiosClients.RPC.post(Constants.JSON_RPC, vBody)).data;
@@ -205,15 +262,15 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       && vAddress.result.nettype !== 'mainnet') {
       const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;
       const destination: Interfaces.Destination = {
-        address: values.sendTo.trim(),
-        amount: BigInt(values.amount * Constants.PICO).toString(),
+        address: accountState.sendTo.trim(),
+        amount: BigInt(accountState.amount * Constants.PICO).toString(),
       };
       tBody.params.destinations.push(destination);
       // serialize the destination with big int
       const tx: Interfaces.TransferResponse = await (
         await AxiosClients.RPC.post(Constants.JSON_RPC, tBody)
       ).data;
-      setValues({ ...values, hash: tx.result.tx_hash });
+      setAccountState({ ...accountState, hash: tx.result.tx_hash });
       handleTransferSuccess();
       loadXmrBalance();
     }
@@ -221,6 +278,33 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
       handleInvalidAddress();
     }
     if (!isValidAmt) { handleInvalidAmount(); }
+  };
+
+  const unlockScreen = async (): Promise<void> => {
+    // use the password from user input to open the wallet
+    const oBody: Interfaces.CreateWalletRequest = Constants.CREATE_WALLET_REQUEST;
+    oBody.params.filename = unlockState.walletName;
+    oBody.params.password = unlockState.password;
+    oBody.method = 'open_wallet';
+    const o = await AxiosClients.RPC.post(Constants.JSON_RPC, oBody);
+    if (o.status === Constants.HTTP_OK) {
+      // prokurilo needs the address because it is wiped from the state
+      const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
+      const a: Interfaces.ShowAddressResponse = await (
+        await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
+      ).data;
+      const expire = await Prokurilo.authenticate(a.result.address);
+      const expires = new Date(expire);
+      setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu,
+        { path: '/', expires, sameSite: 'lax' });
+      setGlobalState('lock', { ...gLock, isScreenLocked: false, isProcessing: false });
+      loadXmrBalance();
+    }
+    if (Constants.IS_DEV) {
+      setGlobalState('lock', { ...gLock, isScreenLocked: false, isProcessing: false });
+    }
+    setIsBusy(false);
+    loaded = true;
   };
 
   useEffect(() => {
@@ -283,12 +367,12 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   id="standard-start-adornment"
                   required
                   className={clsx(classes.textField)}
-                  onChange={handleChange('label')}
+                  onChange={handleAccountChange('label')}
                 />
                 <br />
                 <Button
                   className={classes.modalButton}
-                  disabled={values.label === ''}
+                  disabled={accountState.label === ''}
                   onClick={() => { generateSubAddress(); }}
                   variant="outlined"
                   color="primary"
@@ -331,7 +415,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   required
                   id="standard-start-adornment"
                   className={clsx(classes.textField)}
-                  onChange={handleChange('sendTo')}
+                  onChange={handleAccountChange('sendTo')}
                 />
                 <TextField
                   label="amount"
@@ -339,20 +423,20 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   required
                   id="standard-start-adornment"
                   className={clsx(classes.textField)}
-                  onChange={handleChange('amount')}
+                  onChange={handleAccountChange('amount')}
                 />
                 <TextField
                   label="pin (optional)"
                   type="password"
                   id="standard-start-adornment"
                   className={clsx(classes.textField)}
-                  onChange={handleChange('pin')}
+                  onChange={handleAccountChange('pin')}
                 />
                 <br />
                 <Button
                   className={classes.modalButton}
-                  disabled={BigInt(values.amount * Constants.PICO) > gAccount.unlockedBalance
-                    || values.amount <= 0}
+                  disabled={BigInt(accountState.amount * Constants.PICO) > gAccount.unlockedBalance
+                    || accountState.amount <= 0}
                   onClick={() => { transfer(); }}
                   variant="outlined"
                   color="primary"
@@ -392,10 +476,10 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   enter address, signature and optional message to validate.
                 </p>
                 <div>
-                  <CopyToClipboard text={values.reserveProof}>
+                  <CopyToClipboard text={accountState.reserveProof}>
                     <button type="button" onClick={handleCopy}>
                       <p className={classes.proof}>
-                        {`${values.reserveProof.slice(0, 19)}...`}
+                        {`${accountState.reserveProof.slice(0, 19)}...`}
                       </p>
                     </button>
                   </CopyToClipboard>
@@ -406,7 +490,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   required
                   id="standard-start-adornment"
                   className={clsx(classes.textField)}
-                  onChange={handleChange('message')}
+                  onChange={handleAccountChange('message')}
                 />
                 <TextField
                   label="amount"
@@ -414,7 +498,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   required
                   id="standard-start-adornment"
                   className={clsx(classes.textField)}
-                  onChange={handleChange('amount')}
+                  onChange={handleAccountChange('amount')}
                 />
                 <TextField
                   label="address"
@@ -422,7 +506,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   required
                   id="standard-start-adornment"
                   className={clsx(classes.textField)}
-                  onChange={handleChange('sendTo')}
+                  onChange={handleAccountChange('sendTo')}
                 />
                 <TextField
                   label="signature"
@@ -430,13 +514,13 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   required
                   id="standard-start-adornment"
                   className={clsx(classes.textField)}
-                  onChange={handleChange('reserveProof')}
+                  onChange={handleAccountChange('reserveProof')}
                 />
                 <br />
                 <Button
                   className={classes.modalButton}
-                  disabled={BigInt(values.amount * Constants.PICO) > gAccount.unlockedBalance
-                    || values.amount <= 0}
+                  disabled={BigInt(accountState.amount * Constants.PICO) > gAccount.unlockedBalance
+                    || accountState.amount <= 0}
                   onClick={() => { generateReserveProof(); }}
                   variant="outlined"
                   color="primary"
@@ -446,7 +530,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                 {' '}
                 <Button
                   className={classes.modalButton}
-                  disabled={values.sendTo === '' || values.reserveProof === ''}
+                  disabled={accountState.sendTo === '' || accountState.reserveProof === ''}
                   onClick={() => { checkReserveProof(); }}
                   variant="outlined"
                   color="primary"
@@ -461,6 +545,43 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
                   color="primary"
                 >
                   <MuIcons.CloseRounded />
+                </Button>
+              </div>
+            </Fade>
+          </Modal>
+        )}
+      {/* Screen lock modal */}
+      { gLock.isScreenLocked
+        && (
+          <Modal
+            aria-labelledby="transition-modal-title"
+            aria-describedby="transition-modal-description"
+            className={classes.modal}
+            open={gLock.isScreenLocked}
+            closeAfterTransition
+          >
+            <Fade in={gLock.isScreenLocked}>
+              <div className={clsx(classes.paper, 'altBg')}>
+                <h2 id="transition-modal-title">
+                  Enter password:
+                </h2>
+                <TextField
+                  label="password"
+                  type="password"
+                  required
+                  id="standard-start-adornment"
+                  className={clsx(classes.textField)}
+                  onChange={handleUnlockChange('password')}
+                />
+                <br />
+                <Button
+                  className={classes.send}
+                  disabled={unlockState.password === ''}
+                  onClick={() => { unlockScreen(); }}
+                  variant="outlined"
+                  color="primary"
+                >
+                  <MuIcons.CheckRounded />
                 </Button>
               </div>
             </Fade>
@@ -609,7 +730,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           onClose={handleTransferSuccess}
           severity="success"
         >
-          {`Send success for hash: ${values.hash.slice(0, 9)}...`}
+          {`Send success for hash: ${accountState.hash.slice(0, 9)}...`}
         </Alert>
       </Snackbar>
       <Snackbar
@@ -621,7 +742,7 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           onClose={handleInvalidAmount}
           severity="error"
         >
-          {`${values.amount} is not valid`}
+          {`${accountState.amount} is not valid`}
         </Alert>
       </Snackbar>
       <Snackbar
@@ -645,9 +766,9 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
           onClose={() => { setShowProofValidation(false); }}
           severity="info"
         >
-          {`Valid proof on ${BigDecimal.divide(values.proofValidation.spent.toString(),
+          {`Valid proof on ${BigDecimal.divide(accountState.proofValidation.spent.toString(),
             Constants.PICO.toString(), 3)} spent and
-            ${BigDecimal.divide(values.proofValidation.total.toString(),
+            ${BigDecimal.divide(accountState.proofValidation.total.toString(),
             Constants.PICO.toString(), 3)} total`}
         </Alert>
       </Snackbar>
@@ -655,4 +776,4 @@ const MoneroAccountComponent: React.FC = (): ReactElement => {
   );
 };
 
-export default MoneroAccountComponent;
+export default WalletComponent;

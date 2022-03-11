@@ -76,4 +76,10 @@ export const useStyles = makeStyles((theme: Theme) => createStyles({
     cursor: 'pointer',
     fontSize: '1em',
   },
+  send: {
+    marginRight: theme.spacing(0.1),
+    backgroundColor: '#212D362',
+    color: '#FF5277',
+    margin: theme.spacing(1),
+  },
 }));

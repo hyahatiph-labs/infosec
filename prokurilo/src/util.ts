@@ -15,7 +15,9 @@ const NODE_ENV = process.env.NODE_ENV || "";
 
 /* himitsu specific */
 let himitsuName = '';
+let walletIsSet = false;
 let addressIsSet = false;
+let signatureIsSet = false;
 let himitsuConfigured = false;
 let himitsuExpiration = 0;
 let data = crypto.randomBytes(32).toString('hex');
@@ -67,7 +69,7 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
   const parseIt = auth && auth.length > 0 && auth.indexOf(":") > 0 ? auth.split("basic ")[1] : '';
   const address = parseIt !== '' ? parseIt.split(":")[0] : '';
   const signature = parseIt !== '' ? parseIt.split(":")[1] : '';
-  if (addressIsSet && address.length > 0 && signature.length > 0) {
+  if (addressIsSet && walletIsSet && signatureIsSet && address.length > 0 && signature.length > 0) {
     log(`checking signature for configuration`, LogLevel.DEBUG, true);
     if (await verifyHimitsuSignature(address, signature)){
       log(`configuring himitsu instance`, LogLevel.INFO, true);
@@ -81,15 +83,21 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
         .header("www-authenticate", `challenge=${data}`)
         .send();
     }
-  } else if (!addressIsSet || req.body.method === 'sign') {
+  } else if ((!addressIsSet || !walletIsSet || !signatureIsSet) && req.body.method) {
     log(`bypass for signing only`, LogLevel.WARN, true);
-    if (req.body.method === 'create_wallet') {
+    if (req.body.method === 'create_wallet' || req.body.method === 'open_wallet'
+      || req.body.method === 'restore_deterministic_wallet') {
       himitsuName = req.body.params.filename;
+      walletIsSet = true;
       log(`wallet is set`, LogLevel.DEBUG, true);
     }
     if (req.body.method === 'get_address') {
       log(`address is set`, LogLevel.DEBUG, true);
       addressIsSet = true;
+    }
+    if (req.body.method === 'sign') {
+      log(`signature is set`, LogLevel.DEBUG, true);
+      signatureIsSet = true;
     }
     passThrough(req, res, null); // one time deal for the handshake
   } else {
@@ -115,20 +123,20 @@ const verifyHimitsu = async (req: any, res: any) => {
   if (await verifyHimitsuSignature(address, signature) && himitsuExpiration > Date.now()) {
     log(`welcome back himitsu!`, LogLevel.INFO, true);
     passThrough(req, res, null);
+  } else if (await !verifyHimitsuSignature(address, signature)) {
+    res.status(Config.Http.FORBIDDEN).send();
   } else {
     // a new challenge has arrived!
     log(`invalid himitsu session detected`, LogLevel.DEBUG, true);
     addressIsSet = false;
+    walletIsSet = false;
+    signatureIsSet = false;
     himitsuConfigured = false;
     data = crypto.randomBytes(32).toString('hex');
     const body = { jsonrpc: Config.RPC.VERSION, id: Config.RPC.ID, method: Config.RPC.CLOSE };
     await axios.post(`http://${Config.XMR_RPC_HOST}/json_rpc`, body);
-    res.status(Config.Http.UNAUTHORIZED).send({ himitsuName });
+    res.status(Config.Http.UNAUTHORIZED).json({ himitsuName }).send();
   }
-  // TODO: there is an edge case here where an attacker could attempt to access the wallet and
-  // acquire the wallet name. Himitsu configuration is reset and password is needed. Still there
-  // is something to be desired such as presentation of expired cookie. But then attacker could
-  // have that if they get access to the machine of the wallet.
 };
 
 /**

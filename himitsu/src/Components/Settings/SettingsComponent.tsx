@@ -13,8 +13,6 @@ const SettingsComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
   const [gInit] = useGlobalState('init');
   const [invalidRpcHost, setInvalidRpcHost] = useState(false);
-  const [invalidPin, setInvalidPin] = useState(false);
-  const [updatedPin, setUpdatedPin] = useState(false);
   const [isUpdatedRpcHost, setUpdatedRpcHost] = useState(false);
   const [values, setValues] = React.useState<Interfaces.SettingsState>({
     rpcHost: '',
@@ -25,10 +23,6 @@ const SettingsComponent: React.FC = (): ReactElement => {
     setValues({ ...values, [prop]: event.target.value });
   };
 
-  const handleUpdatedPin = (): void => { setUpdatedPin(!updatedPin); };
-
-  const handleInvalidPin = (): void => { setInvalidPin(!invalidPin); };
-
   const handleInvalidRpcHost = (): void => { setInvalidRpcHost(!invalidRpcHost); };
 
   const handleUpdateRpcHostSuccess = (): void => { setUpdatedRpcHost(!isUpdatedRpcHost); };
@@ -37,7 +31,7 @@ const SettingsComponent: React.FC = (): ReactElement => {
     const rBody: Interfaces.ShowBalanceRequest = Constants.SHOW_BALANCE_REQUEST;
     const host = `http://${values.rpcHost}/json_rpc`;
     try {
-      const result = await axios.post(host, rBody, { proxy: Constants.I2P_PROXY });
+      const result = await axios.post(host, rBody);
       if (result.status === Constants.HTTP_OK) {
         setGlobalState('init', { ...gInit, rpcHost: values.rpcHost });
         localStorage.setItem(Constants.HIMITSU_RPC_HOST, values.rpcHost);
@@ -95,30 +89,6 @@ const SettingsComponent: React.FC = (): ReactElement => {
           severity="error"
         >
           {`${values.rpcHost} is not valid`}
-        </Alert>
-      </MUI.Snackbar>
-      <MUI.Snackbar
-        open={updatedPin}
-        autoHideDuration={2000}
-        onClose={handleUpdatedPin}
-      >
-        <Alert
-          onClose={handleUpdatedPin}
-          severity="success"
-        >
-          Pin updated successfully
-        </Alert>
-      </MUI.Snackbar>
-      <MUI.Snackbar
-        open={invalidPin}
-        autoHideDuration={2000}
-        onClose={handleInvalidPin}
-      >
-        <Alert
-          onClose={handleInvalidPin}
-          severity="error"
-        >
-          Invalid pin. Enter a 6-digit pin
         </Alert>
       </MUI.Snackbar>
     </div>

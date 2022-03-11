@@ -64,7 +64,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
   const loadContacts = async (): Promise<void> => {
     const bookBody: Interfaces.GetAddressBookRequest = Constants.GET_ADDRESS_BOOK_REQUEST;
     const book: Interfaces.GetAddressBookResponse = await (
-      await axios.post(host, bookBody, { proxy: Constants.I2P_PROXY })).data;
+      await axios.post(host, bookBody)).data;
     if (book.result.entries) {
       setGlobalState('contact', { ...gContact, contactList: book.result.entries });
     } else {
