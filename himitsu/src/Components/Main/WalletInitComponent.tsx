@@ -48,7 +48,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
     showPassword: false,
     isInitializing: false,
     isAdvanced: false,
-    networkType: 'STAGENET', // TODO: set network type after reading address
+    networkType: Interfaces.NetworkType.MAINNET,
     rpcUserName: null,
     rpcPassword: null,
     seed: '',
@@ -138,7 +138,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               isSeedConfirmed: true,
               isWalletInitialized: true,
               isRestoringFromSeed: true,
-              network: values.networkType,
             });
             setGlobalState('account', {
               ...gAccount,
@@ -175,7 +174,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               ...gInit,
               isWalletInitialized: true,
               isRestoringFromSeed: false,
-              network: values.networkType,
             }); // TODO: snackbar with error handling
             setGlobalState('account', {
               ...gAccount,

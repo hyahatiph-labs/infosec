@@ -1,4 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
+import { useCookies } from 'react-cookie';
 import BigDecimal from 'js-big-decimal';
 import * as MUI from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
@@ -12,16 +13,20 @@ import * as Interfaces from '../../Config/interfaces';
 import * as AxiosClients from '../../Axios/Clients';
 import { setGlobalState, useGlobalState } from '../../state';
 import { useStyles } from './styles';
+import LockScreenComponent from '../Modals/LockScreenComponent';
 
 let loaded = false;
 const TransactionsComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
-  const [gInit] = useGlobalState('init');
+  const [gLock] = useGlobalState('lock');
+  const [cookies] = useCookies(['himitsu']);
   const [gTransfer] = useGlobalState('transfer');
   const [copy, setCopy] = useState(false);
   const [noTransfers, setNoTransfers] = useState(false);
   const [showProofValidation, setShowProofValidation] = useState(false);
   const [isGeneratingProof, setIsGeneratingProof] = useState(false);
+  const [unlockState, setUnlockState] = React
+    .useState<Interfaces.UnlockState>({ walletName: '', password: '' });
   const [values, setValues] = React.useState<Interfaces.TransactionState>({
     address: '',
     txid: '',
@@ -34,7 +39,12 @@ const TransactionsComponent: React.FC = (): ReactElement => {
       received: 0n,
     },
   });
-  const host = `http://${gInit.rpcHost}/json_rpc`;
+
+  const setCookieInHeader = async (): Promise<void> => {
+    if (cookies.himitsu) {
+      AxiosClients.RPC.defaults.headers.himitsu = `${cookies.himitsu}`;
+    }
+  };
 
   const handleCopy = (): void => {
     setCopy(!copy);
@@ -78,40 +88,52 @@ const TransactionsComponent: React.FC = (): ReactElement => {
   };
 
   const loadTransactions = async (type: string | null): Promise<void> => {
+    await setCookieInHeader();
     let tBody: Interfaces.ShowTransfersRequest = Constants.SHOW_TRANSFERS_REQUEST;
     if (type) {
       tBody = filterTransactions(type);
     }
-    const transfers: Interfaces.ShowTransfersResponse = await (
-      await AxiosClients.RPC.post(host, tBody)).data;
-    const r = transfers.result;
-    const hasTransfers = r.failed || r.in || r.out || r.pending || r.pool;
-    if (hasTransfers) {
-      let all: Interfaces.Transfer[] = [];
-      if (r.failed) {
-        all = all.concat(...all, r.failed);
-      }
-      if (r.in) {
-        all = all.concat(...all, r.in);
-      }
-      if (r.pending) {
-        all = all.concat(...all, r.pending);
-      }
-      if (r.pool) {
-        all = all.concat(...all, r.pool);
-      }
-      if (r.out) {
-        all = all.concat(...all, r.out);
-      }
-      const filter: Set<Interfaces.Transfer> = new Set(all);
-      setGlobalState('transfer', { ...gTransfer, transferList: Array.from(filter) });
-    } else {
-      setGlobalState('transfer', { ...gTransfer, transferList: [] });
-      handleNoTransfers();
-    }
-    if (!loaded) {
-      loaded = true;
-    }
+    await AxiosClients.RPC.post(Constants.JSON_RPC, tBody)
+      .then((transfers) => {
+        const rResponse: Interfaces.ShowTransfersResponse = transfers.data;
+        const r = rResponse.result;
+        const hasTransfers = r.failed || r.in || r.out || r.pending || r.pool;
+        if (hasTransfers) {
+          let all: Interfaces.Transfer[] = [];
+          if (r.failed) {
+            all = all.concat(...all, r.failed);
+          }
+          if (r.in) {
+            all = all.concat(...all, r.in);
+          }
+          if (r.pending) {
+            all = all.concat(...all, r.pending);
+          }
+          if (r.pool) {
+            all = all.concat(...all, r.pool);
+          }
+          if (r.out) {
+            all = all.concat(...all, r.out);
+          }
+          const filter: Set<Interfaces.Transfer> = new Set(all);
+          setGlobalState('transfer', { ...gTransfer, transferList: Array.from(filter) });
+        } else {
+          setGlobalState('transfer', { ...gTransfer, transferList: [] });
+          handleNoTransfers();
+        }
+        if (!loaded) {
+          loaded = true;
+        }
+      })
+      .catch((e: Interfaces.ReAuthState) => {
+        setUnlockState({
+          ...unlockState,
+          walletName: e.response.data.himitsuName
+            ? e.response.data.himitsuName : unlockState.walletName,
+        });
+        setGlobalState('lock', { ...gLock, isScreenLocked: true, isProcessing: true });
+        loaded = true;
+      });
   };
 
   const generateTxProof = async (txid: string, address: string): Promise<void> => {
@@ -119,7 +141,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
     proofBody.params.address = address;
     proofBody.params.txid = txid;
     const proof: Interfaces.GetTxProofResponse = await (
-      await AxiosClients.RPC.post(host, proofBody)).data;
+      await AxiosClients.RPC.post(Constants.JSON_RPC, proofBody)).data;
     setValues({ ...values, txProof: proof.result.signature });
   };
 
@@ -130,7 +152,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
     proofBody.params.signature = values.txProof;
     proofBody.params.txid = values.txid;
     const proof: Interfaces.CheckTxProofResponse = await (
-      await AxiosClients.RPC.post(host, proofBody)).data;
+      await AxiosClients.RPC.post(Constants.JSON_RPC, proofBody)).data;
     if (proof.result.good) {
       setValues({ ...values, proofValidation: proof.result });
       setShowProofValidation(true);
@@ -145,6 +167,7 @@ const TransactionsComponent: React.FC = (): ReactElement => {
 
   return (
     <div className="container-fluid">
+      <LockScreenComponent refresh={() => loadTransactions(null)} />
       <div className={classes.buttonRow}>
         <MUI.ButtonGroup variant="outlined" aria-label="outlined button group">
           <MUI.Button onClick={() => loadTransactions('failed')}>Failed</MUI.Button>

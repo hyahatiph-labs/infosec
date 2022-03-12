@@ -13,9 +13,8 @@ import AccountBalanceWalletIcon from '@material-ui/icons/AccountBalanceWallet';
 import ListItemText from '@material-ui/core/ListItemText';
 import ImportExportIcon from '@material-ui/icons/ImportExport';
 import { ContactMail } from '@material-ui/icons';
-import { Snackbar } from '@material-ui/core';
-import { Alert } from '@material-ui/lab';
 import logo from '../../Assets/logo.png';
+import stagenetLogo from '../../Assets/stagenet.png';
 import { useGlobalState } from '../../state';
 import WalletInitComponent from './WalletInitComponent';
 import { useStyles } from './styles';
@@ -24,12 +23,12 @@ import TransactionsComponent from '../Wallet/TransactionsComponent';
 import ContactsComponent from '../Contacts/ContactsComponent';
 import * as Constants from '../../Config/constants';
 import WalletComponent from '../Wallet/WalletComponent';
+import * as Interfaces from '../../Config/interfaces';
 
 const MainComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
   const [gLock] = useGlobalState('lock');
   const [isDrawerOpen, setDrawer] = useState(false);
-  const [invalidPassword, setInvalidPassword] = useState(false);
   const classes = useStyles();
 
   // panel injection drivers
@@ -96,7 +95,12 @@ const MainComponent: React.FC = (): ReactElement => {
             onClick={handleMoveDrawer}
             type="button"
           >
-            <img src={logo} alt="monero logo" width={50} />
+            <img
+              src={gInit.network === Interfaces.NetworkType.MAINNET
+                ? logo : stagenetLogo}
+              alt="monero logo"
+              width={50}
+            />
           </button>
           <Typography variant="h6" noWrap>
             himitsu v0.1.0-experimental
@@ -151,18 +155,6 @@ const MainComponent: React.FC = (): ReactElement => {
         {isWalletInitialized && isViewingTxs && <TransactionsComponent />}
         {isWalletInitialized && isViewingSettings && <SettingsComponent />}
       </main>
-      <Snackbar
-        open={invalidPassword}
-        autoHideDuration={2000}
-        onClose={() => { setInvalidPassword(false); }}
-      >
-        <Alert
-          onClose={() => { setInvalidPassword(false); }}
-          severity="error"
-        >
-          Invalid password.
-        </Alert>
-      </Snackbar>
     </div>
   );
 };

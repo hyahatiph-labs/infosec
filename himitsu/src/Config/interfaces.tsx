@@ -7,6 +7,11 @@ export interface RequestContext {
   method: string;
 }
 
+export enum NetworkType {
+  // eslint-disable-next-line no-unused-vars
+  MAINNET = 'mainnet',
+}
+
 // Complex Component State
 export interface WalletInitState {
   monerodHost: string;
@@ -19,7 +24,7 @@ export interface WalletInitState {
   rpcUserName: string | null;
   rpcPassword: string | null;
   seed: string;
-  networkType: string;
+  networkType: NetworkType | null;
   mode: string;
   height: number;
 }
@@ -279,7 +284,7 @@ interface ValidateAddressResult {
   valid: boolean;
   integrated: boolean;
   subaddress: boolean;
-  nettype: string;
+  nettype: NetworkType;
   openalias_address: boolean;
 }
 

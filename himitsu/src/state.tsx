@@ -31,7 +31,7 @@ export const {
     isWalletInitialized: walletInit,
     isRestoringFromSeed: false,
     isSeedConfirmed: seedConfirmationInit,
-    network: '', // TODO: add MAINNET, STAGENET enum / flags
+    network: Interfaces.NetworkType.MAINNET || null,
     rpcHost: host || 'localhost:38083',
   },
   transfer: {

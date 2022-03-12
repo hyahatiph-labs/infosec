@@ -121,6 +121,12 @@ const WalletComponent: React.FC = (): ReactElement => {
             loaded = true;
             const a: Interfaces.ShowAddressResponse = await aResponse.data;
             if (a.result) {
+              const vReq: Interfaces.ValidateAddressRequest = Constants.VALIDATE_ADDRESS_REQUEST;
+              vReq.params.address = a.result.address;
+              const vRes: Interfaces.ValidateAddressResponse = await (
+                await AxiosClients.RPC.post(Constants.JSON_RPC, vReq)
+              ).data;
+              setGlobalState('init', { ...gInit, network: vRes.result.nettype });
               await AxiosClients.RPC.post(Constants.JSON_RPC, bBody)
                 .then(async (bResponse) => {
                   const b: Interfaces.ShowBalanceResponse = await bResponse.data;
