@@ -40,6 +40,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
   const [cookies, setCookie] = useCookies(['himitsu']);
   const [invalidRpcHost, setInvalidRpcHost] = useState(false);
   const [isUpdatedRpcHost, setUpdatedRpcHost] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [values, setValues] = React.useState<Interfaces.WalletInitState>({
     monerodHost: '',
     rpcHost: '',
@@ -81,8 +82,13 @@ const WalletInitComponent: React.FC = (): ReactElement => {
   const handleInvalidRpcHost = (): void => {
     setInvalidRpcHost(!invalidRpcHost);
   };
+
   const handleUpdateRpcHostSuccess = (): void => {
     setUpdatedRpcHost(!isUpdatedRpcHost);
+  };
+
+  const handleProkuriloAuth = (): void => {
+    setIsAuthenticated(!isAuthenticated);
   };
 
   // TODO: refactor createAndOpenWallet to three functions
@@ -132,7 +138,9 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             // initialize prokurilo authentication
             const expire = await Prokurilo.authenticate(address.result.address);
             const expires = new Date(expire);
-            setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu, { path: '/', expires });
+            setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu,
+              { path: '/', expires });
+            if (cookies.himitsu) { handleProkuriloAuth(); }
             setGlobalState('init', {
               ...gInit,
               isSeedConfirmed: true,
@@ -145,9 +153,6 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               mnemonic: '',
             }); // TODO: snackbar with error handling
             localStorage.setItem(Constants.SEED_CONFIRMED, `${Date.now()}`);
-            if (cookies.himitsu) {
-              localStorage.setItem(Constants.HIMITSU_INIT, `${Date.now()}`);
-            }
           } else {
             handleInvalidRpcHost();
             setValues({ ...values, isInitializing: false });
@@ -295,6 +300,20 @@ const WalletInitComponent: React.FC = (): ReactElement => {
       <Snackbar open={invalidRpcHost} autoHideDuration={2000} onClose={handleInvalidRpcHost}>
         <Alert onClose={handleInvalidRpcHost} severity="error">
           {`rpc host ${values.rpcHost} is not valid`}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={isUpdatedRpcHost}
+        autoHideDuration={2000}
+        onClose={handleUpdateRpcHostSuccess}
+      >
+        <Alert onClose={handleUpdateRpcHostSuccess} severity="success">
+          {`${values.rpcHost} is now connected.`}
+        </Alert>
+      </Snackbar>
+      <Snackbar open={isAuthenticated} autoHideDuration={2000} onClose={handleProkuriloAuth}>
+        <Alert onClose={handleProkuriloAuth} severity="success">
+          himitsu is authenticated
         </Alert>
       </Snackbar>
     </div>

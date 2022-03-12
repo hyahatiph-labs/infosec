@@ -398,13 +398,6 @@ const WalletComponent: React.FC = (): ReactElement => {
                   className={clsx(classes.textField)}
                   onChange={handleAccountChange('amount')}
                 />
-                <TextField
-                  label="pin (optional)"
-                  type="password"
-                  id="standard-start-adornment"
-                  className={clsx(classes.textField)}
-                  onChange={handleAccountChange('pin')}
-                />
                 <br />
                 <Button
                   className={classes.modalButton}
