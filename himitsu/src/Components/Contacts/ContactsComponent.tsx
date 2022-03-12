@@ -303,7 +303,7 @@ const ContactsComponent: React.FC = (): ReactElement => {
           Failed to send to contact.
         </Alert>
       </MUI.Snackbar>
-      <MUI.Snackbar open={isSending} autoHideDuration={5000} onClose={handleIsSending}>
+      <MUI.Snackbar open={isSending} autoHideDuration={10000} onClose={handleIsSending}>
         <Alert onClose={handleIsSending} severity="info">
           Transfer in progress...
         </Alert>

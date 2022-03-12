@@ -31,6 +31,7 @@ const WalletComponent: React.FC = (): ReactElement => {
   const [isBusy, setIsBusy] = useState(false);
   const [copy, setCopy] = useState(false);
   const [cookies] = useCookies(['himitsu']);
+  const [isSending, setIsSending] = useState(false);
   const [subAddressUpdated, setSubAddressUpdated] = useState(false);
   const [invalidAddress, setIsInvalidAddress] = useState(false);
   const [unusedAddressAlert, setUnusedAddressAlert] = useState(false);
@@ -100,6 +101,10 @@ const WalletComponent: React.FC = (): ReactElement => {
     setGlobalState('init', { ...gInit, isSeedConfirmed: true });
     setGlobalState('account', { ...gAccount, mnemonic: '' });
     localStorage.setItem(Constants.SEED_CONFIRMED, `${Date.now()}`);
+  };
+
+  const handleIsSending = (): void => {
+    setIsSending(!isSending);
   };
 
   const loadXmrBalance = async (): Promise<void> => {
@@ -252,14 +257,14 @@ const WalletComponent: React.FC = (): ReactElement => {
   };
 
   const transfer = async (): Promise<void> => {
+    setIsSending(true);
     const vBody: Interfaces.ValidateAddressRequest = Constants.VALIDATE_ADDRESS_REQUEST;
     vBody.params.address = accountState.sendTo.trim();
     const isValidAmt = accountState.amount < parseFloat(BigDecimal
       .divide(gAccount.unlockedBalance.toString(), Constants.PICO.toString(), 6));
     const vAddress: Interfaces.ValidateAddressResponse = await (
       await AxiosClients.RPC.post(Constants.JSON_RPC, vBody)).data;
-    if (vAddress.result.valid && isValidAmt
-      && vAddress.result.nettype !== 'mainnet') {
+    if (vAddress.result.valid && isValidAmt) {
       const tBody: Interfaces.TransferRequest = Constants.TRANSFER_REQUEST;
       const destination: Interfaces.Destination = {
         address: accountState.sendTo.trim(),
@@ -272,6 +277,7 @@ const WalletComponent: React.FC = (): ReactElement => {
       ).data;
       setAccountState({ ...accountState, hash: tx.result.tx_hash });
       handleTransferSuccess();
+      handleIsSending();
       loadXmrBalance();
     }
     if (!vAddress.result.valid) {
@@ -397,13 +403,6 @@ const WalletComponent: React.FC = (): ReactElement => {
                   id="standard-start-adornment"
                   className={clsx(classes.textField)}
                   onChange={handleAccountChange('amount')}
-                />
-                <TextField
-                  label="pin (optional)"
-                  type="password"
-                  id="standard-start-adornment"
-                  className={clsx(classes.textField)}
-                  onChange={handleAccountChange('pin')}
                 />
                 <br />
                 <Button
@@ -707,6 +706,11 @@ const WalletComponent: React.FC = (): ReactElement => {
             Constants.PICO.toString(), 3)} spent and
             ${BigDecimal.divide(accountState.proofValidation.total.toString(),
             Constants.PICO.toString(), 3)} total`}
+        </Alert>
+      </Snackbar>
+      <Snackbar open={isSending} autoHideDuration={10000} onClose={handleIsSending}>
+        <Alert onClose={handleIsSending} severity="info">
+          Transfer in progress...
         </Alert>
       </Snackbar>
     </div>

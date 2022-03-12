@@ -62,6 +62,11 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 * extensions => "Load Unpacked"
 * open the `build` directory
 
+## Releasing
+
+* `cd build`
+* `zip -r -FS himitsu-vx.x.x-experimental.zip * --exclude '*.git*'`
+
 ### Additional Notes
 
 * there is a `Dockerfile` that can run with `docker build -t himitsu:v.0.1.0 .` from the infosec/himitsu directory
