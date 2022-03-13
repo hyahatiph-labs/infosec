@@ -9,8 +9,8 @@
   "author": "hyahatiph-labs",
   "license": "MIT",
   "dependencies": {
+    "chai": "^4.3.6",
     "axios": "^0.25.0",
-    "chai": "^4.3.4",
     "chai-http": "^4.3.0",
     "express": "^4.17.2",
     "helmet": "^5.0.2",
