@@ -25,13 +25,16 @@
   "author": "hyahatiph-labs",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.25.0",
-    "express": "^4.17.2",
+    "axios": "^0.26.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.3",
     "helmet": "^5.0.2",
     "ts-node": "^9.1.1",
     "yargs": "^16.2.0"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.2",
+    "@types/cors": "^2.8.12",
     "@types/express": "^4.17.11",
     "@types/jest": "^26.0.22",
     "@types/node": "^14.18.9",

@@ -2,19 +2,16 @@ import * as Interfaces from './interfaces';
 
 export {};
 export const PICO = 1000000000000;
+export const COOKIE_LIMIT = 600000;
 export const HTTP_OK = 200;
-export const CONFIG_HASH = 'CONFIG_HASH';
-export const TIME_HASH = 'TIME_HASH';
-export const UNLOCK_HASH = 'UNLOCK_HASH';
-export const PIN_HASH = 'PIN_HASH';
+export const HIMITSU_INIT = 'HIMITSU_INIT';
+export const SEED_CONFIRMED = 'SEED_CONFIRMED';
 export const HIMITSU_RPC_HOST = 'HIMITSU_RPC_HOST';
 export const HIMITSU_MONEROD_HOST = 'HIMITSU_MONEROD_HOST';
-export const HIMITSU_ADDRESS = 'HIMITSU_ADDRESS';
-export const LOCK_LIMIT = 360000;
 export const IS_DEV = process.env.REACT_APP_HIMITSU_DEV === 'DEV'
   || process.env.REACT_APP_HIMITSU_DEV === 'ANDROID';
-export const I2P_PROXY = IS_DEV ? {} : { proxy: { host: 'localhost', port: 4444 } };
-export const JSON_RPC = 'json_rpc';
+export const I2P_PROXY = { host: 'localhost', port: 4444 };
+export const JSON_RPC = '/json_rpc';
 
 /* RPC Request constants */
 const context: Interfaces.RequestContext = {

@@ -7,9 +7,15 @@ export interface RequestContext {
   method: string;
 }
 
+export enum NetworkType {
+  // eslint-disable-next-line no-unused-vars
+  MAINNET = 'mainnet',
+}
+
 // Complex Component State
 export interface WalletInitState {
-  url: string;
+  monerodHost: string;
+  rpcHost: string;
   walletPassword: string;
   walletName: string;
   showPassword: boolean;
@@ -18,7 +24,7 @@ export interface WalletInitState {
   rpcUserName: string | null;
   rpcPassword: string | null;
   seed: string;
-  networkType: string;
+  networkType: NetworkType | null;
   mode: string;
   height: number;
 }
@@ -49,9 +55,24 @@ export interface ContactState {
 }
 
 export interface SettingsState {
-  oldPin: string;
-  pin: number;
   rpcHost: string;
+}
+
+export interface UnlockState {
+  walletName: string;
+  password: string;
+}
+
+interface ReAuthData {
+  himitsuName: string;
+}
+
+interface ReAuthResponse {
+  data: ReAuthData;
+}
+
+export interface ReAuthState {
+  response: ReAuthResponse;
 }
 
 /* RPC Request Parameter Interfaces */
@@ -263,7 +284,7 @@ interface ValidateAddressResult {
   valid: boolean;
   integrated: boolean;
   subaddress: boolean;
-  nettype: string;
+  nettype: NetworkType;
   openalias_address: boolean;
 }
 

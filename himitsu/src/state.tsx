@@ -5,12 +5,9 @@ import * as Interfaces from './Config/interfaces';
 const subAddressInit: Interfaces.Address[] = [];
 const contactInit: Interfaces.Contact[] = [];
 const transferInit: Interfaces.Transfer[] = [];
-const configHash = localStorage.getItem(Constants.CONFIG_HASH);
-const timeHash = localStorage.getItem(Constants.TIME_HASH);
-const unlockHash = localStorage.getItem(Constants.UNLOCK_HASH);
-const pinHash = localStorage.getItem(Constants.PIN_HASH);
 const host = localStorage.getItem(Constants.HIMITSU_RPC_HOST);
-
+const walletInit = localStorage.getItem(Constants.HIMITSU_INIT) !== null;
+const seedConfirmationInit = localStorage.getItem(Constants.SEED_CONFIRMED) !== null;
 /**
  * Global state management
  */
@@ -31,18 +28,18 @@ export const {
     contactList: contactInit,
   },
   init: {
-    isWalletInitialized: false,
+    isWalletInitialized: walletInit,
     isRestoringFromSeed: false,
-    isSeedConfirmed: false,
-    walletName: configHash || '',
-    walletPassword: '',
-    timeHash,
-    unlockHash,
-    network: '', // TODO: add MAINNET, STAGENET enum / flags
+    isSeedConfirmed: seedConfirmationInit,
+    network: Interfaces.NetworkType.MAINNET || null,
     rpcHost: host || 'localhost:38083',
-    pinHash,
   },
   transfer: {
     transferList: transferInit,
+  },
+  lock: {
+    isProcessing: true,
+    isScreenLocked: false,
+    walletName: '',
   },
 });

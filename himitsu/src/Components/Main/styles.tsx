@@ -4,8 +4,10 @@ const drawerWidth = 240;
 export const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
-    flexWrap: 'wrap',
-    backgroundColor: '#212D36',
+    flexDirection: 'column',
+    width: '100%',
+    alignItems: 'center',
+    marginTop: theme.spacing(10),
   },
   appBar: {
     backgroundColor: '#FF5722',
@@ -20,8 +22,6 @@ export const useStyles = makeStyles((theme) => ({
     backgroundColor: '#212D36',
   },
   drawerContainer: {
-    overflow: 'auto',
-    marginTop: theme.spacing(1),
     backgroundColor: '#212D36',
     color: '#FF5722',
   },
@@ -31,35 +31,28 @@ export const useStyles = makeStyles((theme) => ({
   },
   content: {
     fontFamily: 'sagona',
-    marginTop: theme.spacing(2),
-    flexGrow: 1,
-    pwidth: 'max-content',
     color: '#FF5722',
-    backgroundColor: '255, 165, 0, 0.73',
+    backgroundColor: '#FFF',
   },
   menuButton: {
     cursor: 'pointer',
-    marginRight: theme.spacing(1),
     backgroundColor: '#212D36',
+    marginRight: theme.spacing(1),
   },
   modal: {
-    overflow: 'scroll',
     display: 'flex',
+    wrap: 'wrap',
+    overflow: 'scroll',
     alignItems: 'center',
     justifyContent: 'center',
   },
   paper: {
     fontSize: '16px',
-    backgroundColor: theme.palette.background.paper,
+    backgroundColor: '#FFF',
     border: '2px solid #000',
     boxShadow: theme.shadows[5],
-    padding: theme.spacing(2, 4, 3),
-  },
-  margin: {
-    margin: theme.spacing(1),
   },
   withoutLabel: {
-    marginTop: theme.spacing(3),
   },
   textField: {
     width: '42ch',
@@ -68,6 +61,7 @@ export const useStyles = makeStyles((theme) => ({
     marginRight: theme.spacing(0.1),
     backgroundColor: '#212D362',
     color: '#FF5277',
+    margin: theme.spacing(1),
   },
 }));
 

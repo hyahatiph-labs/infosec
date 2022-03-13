@@ -2,24 +2,19 @@ import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 
 export const useStyles = makeStyles((theme: Theme) => createStyles({
   paper: {
-    marginTop: theme.spacing(2),
-    marginLeft: theme.spacing(2),
-    marginRight: theme.spacing(2),
-    fontSize: '20px',
+    fontSize: '1em',
     backgroundColor: theme.palette.background.paper,
-    border: '2px solid #000',
     boxShadow: theme.shadows[5],
-    width: '25ch',
   },
   uButton: {
-    marginTop: theme.spacing(2),
     backgroundColor: '#FFF',
     color: '#212D36',
   },
   settings: {
     display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
+    flexDirection: 'column',
     width: '100%',
+    alignItems: 'center',
+    marginTop: theme.spacing(10),
   },
 }));

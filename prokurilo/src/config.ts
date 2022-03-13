@@ -96,6 +96,7 @@ export enum RPC {
   ID = "0",
   VERSION = "2.0",
   CHECK_TX_PROOF = "check_tx_proof",
+  CLOSE = "close_wallet",
   VERIFY = "verify",
   GET_VERSION = "get_version",
 }
@@ -104,6 +105,7 @@ export const EXIT_ERROR = 1
 
 export enum Http {
     OK = 200,
+    UNAUTHORIZED = 401,
     PAYMENT_REQUIRED = 402,
     FORBIDDEN = 403,
     BAD_REQUEST = 404,
@@ -160,8 +162,11 @@ export const DEFAULT_CONFIG: ConfigFile = {
 export const INDENT = 2;
 export const LOCAL_HOSTS: string[] = ["::ffff:127.0.0.1", "127.0.0.1", "::1"];
 
-export const I2P_CHECK_INTERVAL = 600000;
+export const I2P_CHECK_INTERVAL = 60000;
+export const I2P_KILL_SWITCH_LIMIT = 21;
+export const I2P_OFFLINE_ERROR = 2;
 
+export const HIMITSU_TTL = 60000 * 20
 // set cmd line args
 export const PORT: number = ARGS["port"];
 export const KEY_PATH: string = ARGS["key-path"];

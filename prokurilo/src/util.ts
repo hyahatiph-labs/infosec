@@ -5,15 +5,27 @@ import log, { LogLevel } from "./logging";
 import { getConfigs, getDemoStaticFiles } from "./setup";
 import crypto from "crypto";
 import path from 'path';
+import { i2pJanitor } from "./prokurilo";
 
 export const jail: Config.JailedToken[] = [];
+
+const ACCEPTING_TUNNELS = 'Accepting tunnels'
+const REJECTING_TUNNELS = 'Rejecting tunnels: Starting up'
 const NODE_ENV = process.env.NODE_ENV || "";
-let himitsuConfigured = false;
+
+/* himitsu specific */
+let himitsuName = '';
+let walletIsSet = false;
 let addressIsSet = false;
-let himitsuAddress = '';
-let data = crypto.randomBytes(32).toString();
-let lastKnownSignature = '';
-const setLastKnownSignature = (s: string) => { lastKnownSignature = s; }
+let signatureIsSet = false;
+let himitsuConfigured = false;
+let himitsuExpiration = 0;
+let data = crypto.randomBytes(32).toString('hex');
+/* himitsu specific */
+let i2pKillSwitchCheck = 0;
+let i2pStatus = '';
+let i2pReconnect = false;
+let utilI2pJanitor = setInterval(() => {/* initialize reconnect janitor for event loop */}, 0);
 
 const verifyHimitsuSignature = async (address: string, signature: string): Promise<boolean> => {
   const body = {
@@ -22,13 +34,12 @@ const verifyHimitsuSignature = async (address: string, signature: string): Promi
     method: Config.RPC.VERIFY,
     params: { address, data, signature },
   };
-  return await axios
-    .post(`http://${Config.XMR_RPC_HOST}/json_rpc`, body)
-    .then((v) => { return v.data.result.good; })
-    .catch(() => {
-      log(`rpc failure`, LogLevel.ERROR, true);
-      return false;
-    });
+  try {
+    const sResponse = await (await axios.post(`http://${Config.XMR_RPC_HOST}/json_rpc`, body)).data;
+    return sResponse.result.good;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -38,40 +49,57 @@ const verifyHimitsuSignature = async (address: string, signature: string): Promi
  * 3. On wallet initialization Himitsu will request the challenge
  *    from prokurilo. It will then take the challenge and use
  *    it as data for signing.
- * 5. On the initial request himitsu fails with 403 and 
+ * 4. On the initial request himitsu fails with 403 and 
  *     challenge response. Next it sends primary address and
  *    signature for validation.
- * 6. Set himitsu configured and challenge address
- * 7. New challenge generated on each request with 403
- * 8. Continue to send signature to match challenge for each additional auth
+ * 5. Set himitsu configured and challenge address
+ * 6. New challenge generated after cookie expiration with 401
+ * 7. Continue to send signature to match challenge for each additional auth
  * NOTE: An attacker would somehow need to get the challenge which is
- * not possible because a new 32-byte challenge is generated on each request.
- * Himitsu does not store this challenge, nor does prokurilo store the signature which has yet
- * to be generated*. The only way to gain access to the new signature is to 
- * gain physical access to the device on which himitsu is running.
- * To mitigate, himitsu has a password lock screen which with a secure enough
- * password makes the wallet inaccessible. There is also an additional pin-to-send
- * feature in which the pin is not stored on the device. Only the hash of it.
+ * not possible because a new 32-byte challenge is generated on each session.
+ * Himitsu does not store this challenge, and the signature is place in a
+ * cryptographically signed cookie with the address to maintain the user session. 
+ * Himitsu has a password lock screen which with a secure enough
+ * password makes the wallet inaccessible.
  * basic <address:signature> on the first request "handshake"
- * basic <h(address):signature> SHA-256 hash of address on all subsequent requests
- * * last known signature is kept for re-signings
+ * verify the custom himitsu cookie on each request
  * @param auth - basic auth for himitsu
  */
 const configureHimitsu = async (auth: string, req: any, res: any) => {
-  const address = auth.split("basic ")[1].split(":")[0];
-  const signature = auth.split("basic ")[1].split(":")[1];
-  if (await verifyHimitsuSignature(address, signature) && addressIsSet) {
-    log(`configuring himitsu instance`, LogLevel.INFO, true);
-    himitsuAddress = address;
-    himitsuConfigured = true;
-    // clear the challenge to start the regeneration process on subsequent verifications
-    data = null;
-    setLastKnownSignature(signature);
-    res.status(Config.Http.OK).send();
-  } else if (!addressIsSet || req.body.method === 'sign') {
+  const parseIt = auth && auth.length > 0 && auth.indexOf(":") > 0 ? auth.split("basic ")[1] : '';
+  const address = parseIt !== '' ? parseIt.split(":")[0] : '';
+  const signature = parseIt !== '' ? parseIt.split(":")[1] : '';
+  if (addressIsSet && walletIsSet && signatureIsSet && address.length > 0 && signature.length > 0) {
+    log(`checking signature for configuration`, LogLevel.DEBUG, true);
+    if (await verifyHimitsuSignature(address, signature)){
+      log(`configuring himitsu instance`, LogLevel.INFO, true);
+      himitsuConfigured = true;
+      himitsuExpiration = Date.now() + Config.HIMITSU_TTL;
+      res.status(Config.Http.OK).send({ expire: himitsuExpiration}); 
+    } else {
+      log(`himitsu configuration failure`, LogLevel.ERROR, true);
+      res
+        .status(Config.Http.FORBIDDEN)
+        .header("www-authenticate", `challenge=${data}`)
+        .send();
+    }
+  } else if ((!addressIsSet || !walletIsSet || !signatureIsSet) && req.body.method) {
     log(`bypass for signing only`, LogLevel.WARN, true);
+    if (req.body.method === 'create_wallet' || req.body.method === 'open_wallet'
+      || req.body.method === 'restore_deterministic_wallet') {
+      himitsuName = req.body.params.filename;
+      walletIsSet = true;
+      log(`wallet is set`, LogLevel.DEBUG, true);
+    }
+    if (req.body.method === 'get_address') {
+      log(`address is set`, LogLevel.DEBUG, true);
+      addressIsSet = true;
+    }
+    if (req.body.method === 'sign') {
+      log(`signature is set`, LogLevel.DEBUG, true);
+      signatureIsSet = true;
+    }
     passThrough(req, res, null); // one time deal for the handshake
-    addressIsSet = !addressIsSet ? req.body.method === 'get_address' : addressIsSet;
   } else {
     log(`himitsu configuration failure`, LogLevel.ERROR, true);
     res
@@ -81,26 +109,33 @@ const configureHimitsu = async (auth: string, req: any, res: any) => {
   }
 };
 
-const verifyHimitsu = async (auth:string, req: any, res: any) => {
-  const address = auth.split("basic ")[1].split(":")[0];
-  const signature = auth.split("basic ")[1].split(":")[1];
-  const hAddress = crypto.createHash('sha256');
-  hAddress.update(himitsuAddress);
-  const isKnown = address === hAddress.digest('hex') && lastKnownSignature === signature;
-  log(`verifying himitsu instance`, LogLevel.INFO, true);
-  if (await verifyHimitsuSignature(himitsuAddress, signature) && data !== null) {
+/**
+ * Entry point post-cofiguration. After the himitsu custom cookie
+ * expires the client will return for the wallet name, re-open
+ * the wallet and sign a new challenge.
+ * @param req request
+ * @param res response
+ */
+const verifyHimitsu = async (req: any, res: any) => {
+  const himitsu = req.headers.himitsu;
+  const address = himitsu ? himitsu.split(':')[0] : '';
+  const signature = himitsu ? himitsu.split(':')[1] : '';
+  if (await verifyHimitsuSignature(address, signature) && himitsuExpiration > Date.now()) {
+    log(`welcome back himitsu!`, LogLevel.INFO, true);
     passThrough(req, res, null);
-    data = null; // reset challenge
-  } else if (req.body.method === 'sign' && isKnown && data !== null) {
-      // pass through to sign after challenge set
-      passThrough(req, res, null);
+  } else if (await !verifyHimitsuSignature(address, signature)) {
+    res.status(Config.Http.FORBIDDEN).send();
   } else {
-    log(`himitsu verification failure`, LogLevel.ERROR, true);
-    data = crypto.randomBytes(32).toString(); // create new challenge
-    res
-      .status(Config.Http.FORBIDDEN)
-      .header("www-authenticate", `challenge=${isKnown ? data : ''}`)
-      .send();
+    // a new challenge has arrived!
+    log(`invalid himitsu session detected`, LogLevel.DEBUG, true);
+    addressIsSet = false;
+    walletIsSet = false;
+    signatureIsSet = false;
+    himitsuConfigured = false;
+    data = crypto.randomBytes(32).toString('hex');
+    const body = { jsonrpc: Config.RPC.VERSION, id: Config.RPC.ID, method: Config.RPC.CLOSE };
+    await axios.post(`http://${Config.XMR_RPC_HOST}/json_rpc`, body);
+    res.status(Config.Http.UNAUTHORIZED).json({ himitsuName }).send();
   }
 };
 
@@ -268,9 +303,9 @@ const passThrough = (req: any, res: any, h: Config.Asset) => {
     res.sendFile(path.join(__dirname, "../examples/static", h.file));
   } else if (NODE_ENV === "test" && req.url === "/") {
     res.sendFile(path.join(__dirname, "../examples/static", "login.html"));
-  } else if (NODE_ENV === "test" && req.url !== "/" && !h) {
+  } else if (NODE_ENV === "test" && req.url !== "/" && !h && !Config.HIMITSU_RESTRICTED) {
     res.sendFile(path.join(__dirname, "../examples/static", req.url.replace("/", "")));
-  } else if ((!h || h.static) || (h && h.static)) { // static or redirects
+  } else if ((h && h.static)) { // static or redirects
     if (req.method === "GET") {
       axios
         .get(`http://${Config.ASSET_HOST}${req.url}`, req.body)
@@ -330,8 +365,6 @@ const passThrough = (req: any, res: any, h: Config.Asset) => {
   }
 };
 
-// TODO: implement custom messages update js doc
-
 /**
  * @param {Object} tpat - transaction proof authentication token
  * Object parsed from the www-authenticate header.
@@ -340,16 +373,16 @@ const passThrough = (req: any, res: any, h: Config.Asset) => {
  *  hash="<transaction_hash>", signature="<transaction_proof>", ast="<60>"'
  * @returns
  */
-export const isValidProof = (req: any, res: any): void => {
-  log(`request body: ${JSON.stringify(req.body)}`, LogLevel.DEBUG, false);
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export const isValidProof = async (req: any, res: any): Promise<void> => {
   const authHeader = req.headers[Config.Header.AUTHORIZATION];
   // check for bypass, always bypass home (login?) page
   if (bypassAsset(req) || req.url === "/") {
     passThrough(req, res, null);
   } else if (Config.HIMITSU_RESTRICTED && !himitsuConfigured) {
-    configureHimitsu(authHeader, req, res);
+    await configureHimitsu(authHeader, req, res);
   } else if (Config.HIMITSU_RESTRICTED && himitsuConfigured) {
-    verifyHimitsu(authHeader, req, res);
+    verifyHimitsu(req, res);
   } else {
     // check the proof
     const h = validateAsset(req.url);
@@ -425,20 +458,53 @@ export const isValidProof = (req: any, res: any): void => {
  * if it is not running over i2p.
  */
 export const i2pCheck = (): void => {
-  axios.get('http://localhost:7657/tunnels')
-      .then(v => {
-          const status = v.data.split('<h4><span class="tunnelBuildStatus">')[1].split('</span></h4>')[0]
-          const ACCEPTING_TUNNELS = 'Accepting tunnels'
-          const REJECTING_TUNNELS = 'Rejecting tunnels: Starting up'
-          if (status === ACCEPTING_TUNNELS) {
-              log('i2p is active', LogLevel.INFO, true);
-          } else if (status === REJECTING_TUNNELS) {
-              log('i2p is starting up', LogLevel.INFO, true);
-          } else {
-              log('no i2p connection', LogLevel.INFO, true);
-          }
+    getI2pStatus()
+      .catch(() => { 
+        // kill the currently running janitor
+        clearInterval(i2pJanitor);
+        if (i2pReconnect) {
+          clearInterval(utilI2pJanitor);
+        }
+        log(`i2p is connection lost`, LogLevel.ERROR, true );
+        log(
+          `prokurilo will disconnect in ${(Config.I2P_KILL_SWITCH_LIMIT - 1) - i2pKillSwitchCheck} minutes`,
+          LogLevel.WARN, true
+        );
+        log(`please restart i2p`, LogLevel.INFO, true );
+        // this is some kind of quasi-task executor that kill the server
+        // if i2p is down for more than twenty minutes
+        if (i2pKillSwitchCheck === 0) {
+          const i2pKillSwitch = setInterval(() => {
+            getI2pStatus(); // the kill switch logic needs to get its own status
+            i2pKillSwitchCheck += 1;
+            log(`executing i2p check ${i2pKillSwitchCheck}/${Config.I2P_KILL_SWITCH_LIMIT - 1}`, LogLevel.INFO, true);
+            if (i2pKillSwitchCheck === Config.I2P_KILL_SWITCH_LIMIT) {
+              process.exit(Config.I2P_OFFLINE_ERROR);
+            }
+            if (i2pStatus === ACCEPTING_TUNNELS) {
+              log(`i2p connection re-established`, LogLevel.INFO, true);
+              i2pKillSwitchCheck = 0; // back on-line reset the check
+              i2pReconnect = true;
+              log(`initialized new i2p janitor`, LogLevel.INFO, true);
+              // start a new janitor
+              utilI2pJanitor = setInterval(() => { i2pCheck(); }, Config.I2P_CHECK_INTERVAL);
+              clearInterval(i2pKillSwitch);
+            }
+          }, Config.I2P_CHECK_INTERVAL)
+        }
       })
-      .catch(() => { throw new Error('I2P check failed. Are you sure, it is running?') })
 };
+
+const getI2pStatus = () => axios.get('http://localhost:7657/tunnels')
+.then(v => {
+  i2pStatus = v.data.split('<h4><span class="tunnelBuildStatus">')[1].split('</span></h4>')[0]
+  if (i2pStatus === ACCEPTING_TUNNELS) {
+    log('i2p is active', LogLevel.INFO, true);
+  } else if (i2pStatus === REJECTING_TUNNELS) {
+    log('i2p is starting up', LogLevel.INFO, true);
+  } else {
+      log('no i2p connection', LogLevel.INFO, true);
+  }
+})
 
 export default isValidProof;

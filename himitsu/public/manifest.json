@@ -1,7 +1,7 @@
 {
   "name": "Himitsu",
   "description": "Browser extension for xmr powered apps and hidden services",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "manifest_version": 2,
   "homepage_url": "https://github.com/hyahatiph-labs/infosec/tree/main/himitsu",
   "browser_action": {
@@ -13,6 +13,5 @@
   },
   "icons": {
     "128": "logo128.png"
-  },
-  "content_security_policy": "object-src 'self'; script-src 'self' 'sha256-ks190F+n0V9wS5Z5ErUKX91fbpVOwf98QhiVaSlonpc=';"
+  }
 }

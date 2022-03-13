@@ -8,10 +8,24 @@ import setup from "./setup";
 import log, { LogLevel } from "./logging";
 import https from 'https';
 import fs from 'fs';
+import cors from 'cors';
 
 const NODE_ENV = process.env.NODE_ENV || "";
 
 const APP = express();
+
+if (Config.HIMITSU_RESTRICTED) {
+  const corsOptions = {
+    origin: "*",
+    exposedHeaders: [
+      "www-authenticate", "authorization"
+    ], // we need this to expose challenge to himitsu client
+    method: ["OPTIONS","POST"],
+    optionsSuccessStatus: 200
+  };
+  APP.use(cors({ ...corsOptions, credentials: true}));
+}
+
 APP.use(express.json());
 APP.use(express.urlencoded({ extended: true }));
 // disable x-powered-by headers
@@ -32,30 +46,31 @@ APP.use(helmet({
 }));
 
 // entry
-APP.get('/*', (req: any, res: any) => {
+APP.get("/*", (req: any, res: any) => {
   Util.isValidProof(req, res);
-})
+});
 
-APP.post('/*', (req: any, res: any) => {
+APP.post("/*", (req: any, res: any) => {
   Util.isValidProof(req, res);
-})
+});
 
-APP.delete('/*', (req: any, res: any) => {
+APP.delete("/*", (req: any, res: any) => {
   Util.isValidProof(req, res);
-})
+});
 
-APP.patch('/*', (req: any, res: any) => {
+APP.patch("/*", (req: any, res: any) => {
   Util.isValidProof(req, res);
-})
+});
+
 
 // initialize the config
 setup();
 
 // only stay online if i2p is online as well
 Util.i2pCheck();
-setInterval(() => { 
+export const i2pJanitor = setInterval(() => { 
   Util.i2pCheck();
-});
+}, Config.I2P_CHECK_INTERVAL);
 
 if (Config.HIMITSU_RESTRICTED) {
   log(`/sign API is open until himitsu configures`, LogLevel.WARN, true);
@@ -68,7 +83,8 @@ if (Config.HIMITSU_RESTRICTED) {
  * reject requests from jailed proofs
  * create janitor interval to sweep cache and reset tokens
  */
-setInterval(() => {
+if (!Config.HIMITSU_RESTRICTED) {
+  setInterval(() => {
   log('checking jail to free tokens...', LogLevel.INFO, false);
   Util.jail.forEach((j,i) => {
     if ((Date.now() - j.timestamp) > Config.ANTI_SPAM_THRESHOLD) {
@@ -77,9 +93,10 @@ setInterval(() => {
     }
   })
 }, Config.JAIL_JANITOR_INTERVAL)
+}
 
 // start the server
-if (NODE_ENV === 'test') {
+if (NODE_ENV === 'test' || Config.HIMITSU_RESTRICTED) {
   APP.listen(Config.PORT,  () => {
     log(`Prokurilo DEV running on ${os.hostname()}`, LogLevel.INFO, false);
   })

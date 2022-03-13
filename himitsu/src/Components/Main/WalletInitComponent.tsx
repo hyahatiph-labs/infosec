@@ -1,4 +1,5 @@
 import React, { ReactElement, useState } from 'react';
+import { useCookies } from 'react-cookie';
 import Modal from '@material-ui/core/Modal';
 import Backdrop from '@material-ui/core/Backdrop';
 import Fade from '@material-ui/core/Fade';
@@ -16,11 +17,11 @@ import {
 } from '@material-ui/core';
 import crypto from 'crypto';
 import { Alert } from '@material-ui/lab';
+import * as AxiosClients from '../../Axios/Clients';
 import { setGlobalState, useGlobalState } from '../../state';
 import * as Interfaces from '../../Config/interfaces';
 import * as Constants from '../../Config/constants';
 import * as Prokurilo from '../../prokurilo';
-import * as AxiosClients from '../../Axios/Clients';
 import { AntSwitch, useStyles } from './styles';
 
 /**
@@ -36,16 +37,19 @@ const WalletInitComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
   const [gAccount] = useGlobalState('account');
   const [open] = useState(!gInit.isWalletInitialized);
+  const [cookies, setCookie] = useCookies(['himitsu']);
   const [invalidRpcHost, setInvalidRpcHost] = useState(false);
   const [isUpdatedRpcHost, setUpdatedRpcHost] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [values, setValues] = React.useState<Interfaces.WalletInitState>({
-    url: '',
+    monerodHost: '',
+    rpcHost: '',
     walletPassword: '',
     walletName: '',
     showPassword: false,
     isInitializing: false,
     isAdvanced: false,
-    networkType: 'STAGENET',
+    networkType: Interfaces.NetworkType.MAINNET,
     rpcUserName: null,
     rpcPassword: null,
     seed: '',
@@ -78,27 +82,13 @@ const WalletInitComponent: React.FC = (): ReactElement => {
   const handleInvalidRpcHost = (): void => {
     setInvalidRpcHost(!invalidRpcHost);
   };
+
   const handleUpdateRpcHostSuccess = (): void => {
     setUpdatedRpcHost(!isUpdatedRpcHost);
   };
 
-  /**
-   * Password Management: The hash is stored with a timestamp
-   * of TIME_HASH. The corresponding password hash is stored as
-   * UNLOCK_HASH with the CONFIG_HASH aka wallet name.
-   * @param f - wallet filename
-   * @param p - wallet password
-   * @param h - rpc host
-   * @param a - primary address for signing auth requests
-   */
-  const setLocalStorage = (f: string, p: string, h: string, a: string): void => {
-    const keyHash = crypto.createHash('sha256');
-    keyHash.update(p);
-    localStorage.setItem(Constants.TIME_HASH, Date.now().toString());
-    localStorage.setItem(Constants.CONFIG_HASH, f);
-    localStorage.setItem(Constants.UNLOCK_HASH, keyHash.digest('hex'));
-    localStorage.setItem(Constants.HIMITSU_RPC_HOST, h);
-    localStorage.setItem(Constants.HIMITSU_ADDRESS, a);
+  const handleProkuriloAuth = (): void => {
+    setIsAuthenticated(!isAuthenticated);
   };
 
   // TODO: refactor createAndOpenWallet to three functions
@@ -110,10 +100,14 @@ const WalletInitComponent: React.FC = (): ReactElement => {
    */
   const createAndOpenWallet = async (): Promise<void> => {
     setValues({ ...values, isInitializing: true });
+    // TODO: these will eventually become an environment variable for
+    // public thread-safe secure rpc / monerod instances
+    localStorage.setItem(Constants.HIMITSU_RPC_HOST, values.rpcHost);
+    localStorage.setItem(Constants.HIMITSU_MONEROD_HOST, values.monerodHost);
     const vBody: Interfaces.RequestContext = Constants.GET_VERSION_REQUEST;
     try {
       let rpcResult = null;
-      if (values.isAdvanced && values.url === '') {
+      if (values.isAdvanced && values.rpcHost === '') {
         setValues({ ...values, isInitializing: false });
         handleInvalidRpcHost();
       } else {
@@ -125,7 +119,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         body.params.filename = filename;
         body.params.password = values.walletPassword;
         if (values.seed !== '') {
-          const dbody: Interfaces.RestoreDeterministicRequest = {
+          const dBody: Interfaces.RestoreDeterministicRequest = {
             ...body,
             method: 'restore_deterministic_wallet',
             params: {
@@ -134,68 +128,74 @@ const WalletInitComponent: React.FC = (): ReactElement => {
               restore_height: values.height > 0 ? values.height : 0,
             },
           };
-          const dResult = (await AxiosClients.RPC.post(Constants.JSON_RPC, dbody));
+          const dResult = (await AxiosClients.RPC.post(Constants.JSON_RPC, dBody));
           if (dResult.status === Constants.HTTP_OK) {
+            dBody.method = 'open_wallet';
+            await AxiosClients.RPC.post(Constants.JSON_RPC, dBody); // dont forget to open
             const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
             const address: Interfaces.ShowAddressResponse = await (
-              await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
-            );
+              await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)).data;
+            // initialize prokurilo authentication
+            const expire = await Prokurilo.authenticate(address.result.address);
+            const expires = new Date(expire);
+            setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu,
+              { path: '/', expires });
+            if (cookies.himitsu) { handleProkuriloAuth(); }
             setGlobalState('init', {
               ...gInit,
+              isSeedConfirmed: true,
               isWalletInitialized: true,
               isRestoringFromSeed: true,
-              walletName: filename,
-              walletPassword: values.walletPassword,
-              network: values.networkType,
             });
             setGlobalState('account', {
               ...gAccount,
               primaryAddress: address.result.address,
               mnemonic: '',
             }); // TODO: snackbar with error handling
-            setLocalStorage(filename, values.walletPassword, values.url, address.result.address);
+            localStorage.setItem(Constants.SEED_CONFIRMED, `${Date.now()}`);
           } else {
             handleInvalidRpcHost();
             setValues({ ...values, isInitializing: false });
           }
         } else {
-          await AxiosClients.RPC.post(Constants.JSON_RPC, body);
           const result = await AxiosClients.RPC.post(Constants.JSON_RPC, body);
           if (result.status === Constants.HTTP_OK) {
+            // wallet created now open it
+            body.method = 'open_wallet';
+            await AxiosClients.RPC.post(Constants.JSON_RPC, body);
             const kBody: Interfaces.QueryKeyRequest = Constants.QUERY_KEY_REQUEST;
             const k: Interfaces.QueryKeyResponse = (
               await AxiosClients.RPC.post(Constants.JSON_RPC, kBody)).data;
             const aBody: Interfaces.ShowAddressRequest = Constants.SHOW_ADDRESS_REQUEST;
             const address: Interfaces.ShowAddressResponse = await (
               await AxiosClients.RPC.post(Constants.JSON_RPC, aBody)
-            );
+            ).data;
+            // initialize prokurilo authentication
+            const expire = await Prokurilo.authenticate(address.result.address);
+            const expires = new Date(expire);
+            setCookie('himitsu', AxiosClients.RPC.defaults.headers.himitsu,
+              { path: '/', expires, sameSite: 'lax' });
             setGlobalState('init', {
               ...gInit,
               isWalletInitialized: true,
               isRestoringFromSeed: false,
-              walletName: filename,
-              walletPassword: values.walletPassword,
-              network: values.networkType,
             }); // TODO: snackbar with error handling
             setGlobalState('account', {
               ...gAccount,
               mnemonic: k.result.key,
             }); // TODO: snackbar with error handling
-            setLocalStorage(filename, values.walletPassword, gInit.rpcHost, address.result.address);
           }
         }
       }
+      localStorage.setItem(Constants.HIMITSU_INIT, `${Date.now()}`);
     } catch {
       setValues({ ...values, isInitializing: false });
       handleInvalidRpcHost();
     }
-
-    // initialize prokurilo authentication
-    Prokurilo.authenticate(localStorage.getItem(Constants.HIMITSU_ADDRESS), true);
   };
 
   return (
-    <div>
+    <div className={clsx(classes.root, 'container-fluid')}>
       <Modal
         aria-labelledby="transition-modal-title"
         aria-describedby="transition-modal-description"
@@ -208,14 +208,10 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         }}
       >
         <Fade in={open}>
-          <div className={classes.paper}>
+          <div className={clsx(classes.paper, 'container-fluid')}>
             <h2 id="transition-modal-title">Wallet Initialization</h2>
             <p id="transition-modal-description">
-              Welcome to the himitsu prototype wallet. If you have a remote node configure it below.
-            </p>
-            <p id="transition-modal-description">
-              If not, leave blank, one will be configured for you. Also, set a strong password
-              below.
+              Welcome to the himitsu prototype wallet.
             </p>
             <p id="transition-modal-description">
               Once the wallet is created your mnemonic phrase will be presented.
@@ -226,7 +222,7 @@ const WalletInitComponent: React.FC = (): ReactElement => {
             </p>
             <Typography>{values.mode}</Typography>
             <AntSwitch inputProps={{ 'aria-label': 'ant design' }} onClick={handleWalletMode} />
-            <FormControl className={clsx(classes.margin, classes.textField)}>
+            <FormControl className={clsx(classes.textField)}>
               <InputLabel htmlFor="standard-adornment-password">wallet password</InputLabel>
               <Input
                 id="standard-adornment-password"
@@ -252,31 +248,30 @@ const WalletInitComponent: React.FC = (): ReactElement => {
                 label="seed (optional)"
                 type="password"
                 id="standard-start-adornment"
-                className={clsx(classes.margin, classes.textField)}
+                className={clsx(classes.textField)}
                 onChange={handleChange('seed')}
               />
             )}
+            <br />
             {values.isAdvanced && (
               <TextField
                 label="height (optional)"
                 type="number"
                 id="standard-start-adornment"
-                className={clsx(classes.margin, classes.textField)}
+                className={clsx(classes.textField)}
                 onChange={handleChange('height')}
               />
             )}
-            {values.isAdvanced && (
-              <TextField
-                label="monero-wallet-rpc (host:port)"
-                id="standard-start-adornment"
-                required
-                className={clsx(classes.margin, classes.textField)}
-                onChange={handleChange('url')}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">http://</InputAdornment>,
-                }}
-              />
-            )}
+            <TextField
+              label={Constants.IS_DEV ? 'monero-wallet-rpc (host:port)' : '.b32.i2p address'}
+              id="standard-start-adornment"
+              required
+              className={clsx(classes.textField)}
+              onChange={handleChange('rpcHost')}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">http://</InputAdornment>,
+              }}
+            />
             <br />
             <Button
               className={classes.send}
@@ -299,12 +294,26 @@ const WalletInitComponent: React.FC = (): ReactElement => {
         onClose={handleUpdateRpcHostSuccess}
       >
         <Alert onClose={handleUpdateRpcHostSuccess} severity="success">
-          {`${values.url} is now connected.`}
+          {`${values.rpcHost} is now connected.`}
         </Alert>
       </Snackbar>
       <Snackbar open={invalidRpcHost} autoHideDuration={2000} onClose={handleInvalidRpcHost}>
         <Alert onClose={handleInvalidRpcHost} severity="error">
-          {`url ${values.url} is not valid`}
+          {`rpc host ${values.rpcHost} is not valid`}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={isUpdatedRpcHost}
+        autoHideDuration={2000}
+        onClose={handleUpdateRpcHostSuccess}
+      >
+        <Alert onClose={handleUpdateRpcHostSuccess} severity="success">
+          {`${values.rpcHost} is now connected.`}
+        </Alert>
+      </Snackbar>
+      <Snackbar open={isAuthenticated} autoHideDuration={2000} onClose={handleProkuriloAuth}>
+        <Alert onClose={handleProkuriloAuth} severity="success">
+          himitsu is authenticated
         </Alert>
       </Snackbar>
     </div>

@@ -49,6 +49,8 @@ Options:
                                                              [number] [required]
   -r, --rpc-host                    Host and port of monero-wallet-rpc
                                                              [string] [required]
+      --himitsu-rpc-restrict        Authenticates a single himitsu client only.
+                                           [boolean] [required] [default: false]
   -l, --log-level                   comma separated list of log levels to
                                     maintain                            [string]
 
@@ -91,3 +93,8 @@ www-authenticate: TPAT address="74gqcJZAtgz...", min_amt="1000000", ttl="30", ha
 * `hash` - transaction hash
 * `signature` - transaction proof signature
 * `ast` - anti-spam threshold, minutes that token is restricted until next use
+
+## Himitsu
+
+* integrate with himitsu wallets by authenticating the wallet's signature
+* this allows the rpc attached to prokurilo to self-authenticate with the himitsu instance
