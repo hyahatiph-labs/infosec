@@ -50,8 +50,9 @@ Test bed for bleeding edge features (consensus wallet, swaps, etc.)
 
 * himitsu currently requires `--rpc-login-disabled` which prevents public rpc server usage
 * [prokurilo](https://github.com/hyahatiph-labs/infosec/tree/main/prokurilo) is a reverse proxy authentication server that integrates with the wallet
-* it basically performs a handshake when the wallet is created with the signature and primary address of the newly created wallet
-* after that the hash of the address and signature is sent against a new challenge on each request
+* it basically performs a handshake when the wallet is created 
+* random 32-byte challenge is combined with the signature and primary address of the newly created wallet
+* this is used like a cookie until the expiration set by prokurilo is reached `<primary_address>:<signature>`
 * this is experimental, unreleased software so it is not vetted for mainnet usage
 * Major con of prokurilo is losing local host login. Mitigate by having rpc on a locked down pi or android device on an isolated network with hardened ACL of necessary connections (monerod, i2p port, etc.) 
 
