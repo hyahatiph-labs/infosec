@@ -67,9 +67,13 @@ APP.patch("/*", (req: any, res: any) => {
 setup();
 
 // only stay online if i2p is online as well
-Util.i2pCheck();
-export const i2pJanitor = setInterval(() => { 
+if (!Config.I2P_CHECK_DISABLED) {
   Util.i2pCheck();
+}
+export const i2pJanitor = setInterval(() => { 
+  if (!Config.I2P_CHECK_DISABLED) {
+    Util.i2pCheck();
+  }
 }, Config.I2P_CHECK_INTERVAL);
 
 if (Config.HIMITSU_RESTRICTED) {
