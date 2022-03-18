@@ -8,9 +8,9 @@ import {
 } from '@material-ui/core';
 import Modal from '@material-ui/core/Modal';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import * as xmrjs from 'monero-javascript';
 import { setGlobalState, useGlobalState } from '../../state';
 import { PICO } from '../../Config/constants';
-import * as xmrjs from '../../monero-javascript-0.6.4/index.js';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   modal: {

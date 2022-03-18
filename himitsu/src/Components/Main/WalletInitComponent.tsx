@@ -16,8 +16,8 @@ import {
   Button, CircularProgress, styled, Switch, Typography,
 } from '@material-ui/core';
 import crypto from 'crypto';
+import * as xmrjs from 'monero-javascript';
 import { setGlobalState, useGlobalState } from '../../state';
-import * as xmrjs from '../../monero-javascript-0.6.4/index.js';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   modal: {
