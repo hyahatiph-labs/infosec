@@ -2,7 +2,7 @@
 # Uses the latest stable ubuntu and node.js 16.x+
 # Command to build is <docker build -t himitsu:v0.1.0 .>
 # Docker version 20.10.9, build c2ea9bc
-FROM ubuntu 
+FROM ubuntu:20.04 
 LABEL name = support@hiahatf.org
 
 # update ubuntu
