@@ -10,11 +10,11 @@ const run = async (): Promise<void> => {
     const isDaemonRunning = await Utilities.isDaemonSynced();
     log(
         isDaemonRunning ? "verified monero daemon sync" : "daemon not running", LogLevel.INFO
-    )
+    );
     if (isDaemonRunning) {
         log("executing analytics daemon sync, this may take a while...", LogLevel.INFO)
         await Utilities.testDbConnection();
-        if (!Utilities.isExtractingBlocks) { await Utilities.extractBlocks(); }
+        await Utilities.extractBlocks();
     }
 }
 run();

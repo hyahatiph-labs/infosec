@@ -3,12 +3,13 @@ import { Sequelize } from 'sequelize';
 import log, { LogLevel } from './logging';
 import * as xmrjs from 'monero-javascript';
 import * as Models from './models';
+import * as Configuration from './config';
 
 // TODO: use migrations instead of sync
 
-export let isExtractingBlocks = false;
 // let txCount = 0;
 let blockCount = 0;
+let aHeight = 0;
 
 /**
  * Utilize sequelize ORM to connect via connection string
@@ -28,7 +29,7 @@ export const testDbConnection = async (): Promise<void> => {
         log('Connection has been established successfully.', LogLevel.INFO);
       } catch (error) {
         log('Unable to connect to the database:', LogLevel.ERROR);
-        process.exit(c.EXIT_ERROR)
+        process.exit(c.EXIT_ERROR);
     }
 }
 
@@ -40,19 +41,20 @@ export const isAnalyticsDbSynced = async (): Promise<boolean> => {
     const daemon = await xmrjs.connectToDaemonRpc(
         c.MONERO_DAEMON_RPC_HOST, c.MONERO_DAEMON_RPC_USER, c.MONERO_DAEMON_RPC_CREDENTIAL
     )
-    let aHeight = 0;
+    aHeight = 0;
     try {
-        aHeight = await Models.Block.max('height');
+        aHeight = await Models.Block.max('height') || 0;
     } catch {
         log(`no height found for analytics db`, LogLevel.ERROR);
     }
     const bHeight = await daemon.getHeight();
-    const rHeight = c.NUM_BLOCKS_TO_EXTRACT === 0 ? bHeight : (bHeight + c.NUM_BLOCKS_TO_EXTRACT) - bHeight
+    const rHeight = c.NUM_BLOCKS_TO_EXTRACT === 0 ? bHeight : (bHeight + c.NUM_BLOCKS_TO_EXTRACT) - bHeight;
+    const behind = aHeight > 0 ? bHeight - aHeight : rHeight - aHeight;
     const msg = aHeight < bHeight
-        ? `Analytics database (${aHeight}) is behind Monero LMDB (${bHeight}) by ${rHeight + aHeight} blocks`
+        ? `Analytics database (${aHeight}) is behind Monero LMDB (${bHeight}) by ${behind} block(s)`
         : `Analytics database is on height ${aHeight}`
     await log(msg, LogLevel.INFO);
-    return aHeight === bHeight - 1;
+    return bHeight - aHeight < 2;
 }
 
 /**
@@ -63,33 +65,32 @@ export const isAnalyticsDbSynced = async (): Promise<boolean> => {
 export const extractBlocks = async (): Promise<void> => {
     const daemon = await xmrjs.connectToDaemonRpc(
         c.MONERO_DAEMON_RPC_HOST, c.MONERO_DAEMON_RPC_USER, c.MONERO_DAEMON_RPC_CREDENTIAL
-    )
-    isExtractingBlocks = true;
+    );
     // get known tip
-    const tip = await daemon.getHeight()
+    const tip = await daemon.getHeight();
     const nToGet = c.NUM_BLOCKS_TO_EXTRACT === 0 ? tip : c.NUM_BLOCKS_TO_EXTRACT;
-    let aHeight = 0;
-    try {
-        aHeight = await Models.Block.max('height');
-    } catch {
-        log(`no height found for analytics db`, LogLevel.ERROR);
+    if (! await isAnalyticsDbSynced()) { // don't extract if we have enough blocks
+        for (let i = aHeight > 0 ? aHeight + 1 : tip - nToGet; i < tip; i++) {
+            const block = await daemon.getBlockByHeight(i);
+            blockCount += 1;
+            log(`processed ${blockCount} block(s)`, LogLevel.INFO);
+            const lBlock = { ...block.toJson(), hex: null } // trim full hex
+            const minerTxOutputAmount = lBlock.minerTx.outputs[0].amount; // all we want from MinerTx
+            Models.Block.create({ ...lBlock, minerTxOutputAmount });
+            // if (block.getTxHashes().length > 0) {
+            //     txCount += 1
+            //     block.getTxHashes().forEach(async (hash: string) => {
+            //         tx = await daemon.getTx(hash)
+            //         const liteTx = { ...tx.toJson(), fullHex: null, rctSigPrunable: null }
+            //         log(`processed ${blockCount + 1} blocks`, LogLevel.INFO);
+            //     })
+            // }
+        }
     }
-    for (let i = aHeight > 0 ? aHeight : tip - nToGet; i < tip; i++) {
-        const block = await daemon.getBlockByHeight(i)
-        blockCount += 1;
-        log(`processed ${blockCount} block(s)`, LogLevel.INFO);
-        const lBlock = { ...block.toJson(), hex: null } // trim full hex
-        Models.Block.create({ ...lBlock })
-        // if (block.getTxHashes().length > 0) {
-        //     txCount += 1
-        //     block.getTxHashes().forEach(async (hash: string) => {
-        //         tx = await daemon.getTx(hash)
-        //         const liteTx = { ...tx.toJson(), fullHex: null, rctSigPrunable: null }
-        //         log(`processed ${blockCount + 1} blocks`, LogLevel.INFO);
-        //     })
-        // }
-    }
-    isExtractingBlocks = false;
+    // recursively call block extraction on par with monero block time
+    setTimeout(async () => {
+        extractBlocks()
+    },  Configuration.MONERO_ESTIMATED_BLOCK_TIME);
 }
 
 /**
@@ -99,7 +100,7 @@ export const extractBlocks = async (): Promise<void> => {
 export const isDaemonSynced = async (): Promise<boolean> => {
     const daemon = await xmrjs.connectToDaemonRpc(
         c.MONERO_DAEMON_RPC_HOST, c.MONERO_DAEMON_RPC_USER, c.MONERO_DAEMON_RPC_CREDENTIAL
-    )
+    );
     log(`info: ${JSON.stringify(await daemon.getInfo())}`, LogLevel.DEBUG);
     return await (await daemon.getInfo()).isSynchronized;
 }

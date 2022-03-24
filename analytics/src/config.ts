@@ -35,7 +35,7 @@ export const MONERO_ESTIMATED_BLOCK_TIME = 60000 * 2;
   string: true,
   alias: "p",
   description: "Postgresql port",
-  demand: false,
+  demand: true,
 })
 .option("daemon-host", {
   boolean: true,
@@ -63,7 +63,7 @@ export const MONERO_ESTIMATED_BLOCK_TIME = 60000 * 2;
 })
 .option("report", {
   boolean: true,
-  description: "FUTURE USE. Generate new analytics report new height",
+  description: "FUTURE USE. Generate new analytics report on new height",
   demand: false,
 })
 .option("wipe-db", {
@@ -74,7 +74,7 @@ export const MONERO_ESTIMATED_BLOCK_TIME = 60000 * 2;
 .option("log-level", {
   string: true,
   alias: "l",
-  description: "comma separated list of log levels to maintain",
+  description: "comma separated list of log levels to maintain (e.g. -l ERROR,INFO,DEBUG)",
   demand: false,
 }).argv;
 

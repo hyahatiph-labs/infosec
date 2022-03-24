@@ -36,11 +36,7 @@ for (i in tx_json) {
 # get data frame headers
 head(tx.data)
 # Summary stats
-summary(tx.data)
-sum_fee <- summary(tx.data$fee)
-qu1_fee <- sum_fee["1st Qu."]
-u <- sum_fee["Median"]
-qu3_fee <- sum_fee["3rd Qu."]
+
 # Let's use the summary statistics to create a class variable
 j = 1
 for (i in tx_json) {
