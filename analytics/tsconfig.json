@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "checkJs": false,
+        "module": "commonjs",
+        "esModuleInterop": true,
+        "target": "es6",
+        "noImplicitAny": true,
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "outDir": "dist",
+        "baseUrl": ".",
+        "paths": {
+            "*": [
+                "node_modules/*"
+            ]
+        }
+    },
+    "exclude": ["**/node_modules/monero-javascript/**/*"],
+    "include": [ "src/**/*", "config.ts", "util.ts", "analytics.ts", "logging.ts" ]
+}

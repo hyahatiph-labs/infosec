@@ -1,6 +1,9 @@
 # infosec
 hyahatiph labs information security research repo
 
+## [analytics](https://github.com/hyahatiph-labs/infosec/tree/main/analytics)
+  - Typescript node.js analytics middleware
+  - R models and exploratory data analysis
 ## [anonima](https://github.com/hyahatiph-labs/infosec/tree/main/anonima)
 * anonymous messaging board with xmr integrations
   - submit transaction proof for posting privileges

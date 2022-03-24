@@ -1,0 +1,55 @@
+{
+  "name": "analytics",
+  "version": "0.1.0",
+  "description": "Monero blockchain analytics and exploratory data analysis tools",
+  "main": "analytics.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "clean": "rm -rf dist/",
+    "prebuild": "eslint src/**",
+    "build": "tsc",
+    "test": "jest"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hyahatiph-labs/infosec.git#main"
+  },
+  "keywords": [
+    "blockchain",
+    "analytics"
+  ],
+  "author": "hyahatiph-labs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hyahatiph-labs/infosec/issues"
+  },
+  "homepage": "https://github.com/hyahatiph-labs/infosec/tree/main#readme",
+  "dependencies": {
+    "monero-javascript": "^0.6.4",
+    "pg": "^8.7.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.17.0",
+    "ts-node": "^9.1.1",
+    "yargs": "^16.2.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.22",
+    "@types/node": "^14.18.9",
+    "@types/yargs": "^16.0.1",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
+    "eslint": "^7.24.0",
+    "husky": "^6.0.0",
+    "jest": "^26.6.3",
+    "pretty-quick": "^3.1.0",
+    "ts-jest": "^26.5.4",
+    "typescript": "^4.2.4"
+  }
+}
