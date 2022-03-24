@@ -8,6 +8,11 @@ Monero blockchain analytics and exploratory data analysis tools.
 * Blocks are extracted from the Monero LMDB (lightning mapped database)
 * The Postgresql is imported into an RStudio project where analysis and models can be prepared
 * [ WIP ] living, breathing models constantly updating based on new blocks
+* NRPS stack
+    - node.js middleware
+    - r statistical programming
+    - postgresql database
+    - sequelize object relationship mapping (ORM)
 
 ## Project Layout
 

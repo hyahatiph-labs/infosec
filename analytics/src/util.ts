@@ -7,7 +7,6 @@ import * as Configuration from './config';
 
 // TODO: use migrations instead of sync
 
-// let txCount = 0;
 let blockCount = 0;
 let aHeight = 0;
 
@@ -28,7 +27,7 @@ export const testDbConnection = async (): Promise<void> => {
         c.WIPE_DB ?  await sequelize.sync({ force: true }) : await sequelize.sync({});
         log('Connection has been established successfully.', LogLevel.INFO);
       } catch (error) {
-        log('Unable to connect to the database:', LogLevel.ERROR);
+        log(`Unable to connect to the database: ${error}`, LogLevel.ERROR);
         process.exit(c.EXIT_ERROR);
     }
 }
@@ -77,14 +76,20 @@ export const extractBlocks = async (): Promise<void> => {
             const lBlock = { ...block.toJson(), hex: null } // trim full hex
             const minerTxOutputAmount = lBlock.minerTx.outputs[0].amount; // all we want from MinerTx
             Models.Block.create({ ...lBlock, minerTxOutputAmount });
-            // if (block.getTxHashes().length > 0) {
-            //     txCount += 1
-            //     block.getTxHashes().forEach(async (hash: string) => {
-            //         tx = await daemon.getTx(hash)
-            //         const liteTx = { ...tx.toJson(), fullHex: null, rctSigPrunable: null }
-            //         log(`processed ${blockCount + 1} blocks`, LogLevel.INFO);
-            //     })
-            // }
+            if (block.getTxHashes().length > 0) {
+                block.getTxHashes().forEach(async (hash: string) => {
+                    const tx = await daemon.getTx(hash);
+                    // manually extracted, nested values
+                    const jTx  = tx.toJson()
+                    const numInputs = jTx.inputs.length;
+                    const numOutputs = jTx.outputs.length;
+                    const rctSigFee = jTx.rctSignatures.txnFee;
+                    const rctSigType = jTx.rctSignatures.type;
+                    const height = block.toJson().height;
+                    const lTx = {  ...jTx, fullHex: null, rctSigPrunable: null }
+                    Models.Tx.create({ ...lTx,  numInputs, numOutputs, rctSigFee, rctSigType, height })
+                })
+            }
         }
     }
     // recursively call block extraction on par with monero block time

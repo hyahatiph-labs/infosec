@@ -13,6 +13,12 @@ con <- dbConnect(odbc::odbc(),driver = "PostgreSQL",Server = "127.0.0.1",
 qBlocks <- dbSendQuery(con, 'SELECT * FROM "Blocks"')
 blocks <- dbFetch(qBlocks)
 
+qTxs <- dbSendQuery(con, 'SELECT * FROM "Txes"')
+txs <- dbFetch(qTxs)
+
+qAll <- dbSendQuery(con, 'SELECT * FROM "Blocks" t1 LEFT JOIN "Txes" t2 ON t1.height = t2.height')
+all <- dbFetch(qAll)
+
 # Initialize library for kmeans clustering and elbow method
 library(cluster)
 library(NbClust)

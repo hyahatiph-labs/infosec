@@ -15,7 +15,6 @@ export enum LogLevel {
  * doesn't like console.log()
  * @param {string} message - message to write
  * @param {LogLevel} level - level types to filter by
- * @param {boolean} write - true is writing to app.log file
  */
 export default async function log(
   message: string,
