@@ -24,7 +24,8 @@ interface TxInput {
  * Utilize sequelize ORM to connect via connection string
  */
 export const sequelize = new Sequelize(
-    `postgres://${c.PG_USER}:${c.PG_CREDENTIAL}@${c.PG_HOST}:${c.PG_PORT}/${c.PG_DB_NAME}`
+    `postgres://${c.PG_USER}:${c.PG_CREDENTIAL}@${c.PG_HOST}:${c.PG_PORT}/${c.PG_DB_NAME}`,
+    { logging: msg => log(msg, LogLevel.DEBUG)}
 );
 
 /**
@@ -81,7 +82,7 @@ export const extractBlocks = async (): Promise<void> => {
         for (let i = aHeight > 0 ? aHeight + 1 : tip - nToGet; i < tip; i++) {
             const block = await daemon.getBlockByHeight(i);
             blockCount += 1;
-            log(`processed ${blockCount} block(s)`, LogLevel.INFO);
+            if (blockCount % 100 === 0) { log(`processed ${blockCount} block(s)`, LogLevel.INFO); }
             const lBlock = { ...block.toJson(), hex: null } // trim full hex
             const minerTxOutputAmount = lBlock.minerTx.outputs[0].amount; // all we want from MinerTx
             Models.Block.create({ ...lBlock, minerTxOutputAmount });
