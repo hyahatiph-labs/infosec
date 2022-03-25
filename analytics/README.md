@@ -5,7 +5,7 @@ Monero blockchain analytics and exploratory data analysis tools.
 ## About
 
 * This node.js (typescript) middleware synchronizes a Postgresql database for analytics
-* Blocks are extracted from the Monero LMDB (lightning mapped database)
+* Blocks are extracted from the Monero LMDB (lightning mapped database) via [monero-javascript](https://www.npmjs.com/package/monero-javascript)
 * The Postgresql is imported into an RStudio project where analysis and models can be prepared
 * [ WIP ] living, breathing models constantly updating based on new blocks
 * NRPS stack

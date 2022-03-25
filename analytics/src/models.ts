@@ -43,6 +43,7 @@ export class Tx extends Model {
     declare prunableHash: string;
     declare rctSigType: number;
     declare rctSigFee: number;
+    declare ringOutputIndices: number[];
     declare relay: boolean;
     declare height: number;
     declare unlockHeight: number;
@@ -145,6 +146,9 @@ export const initializeModels = async (sequelize: Sequelize): Promise<void> => {
         },
         rctSigFee: {
             type: DataTypes.BIGINT
+        },
+        ringOutputIndices: {
+            type: DataTypes.ARRAY(DataTypes.INTEGER)
         },
         relay: {
             type: DataTypes.BOOLEAN

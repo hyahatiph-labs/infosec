@@ -9,15 +9,20 @@ library(tibble)
 con <- dbConnect(odbc::odbc(),driver = "PostgreSQL",Server = "127.0.0.1",
                  Database = "xmrsndb",UID = rstudioapi::askForPassword("User"),
                  PWD = rstudioapi::askForPassword("Password!"), Port = 5432)
-# send the query
+# blocks table query
 qBlocks <- dbSendQuery(con, 'SELECT * FROM "Blocks"')
 blocks <- dbFetch(qBlocks)
-
+# transaction table query
 qTxs <- dbSendQuery(con, 'SELECT * FROM "Txes"')
 txs <- dbFetch(qTxs)
-
+# join transactions to respective heights
 qAll <- dbSendQuery(con, 'SELECT * FROM "Blocks" t1 LEFT JOIN "Txes" t2 ON t1.height = t2.height')
 all <- dbFetch(qAll)
+
+# network graph
+
+# TODO: model development
+
 
 # Initialize library for kmeans clustering and elbow method
 library(cluster)
@@ -34,7 +39,7 @@ set.seed(1234)
 
 # Create the new vectors for the data frame
 j = 1
-for (i in tx_json) {
+for (i in all) {
   
   j = j+1
 }

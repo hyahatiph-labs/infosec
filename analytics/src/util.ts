@@ -10,6 +10,16 @@ import * as Configuration from './config';
 let blockCount = 0;
 let aHeight = 0;
 
+interface KeyImage {
+    hex: string;
+}
+
+interface TxInput {
+    amount: number;
+    keyImage: KeyImage;
+    ringOutputIndices: number[];
+}
+
 /**
  * Utilize sequelize ORM to connect via connection string
  */
@@ -27,8 +37,7 @@ export const testDbConnection = async (): Promise<void> => {
         c.WIPE_DB ?  await sequelize.sync({ force: true }) : await sequelize.sync({});
         log('Connection has been established successfully.', LogLevel.INFO);
       } catch (error) {
-        log(`Unable to connect to the database: ${error}`, LogLevel.ERROR);
-        process.exit(c.EXIT_ERROR);
+        throw new Error(`${error}`);
     }
 }
 
@@ -39,7 +48,7 @@ export const testDbConnection = async (): Promise<void> => {
 export const isAnalyticsDbSynced = async (): Promise<boolean> => {
     const daemon = await xmrjs.connectToDaemonRpc(
         c.MONERO_DAEMON_RPC_HOST, c.MONERO_DAEMON_RPC_USER, c.MONERO_DAEMON_RPC_CREDENTIAL
-    )
+    );
     aHeight = 0;
     try {
         aHeight = await Models.Block.max('height') || 0;
@@ -51,7 +60,7 @@ export const isAnalyticsDbSynced = async (): Promise<boolean> => {
     const behind = aHeight > 0 ? bHeight - aHeight : rHeight - aHeight;
     const msg = aHeight < bHeight
         ? `Analytics database (${aHeight}) is behind Monero LMDB (${bHeight}) by ${behind} block(s)`
-        : `Analytics database is on height ${aHeight}`
+        : `Analytics database is on height ${aHeight}`;
     await log(msg, LogLevel.INFO);
     return bHeight - aHeight < 2;
 }
@@ -79,14 +88,21 @@ export const extractBlocks = async (): Promise<void> => {
             if (block.getTxHashes().length > 0) {
                 block.getTxHashes().forEach(async (hash: string) => {
                     const tx = await daemon.getTx(hash);
-                    // manually extracted, nested values
                     const jTx  = tx.toJson()
+                    /* ring output indices extraction */
+                    const ringOutputIndices: number[] = [];
+                    if (!jTx.isMinerTx) {
+                        const inputs: TxInput[] = jTx.inputs;
+                        inputs.forEach(input => { ringOutputIndices.push(...input.ringOutputIndices); });
+                    }
+                    /* ring output indices extraction */
+                    // manually extracted, nested values
                     const numInputs = jTx.inputs.length;
                     const numOutputs = jTx.outputs.length;
                     const rctSigFee = jTx.rctSignatures.txnFee;
                     const rctSigType = jTx.rctSignatures.type;
                     const height = block.toJson().height;
-                    const lTx = {  ...jTx, fullHex: null, rctSigPrunable: null }
+                    const lTx = {  ...jTx, fullHex: null, rctSigPrunable: null, ringOutputIndices }
                     Models.Tx.create({ ...lTx,  numInputs, numOutputs, rctSigFee, rctSigType, height })
                 })
             }
