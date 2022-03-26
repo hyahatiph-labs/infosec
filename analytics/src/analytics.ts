@@ -8,7 +8,6 @@ import * as Configuration from './config';
  * Monero blockchain if not already in progress.
  */
 const run = async (): Promise<void> => {
-    const daemonCheck = setInterval(async () => {
         const isDaemonSynced = await Utilities.isDaemonSynced();
         log(
             isDaemonSynced ? "verified monero daemon sync" : "daemon not sync", LogLevel.INFO
@@ -19,6 +18,8 @@ const run = async (): Promise<void> => {
             await Utilities.testDbConnection();
             await Utilities.extractBlocks();
         }
-    }, Configuration.DAEMON_SYNC_CHECK_INTERVAL); // keep waiting for daemon to sync first
 }
 run();
+const daemonCheck = setInterval(async () => {
+    run();
+}, Configuration.DAEMON_SYNC_CHECK_INTERVAL); // keep waiting for daemon to sync first
