@@ -1,5 +1,6 @@
+
 # This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above in RStduio.
+# the 'Run App' button above in RStudio.
 #
 # Find out more about building applications with Shiny here:
 #
@@ -7,6 +8,7 @@
 #
 
 library(shiny)
+library(networkD3)
 port <- readr::parse_integer(shiny_port)
 options(shiny.port = port)
 # Define UI for application that draws a histogram
@@ -22,28 +24,23 @@ ui <- fluidPage(
                         "Number of transactions",
                         min = 1,
                         max = length(d1$from),
-                        value = 100)
+                        value = 10)
         ),
 
         # Show a plot of the ring output indices for transactions at height n
         mainPanel(
-          # plotOutput("nPlot")
-          # force render the plot and restart the shiny server
-          # via analytics middleware logic until this bug is fixed
-          p
+          simpleNetworkOutput(
+            "nPlot", width = "100%", height = "700px"
+          )
         )
     )
 )
 
 
-# BUG: the network graph is not being updated but
-#      is being sent to the viewer.
-#      Temp fix is to restart the server
-#      via analytics middleware
 # Define server logic required to draw a plot
  server <- function(input, output) {
 
-    output$nPlot <- renderPlot({
+    output$nPlot <- renderSimpleNetwork({
         # draw the plot with the specified number of transactions
         simpleNetwork(hierarchy[1:input$txs,], width = "100px", height = "100px",
                            Source = 1,                 # column number of source
