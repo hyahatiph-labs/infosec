@@ -4,7 +4,7 @@
 # MIT LICENSE
 
 # working directory
-setwd("~/infosec/")
+setwd("~/infosec/analitiko/")
 
 # Connect to the analytics database
 library(DBI)
@@ -54,13 +54,15 @@ rD2 <- dbFetch(qD2)
 hash <- NULL
 index <- NULL
 t = 1
+j = 1
 for (h in rD2$hash) {
   v1 <- strsplit(rD2$ringOutputIndices[t], split="[{}]")
   v2 <- unlist(v1[1])[2]
   v3 <- unlist(strsplit(v2, split=","))
   for (r in v3) {
-    hash[t] <- h
-    index[t] <- readr::parse_number(r)
+    hash[j] <- h
+    index[j] <- readr::parse_number(r)
+    j = j + 1
   }
   t = t + 1
 }
@@ -76,8 +78,11 @@ d2 <- data.frame(from = v_hash, to = v_index)
 hierarchy <- rbind(d1, d2)
 hierarchy <- na.omit(hierarchy)
 
-# Render plot via shiny app (see './xmr-ring-output-network-graph/app.R')
+# TODO: benchmarking with samples. Need a machine that can render this
+set.seed(6969)
+hierarchy <- hierarchy[sample(nrow(hierarchy), 100, replace = FALSE, prob = NULL),]
 
+# Render plot via shiny app (see './xmr-ring-output-network-graph/app.R')
 p <- simpleNetwork(hierarchy, width = "100px", height = "100px",
                    Source = 1,                 # column number of source
                    Target = 2,                 # column number of target
@@ -90,3 +95,5 @@ p <- simpleNetwork(hierarchy, width = "100px", height = "100px",
                    opacity = 0.9,              # opacity of nodes.
                    zoom = T                    # Can you zoom on the figure?
 )
+
+p
