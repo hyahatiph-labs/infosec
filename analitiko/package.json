@@ -1,8 +1,8 @@
 {
-  "name": "analytics",
+  "name": "analitiko",
   "version": "0.1.0",
   "description": "Monero blockchain analytics and exploratory data analysis tools",
-  "main": "analytics.js",
+  "main": "analitiko.js",
   "directories": {
     "example": "examples"
   },

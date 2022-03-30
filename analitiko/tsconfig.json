@@ -17,5 +17,5 @@
         }
     },
     "exclude": ["**/node_modules/monero-javascript/**/*"],
-    "include": [ "src/**/*", "config.ts", "util.ts", "analytics.ts", "logging.ts" ]
+    "include": [ "**/src/", "config.ts", "util.ts", "analitiko.ts", "logging.ts" ]
 }

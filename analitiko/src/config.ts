@@ -2,6 +2,7 @@ import * as yargs from "yargs";
 
 export const EXIT_ERROR = 1;
 export const MONERO_ESTIMATED_BLOCK_TIME = 60000 * 2;
+export const DAEMON_SYNC_CHECK_INTERVAL = 60000 * 10;
 
 /**
  * User input for the analytics
