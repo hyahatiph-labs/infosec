@@ -4,6 +4,14 @@ export const EXIT_ERROR = 1;
 export const MONERO_ESTIMATED_BLOCK_TIME = 60000 * 2;
 export const DAEMON_SYNC_CHECK_INTERVAL = 60000 * 10;
 
+// Reference: Mastering Monero, SerHack p. 141
+export const M_0 = 300;       // minimum block size of 300 kB
+export const AF_1 = 60 / 300; // adjustment factor in reference to penalty-free blocksize limit
+export const F_0 = 0.0002;    // 0.002 XMR
+export const R_0 = 10;        // reference base reward
+export const AF_2 = 4;        // adjustment factor for the fee multiplier
+
+
 /**
  * User input for the analytics
  */

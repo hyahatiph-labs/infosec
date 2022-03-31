@@ -32,6 +32,7 @@ export class Block extends Model {
 export class Tx extends Model {
     declare extra: number[];
     declare hash: string;
+    declare height: number;
     declare inTxPool: boolean;
     declare isConfirmed: boolean;
     declare isDoubleSpendSeen: boolean;
@@ -45,7 +46,7 @@ export class Tx extends Model {
     declare rctSigFee: number;
     declare ringOutputIndices: number[];
     declare relay: boolean;
-    declare height: number;
+    declare size: number;
     declare unlockHeight: number;
     declare version: number;
 }
@@ -114,6 +115,9 @@ export const initializeModels = async (sequelize: Sequelize): Promise<void> => {
         hash: {
             type: DataTypes.STRING,
         },
+        height: {
+            type: DataTypes.INTEGER,
+        },
         inTxPool: {
             type: DataTypes.BOOLEAN
         },
@@ -153,8 +157,8 @@ export const initializeModels = async (sequelize: Sequelize): Promise<void> => {
         relay: {
             type: DataTypes.BOOLEAN
           },
-        height: {
-            type: DataTypes.INTEGER,
+        size: {
+            type: DataTypes.FLOAT,
         },
         unlockHeight: {
             type: DataTypes.INTEGER
