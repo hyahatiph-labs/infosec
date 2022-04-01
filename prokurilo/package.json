@@ -25,7 +25,7 @@
   "author": "hyahatiph-labs",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.26.0",
+    "axios": "^0.26.1",
     "cors": "^2.8.5",
     "express": "^4.17.3",
     "helmet": "^5.0.2",
