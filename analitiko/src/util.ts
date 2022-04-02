@@ -156,6 +156,17 @@ const initializeSizeContainer = async (initialHeight: number, daemon: any): Prom
 }
 
 /**
+ * Calculate median.
+ * @param {number[]}  array - array to work on
+ * @returns median
+ */
+ const median = async (array: number[]): Promise<number> => {
+    array.sort();
+    const half = Math.floor(array.length / 2);
+    return array.length % 2 !== 0  ? array[half] : (array[half] + array[half - 1]) / 2;
+}
+
+/**
  * ```bash
  * Fee per kB = (R/R0) * (M0/M) * F0 * (60/300) * 4
  * ```
