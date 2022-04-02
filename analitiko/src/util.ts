@@ -184,4 +184,3 @@ const updateSizeContainer = async (size: number): Promise<void> => {
     delete sizeContainer[0];
     sizeContainer.push(size);
 }
-
