@@ -22,7 +22,7 @@ Monero blockchain analytics and exploratory data analysis tools.
 
 ```bash
 analitiko/
-├── scripts            # Analytics scrips go here
+├── scripts            # Analytics scripts go here
 ├── src                # Directory of source code
    ├── test              # Test files
    ├── analitiko.ts      # Entry point for the app
@@ -60,8 +60,6 @@ Options:
       --daemon-credential  Password of Monero Daemon RPC. [string] [default: ""]
       --num-blocks         Number of blocks from tip to extract
                                                            [number] [default: 0]
-      --report             FUTURE USE. Generate new analytics report on new
-                           height                                      [boolean]
       --wipe-db            DEV USE. Destructive action. Wipes the Analytics
                            database.                                   [boolean]
   -l, --log-level          comma separated list of log levels to maintain (e.g.

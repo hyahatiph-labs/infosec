@@ -70,11 +70,6 @@ export const AF_2 = 4;        // adjustment factor for the fee multiplier
   description: "Number of blocks from tip to extract",
   demand: false,
 })
-.option("report", {
-  boolean: true,
-  description: "FUTURE USE. Generate new analytics report on new height",
-  demand: false,
-})
 .option("wipe-db", {
   boolean: true,
   description: "DEV USE. Destructive action. Wipes the Analytics database.",
