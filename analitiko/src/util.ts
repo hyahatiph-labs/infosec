@@ -1,6 +1,6 @@
 import * as c from './config';
 import { Sequelize } from 'sequelize';
-import log, { LogLevel } from './logging';
+import log, { LogLevel, PERF_TIME } from './logging';
 import * as xmrjs from 'monero-javascript';
 import * as Models from './models';
 
@@ -83,11 +83,17 @@ export const extractBlocks = async (): Promise<void> => {
     const nToGet = c.NUM_BLOCKS_TO_EXTRACT === 0 ? tip : c.NUM_BLOCKS_TO_EXTRACT;
     // start size calculation for M 
     if ( isCalculatingFees && !isBlockContainerInitialized) { await initializeSizeContainer(tip - nToGet, daemon); }
+    // start tracking for initial block extraction performance
+    PERF_TIME.start = Date.now();
     if (! await isAnalyticsDbSynced()) { // don't extract if we have enough blocks
         for (let i = aHeight > 0 ? aHeight + 1 : tip - nToGet; i < tip; i++) {
             const block = await daemon.getBlockByHeight(i);
             blockCount += 1;
-            if (blockCount % 100 === 0) { log(`processed ${blockCount} blocks`, LogLevel.INFO); }
+            if (blockCount % 100 === 0) {
+                PERF_TIME.end = Date.now();
+                await log(`processed ${blockCount} blocks`, LogLevel.PERF);
+                PERF_TIME.start = PERF_TIME.end;
+            }
             const lBlock = { ...block.toJson(), hex: null } // trim full hex
             const minerTxOutputAmount = lBlock.minerTx.outputs[0].amount; // all we want from MinerTx
             Models.Block.create({ ...lBlock, minerTxOutputAmount });
