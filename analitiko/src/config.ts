@@ -7,7 +7,7 @@ export const DAEMON_SYNC_CHECK_INTERVAL = 60000 * 10;
 // Reference: Mastering Monero, SerHack p. 141
 export const M_0 = 300;       // minimum block size of 300 kB
 export const AF_1 = 60 / 300; // adjustment factor in reference to penalty-free blocksize limit
-export const F_0 = 0.0002;    // 0.002 XMR
+export const F_0 = 0.002;    // 0.002 XMR
 export const R_0 = 10;        // reference base reward
 export const AF_2 = 4;        // adjustment factor for the fee multiplier
 
@@ -47,7 +47,7 @@ export const AF_2 = 4;        // adjustment factor for the fee multiplier
   demand: true,
 })
 .option("daemon-host", {
-  boolean: true,
+  string: true,
   default: "http://localhost:38081",
   description: "Host and port of Monero Daemon RPC.",
   demand: false,
