@@ -4,12 +4,18 @@
 # Author: https://github.com/hyahatiph-labs
 # MIT LICENSE
 
-# Set working directory
-setwd("~/infosec/analitiko")
+local({r <- getOption("repos")
+       r["CRAN"] <- "http://cran.r-project.org"
+       options(repos=r)})
+       
+install.packages(c("DBI", "RODBC", "odbc", "dplyr", "RODBCDBI",
+  "readr", "data.table", "cluster", "NbClust", "factoextra",
+  "psych", "party", "ggplot2", "reshape2", "shiny",
+  "igraph", "tidygraph", "networkD3", "curl"))
+
 # Connect to the analytics database
 library(DBI)
 library(RODBCDBI)
-library(tibble)
 library(readr)
 library(data.table)
 # Initialize library for kmeans clustering and elbow method
@@ -28,9 +34,10 @@ library(party)
 # close and re-open if using RStudio
 pg_user <- Sys.getenv("PG_USER")
 pg_cred <- Sys.getenv("PG_CRED")
+pg_host <- Sys.getenv("PG_HOST")
 shiny_port <- Sys.getenv("SHINY_PORT")
 pg_db_name <- Sys.getenv("PG_DB_NAME")
-con <- dbConnect(odbc::odbc(), driver = "PostgreSQL",Server = "127.0.0.1",
+con <- dbConnect(odbc::odbc(), driver = "PostgreSQL", Server = pg_host,
                  Database = pg_db_name, UID = pg_user, PWD = pg_cred,
                  Port = 5432)
 
@@ -41,8 +48,8 @@ etl <- function() {
   qTxs <- dbSendQuery(con, 'SELECT * FROM "Txes" t1')
   rTxs <- dbFetch(qTxs)
 
-  kb = 1024
-  pico = 1000000000000
+  kb <- 1024
+  pico <- 1000000000000
   tx_fee_dataset <- data.table(
     height = rTxs$height,
     fee = rTxs$rctSigFee / pico,
@@ -51,6 +58,8 @@ etl <- function() {
     num_outputs = rTxs$numOutputs,
     fee_per_byte = (rTxs$rctSigFee / pico) / rTxs$size / kb
   )
+  # clean the dataset
+  tx_fee_dataset <- na.omit(tx_fee_dataset)
   # Reproducible output
   set.seed(1234)
   # Summary stats
@@ -74,7 +83,7 @@ etl <- function() {
   elevated <- 0.00000025
   i <- 1
   for (fee in tx_fee_dataset$fee_per_byte) {
-    if ( fee < unimportant) {
+    if (fee < unimportant) {
       priority_level[i] <- "unimportant"
     } else if (fee < low) {
       priority_level[i] <- "low"
@@ -130,8 +139,7 @@ etl <- function() {
     color = TRUE, shade = TRUE, labels = 4, lines = 0)
   # Bubble data visualization via r-graph-gallery
   # https://r-graph-gallery.com/2d-density-chart.html
-  # Library
-  library(tidyverse)
+
   # Bin size control + color palette
   ggplot(tx_fee_dataset, aes(x = fee_per_byte, y = size)) +
     geom_bin2d(bins = 70) +
@@ -153,7 +161,7 @@ rm_outliers_tx_fee_dataset <- subset(tx_fee_dataset, tx_fee_dataset$size < 1)
 #
 library(shiny)
 port <- readr::parse_integer(shiny_port)
-options(shiny.port = port)
+options(shiny.port = port, shiny.host = "0.0.0.0")
 # Define UI for application that draws a histogram
 ui <- fluidPage(
   # Application title

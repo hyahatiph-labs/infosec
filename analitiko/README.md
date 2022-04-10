@@ -55,7 +55,7 @@ Options:
   -h, --pg-host            Postgresql host                   [string] [required]
   -p, --pg-port            Postgresql port                   [string] [required]
       --daemon-host        Host and port of Monero Daemon RPC.
-                                   [boolean] [default: "http://localhost:38081"]
+                                   [string] [default: "http://localhost:38081"]
       --daemon-user        Username of Monero Daemon RPC. [string] [default: ""]
       --daemon-credential  Password of Monero Daemon RPC. [string] [default: ""]
       --num-blocks         Number of blocks from tip to extract
@@ -78,3 +78,7 @@ Missing required arguments: pg-user, pg-credential, pg-db-name, pg-host, pg-port
 [INFO]  2022-03-26T05:31:08.699Z => processed 200 block(s)
 [INFO]  2022-03-26T05:31:15.554Z => processed 300 block(s)
 ```
+
+## Docker
+
+see [docker.md](./docker.md)

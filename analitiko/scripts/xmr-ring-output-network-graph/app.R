@@ -3,13 +3,17 @@
 # Author: https://github.com/hyahatiph-labs
 # MIT LICENSE
 
-# working directory
-setwd("~/infosec/analitiko/")
+local({r <- getOption("repos")
+       r["CRAN"] <- "http://cran.r-project.org"
+       options(repos=r)})
+       
+install.packages(c("DBI", "odbc", "dplyr", "RODBCDBI",  "tibble", "readr",
+  "data.table", "cluster", "nbclust", "factoextra", "psych", "party", "ggplot2",
+  "reshape2", "shiny", "igraph", "tidygraph", "networkD3"))
 
 # Connect to the analytics database
 library(DBI)
 library(RODBCDBI)
-library(tibble)
 library(readr)
 # create an /infosec/analitiko/.Renviron file with
 # PG_USER=<postgresql username>
@@ -20,9 +24,10 @@ library(readr)
 # close and re-open if using RStudio
 pg_user <- Sys.getenv("PG_USER")
 pg_cred <- Sys.getenv("PG_CRED")
+pg_host <- Sys.getenv("PG_HOST")
 shiny_port <- Sys.getenv("SHINY_PORT")
 pg_db_name <- Sys.getenv("PG_DB_NAME")
-con <- dbConnect(odbc::odbc(), driver = "PostgreSQL",Server = "127.0.0.1",
+con <- dbConnect(odbc::odbc(), driver = "PostgreSQL",Server = pg_host,
                  Database = pg_db_name, UID = pg_user, PWD = pg_cred,
                  Port = 5432)
 
@@ -96,7 +101,7 @@ length(hierarchy$from)
 
 library(shiny)
 port <- readr::parse_integer(shiny_port)
-options(shiny.port = port)
+options(shiny.port = port, shiny.host = "0.0.0.0")
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
