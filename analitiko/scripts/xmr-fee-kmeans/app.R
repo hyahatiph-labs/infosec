@@ -4,14 +4,17 @@
 # Author: https://github.com/hyahatiph-labs
 # MIT LICENSE
 
-local({r <- getOption("repos")
-       r["CRAN"] <- "http://cran.r-project.org"
-       options(repos=r)})
-       
-install.packages(c("DBI", "RODBC", "odbc", "dplyr", "RODBCDBI",
-  "readr", "data.table", "cluster", "NbClust", "factoextra",
-  "psych", "party", "ggplot2", "reshape2", "shiny",
-  "igraph", "tidygraph", "networkD3", "curl"))
+dev_env <- Sys.getenv("DEV_ENV")
+if (dev_env != "local") {
+  local({r <- getOption("repos")
+         r["CRAN"] <- "http://cran.r-project.org"
+         options(repos=r)})
+  
+  install.packages(c("DBI", "RODBC", "odbc", "dplyr", "RODBCDBI",
+    "readr", "data.table", "cluster", "NbClust", "factoextra",
+    "psych", "party", "ggplot2", "reshape2", "shiny",
+    "igraph", "tidygraph", "networkD3", "curl")) 
+}
 
 # Connect to the analytics database
 library(DBI)
@@ -26,6 +29,7 @@ library(factoextra)
 library(psych)
 library(party)
 # Create an /infosec/analitiko/.Renviron file with
+# DEV_ENV=<local or docker>
 # PG_USER=<postgresql username>
 # PG_CRED=<postgresql password>
 # PG_DB_NAME=<database_name>
@@ -151,7 +155,8 @@ etl <- function() {
 
 tx_fee_dataset <- etl()
 kc <- kmeans(tx_fee_dataset, 4, iter.max = 40)
-rm_outliers_tx_fee_dataset <- subset(tx_fee_dataset, tx_fee_dataset$size < 1)
+outlier_threshold <- mean(tx_fee_dataset$size) * .97 + mean(tx_fee_dataset$size)
+rm_outliers_tx_fee_dataset <- subset(tx_fee_dataset, tx_fee_dataset$size < outlier_threshold)
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above in RStudio.
 #

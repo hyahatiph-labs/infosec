@@ -3,19 +3,24 @@
 # Author: https://github.com/hyahatiph-labs
 # MIT LICENSE
 
-local({r <- getOption("repos")
-       r["CRAN"] <- "http://cran.r-project.org"
-       options(repos=r)})
-       
-install.packages(c("DBI", "odbc", "dplyr", "RODBCDBI",  "tibble", "readr",
-  "data.table", "cluster", "nbclust", "factoextra", "psych", "party", "ggplot2",
-  "reshape2", "shiny", "igraph", "tidygraph", "networkD3"))
+dev_env <- Sys.getenv("DEV_ENV")
+if (dev_env != "local") {
+  local({r <- getOption("repos")
+  r["CRAN"] <- "http://cran.r-project.org"
+  options(repos=r)})
+  
+  install.packages(c("DBI", "RODBC", "odbc", "dplyr", "RODBCDBI",
+                     "readr", "data.table", "cluster", "NbClust", "factoextra",
+                     "psych", "party", "ggplot2", "reshape2", "shiny",
+                     "igraph", "tidygraph", "networkD3", "curl")) 
+}
 
 # Connect to the analytics database
 library(DBI)
 library(RODBCDBI)
 library(readr)
 # create an /infosec/analitiko/.Renviron file with
+# DEV_ENV=<local or docker>
 # PG_USER=<postgresql username>
 # PG_CRED=<postgresql password>
 # PG_DB_NAME=<database_name>
