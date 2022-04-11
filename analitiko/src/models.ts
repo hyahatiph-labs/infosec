@@ -6,7 +6,7 @@ import { DataTypes, Model, Sequelize } from 'sequelize';
  */
 export class Block extends Model {
     declare cumulativeDifficulty: bigint;
-    declare difficulty: number;
+    declare difficulty: bigint;
     declare height: number;
     declare longTermWeight: number;
     declare majorVersion: number;
@@ -62,7 +62,7 @@ export const initializeModels = async (sequelize: Sequelize): Promise<void> => {
             type: DataTypes.BIGINT
         },
         difficulty: {
-            type: DataTypes.INTEGER
+            type: DataTypes.BIGINT
         },
         height: {
             type: DataTypes.INTEGER,
