@@ -43,7 +43,7 @@ export class Tx extends Model {
     declare outputIndices: number[];
     declare prunableHash: string;
     declare rctSigType: number;
-    declare rctSigFee: number;
+    declare rctSigFee: bigint;
     declare ringOutputIndices: number[];
     declare relay: boolean;
     declare size: number;
