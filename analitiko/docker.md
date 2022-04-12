@@ -33,6 +33,16 @@ docker run --rm -P -p 127.0.0.1:4242:4242 --name analitiko analitiko:v0.1.0 \
 <DEVICE_IP> <DB_NAME> <NUM_BLOCKS> http://<MONERO_RPC_HOST:PORT>"
 ```
 
-That's pretty much it. Sit back and wait for the blockchain and and analytics middleware to sync up.
+### Extra Flavor - TOR
+
+* Install tor for your system
+* Add the lines below to `/etc/tor/torrc`
+
+```bash
+HiddenServiceDir /var/lib/tor/shiny/
+HiddenServicePort 80 127.0.0.1:<SHINY_PORT>
+```
+
+That's pretty much it. Sit back and wait for the blockchain and analytics middleware to sync up.
 The model should be available at port 4242 in this example. Then you can do some cool stuff such as
 running the interactive models with changes on user input. Or put them behind prokurilo and monetize them.
