@@ -46,6 +46,12 @@ con <- dbConnect(odbc::odbc(), driver = "PostgreSQL", Server = pg_host,
                  Port = 5432)
 
 block_time <- 120000
+second_std <- .977
+# Set outlier threshold
+oth <- function(value, limit) {
+  u <- mean(value)
+  (value * u) + u
+}
 # This function returns a modified dataset for the Shiny server
 etl <- function() {
   # Transaction Fee Dataset
@@ -62,8 +68,6 @@ etl <- function() {
     num_outputs = rTxs$numOutputs,
     fee_per_byte = (rTxs$rctSigFee / pico) / rTxs$size / kb
   )
-  # clean the dataset
-  tx_fee_dataset <- na.omit(tx_fee_dataset)
   # Reproducible output
   set.seed(1234)
   # Summary stats
@@ -122,41 +126,36 @@ etl <- function() {
   kc <- kmeans(tx_fee_dataset2, 3, iter.max = 30)
   kc
   kc$betweenss
-  # Minimum within cluster sum of squares with 4 clusters
-  # Model refinement
-  # This refinement re-imagines the blockchain such that there
-  # are no unimportant transaction priority levels
-  mod_tx_fee_dataset <-
-    subset(tx_fee_dataset, tx_fee_dataset$class != "unimportant")
-  mod_tx_fee_dataset$class <- factor(mod_tx_fee_dataset$class)
-  # Verify dataset structure
-  str(mod_tx_fee_dataset)
-  # Copy the modified dataset
-  mod_tx_fee_dataset2 <- mod_tx_fee_dataset
-  # Remove class from copied dataset
-  mod_tx_fee_dataset2$class <- NULL
+  # Model Refinement - set outlier thresholds for size and fee
+  size_outlier_threshold <- oth(tx_fee_dataset2$size, second_std)
+  fee_outlier_threshold <- oth(tx_fee_dataset2$fee, second_std)
+  rm_outliers_tx_fee_dataset <-
+    subset(tx_fee_dataset2, tx_fee_dataset2$size < size_outlier_threshold)
+  final_data_set <-
+    subset(rm_outliers_tx_fee_dataset,
+      rm_outliers_tx_fee_dataset$fee < fee_outlier_threshold)
   # K-means method with k= 4
-  kc <- kmeans(mod_tx_fee_dataset2, 4, iter.max = 40)
-  # Cross-tabulation
-  table(mod_tx_fee_dataset$class, kc$cluster)
-  clusplot(mod_tx_fee_dataset2, kc$cluster,
+  kc <- kmeans(final_data_set, 4, iter.max = 40)
+  clusplot(final_data_set, kc$cluster,
     color = TRUE, shade = TRUE, labels = 4, lines = 0)
   # Bubble data visualization via r-graph-gallery
   # https://r-graph-gallery.com/2d-density-chart.html
 
   # Bin size control + color palette
-  ggplot(tx_fee_dataset, aes(x = fee_per_byte, y = size)) +
+  ggplot(final_data_set, aes(x = fee_per_byte, y = size)) +
     geom_bin2d(bins = 70) +
     scale_fill_continuous(type = "viridis") +
     theme_bw()
   # Strip away outliers
-  mod_tx_fee_dataset2
+  final_data_set
 }
 
+# Initial Extract, Transfer and Load
 tx_fee_dataset <- etl()
+analitiko_height <- max(tx_fee_dataset$height)
+print(analitiko_height)
 kc <- kmeans(tx_fee_dataset, 4, iter.max = 40)
-outlier_threshold <- mean(tx_fee_dataset$size) * .97 + mean(tx_fee_dataset$size)
-rm_outliers_tx_fee_dataset <- subset(tx_fee_dataset, tx_fee_dataset$size < outlier_threshold)
+
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above in RStudio.
 #
@@ -176,7 +175,7 @@ ui <- fluidPage(
       sliderInput("txs",
                   "Number of transactions",
                   min = 1,
-                  max = length(rm_outliers_tx_fee_dataset$size),
+                  max = length(tx_fee_dataset$size),
                   value = 10),
       hr(),
       h3("Cluster Centers"),
@@ -203,7 +202,7 @@ server <- function(input, output) {
   output$sPlot <- renderPlot({
     # draw the plot with the specified number of transactions
     # Bin size control + color palette
-    ggplot(rm_outliers_tx_fee_dataset[1:input$txs,],
+    ggplot(tx_fee_dataset[1:input$txs,],
       aes(x=fee_per_byte, y=size)) +
       geom_bin2d(bins = 70) +
       scale_fill_continuous(type = "viridis") +
@@ -224,8 +223,9 @@ server <- function(input, output) {
   })
   observe({
     invalidateLater(block_time)
-    isolate(rm_outliers_tx_fee_dataset <- etl())
-    isolate(kc <- kmeans(tx_fee_dataset, 4, iter.max = 40))
+    isolate(tx_fee_dataset <- etl())
+    isolate(kc <- kc <- kmeans(tx_fee_dataset, 4, iter.max = 40))
+    print(analitiko_height)
   })
 }
 # Run the application
