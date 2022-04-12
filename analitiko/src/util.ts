@@ -187,6 +187,6 @@ const calculateFeePerKb = async (R: number): Promise<number> =>
  * @param {number} size - block size
  */
 const updateSizeContainer = async (size: number): Promise<void> => {
-    delete sizeContainer[0];
+    sizeContainer.shift();
     sizeContainer.push(size);
 }
