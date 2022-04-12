@@ -8,7 +8,7 @@
 MODEL=$1
 cd /infosec/analitiko && git pull && npm run clean && npm run build
 echo "Starting monerod..."
-cd / && ./root/monero*/monerod --prune-blockchain --detach
+cd / && ./xmr/monero*/monerod --prune-blockchain --detach
 echo "Starting analitko..."
 cd /infosec/analitiko && node dist/analitiko.js -u $2 -c $3 -h $4 -p 5432 -n $5 \
 -l ERROR,INFO,PERF --num-blocks $6 --daemon-host $7 &
