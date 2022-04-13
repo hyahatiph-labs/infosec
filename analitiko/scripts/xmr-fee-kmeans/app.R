@@ -36,10 +36,7 @@ con <- dbConnect(odbc::odbc(), driver = "PostgreSQL", Server = pg_host,
 block_time <- 120000
 second_std <- .977
 # Set outlier threshold
-oth <- function(value, limit) {
-  u <- mean(value)
-  (value * u) + u
-}
+oth <- function(u, limit) { (u * limit) + u }
 # This function returns a modified dataset for the Shiny server
 etl <- function() {
   # Transaction Fee Dataset
@@ -96,7 +93,6 @@ etl <- function() {
   tx_fee_dataset2 <- tx_fee_dataset
   # Remove the class variable and time
   tx_fee_dataset2$class <- NULL
-  tx_fee_dataset2$height <- NULL
   # Store the model with 4 clusters
   kc <- kmeans(tx_fee_dataset2, 4, iter.max = 40)
   # Print the model output
@@ -115,13 +111,10 @@ etl <- function() {
   kc
   kc$betweenss
   # Model Refinement - set outlier thresholds for size and fee
-  size_outlier_threshold <- oth(tx_fee_dataset2$size, second_std)
-  fee_outlier_threshold <- oth(tx_fee_dataset2$fee, second_std)
-  rm_outliers_tx_fee_dataset <-
-    subset(tx_fee_dataset2, tx_fee_dataset2$size < size_outlier_threshold)
+  size_outlier_threshold <- oth(mean(tx_fee_dataset2$size), second_std)
+  fee_outlier_threshold <- oth(mean(tx_fee_dataset2$fee), second_std)
   final_data_set <-
-    subset(rm_outliers_tx_fee_dataset,
-      rm_outliers_tx_fee_dataset$fee < fee_outlier_threshold)
+    subset(tx_fee_dataset2, tx_fee_dataset2$size < size_outlier_threshold)
   # K-means method with k= 4
   kc <- kmeans(final_data_set, 4, iter.max = 40)
   clusplot(final_data_set, kc$cluster,
@@ -138,12 +131,6 @@ etl <- function() {
   final_data_set
 }
 
-# Initial Extract, Transfer and Load
-tx_fee_dataset <- etl()
-analitiko_height <- max(tx_fee_dataset$height)
-print(analitiko_height)
-kc <- kmeans(tx_fee_dataset, 4, iter.max = 40)
-
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above in RStudio.
 #
@@ -157,21 +144,17 @@ options(shiny.port = port, shiny.host = "0.0.0.0")
 # Define UI for application that draws a histogram
 ui <- fluidPage(
   # Application title
-  titlePanel("Monero Transaction Fee Scatter Plot"),
+  titlePanel("Monero Transaction K-Means Clustering"),
   column(
       width = 4,
-      sliderInput("txs",
-                  "Number of transactions",
-                  min = 1,
-                  max = length(tx_fee_dataset$size),
-                  value = 10),
-      hr(),
+      h3("Analitiko Height"),
+      textOutput("heightText"),
       h3("Cluster Centers"),
       tableOutput("centerTable"),
       h3("Within Sum of Squares"),
       tableOutput("withinTable"),
       h3("Between SS / Total SS"),
-      h4(kc$betweenss / kc$totss)
+      textOutput("ssText")
     ),
     # Show a plot of the transaction fee per byte versus size
     mainPanel(
@@ -185,36 +168,44 @@ ui <- fluidPage(
   )
 
 # Define server logic required to draw a plot
-server <- function(input, output) {
+server <- function(input, output, session) {
+  # Initial Extract, Transfer and Load
+  tx_fee_dataset <<- etl()
+  kc <<- kmeans(tx_fee_dataset, 4, iter.max = 40)
+  observe({
+    invalidateLater(block_time, session)
+    tx_fee_dataset <<- etl()
+    kc <<- kmeans(tx_fee_dataset, 4, iter.max = 40)
+  })
   # outlier-free plot
   output$sPlot <- renderPlot({
-    # draw the plot with the specified number of transactions
+    # Draw the plot with the specified number of transactions
     # Bin size control + color palette
-    ggplot(tx_fee_dataset[1:input$txs,],
-      aes(x=fee_per_byte, y=size)) +
-      geom_bin2d(bins = 70) +
-      scale_fill_continuous(type = "viridis") +
-      theme_bw()
-  })
-  # Cluster center table
-  output$centerTable <- renderTable({
-    data.table(kc$centers)
-  })
-  # within sum of squares table
-  output$withinTable <- renderTable({
-    data.table(kc$withinss)
-  })
-  # original cluster plot
-  output$cPlot <- renderPlot({
-    clusplot(tx_fee_dataset, kc$cluster,
-    color = TRUE, shade = TRUE, labels = 4, lines = 0)
-  })
-  observe({
-    invalidateLater(block_time)
-    isolate(tx_fee_dataset <- etl())
-    isolate(kc <- kc <- kmeans(tx_fee_dataset, 4, iter.max = 40))
-    print(analitiko_height)
-  })
+    ggplot(tx_fee_dataset,
+           aes(x=fee_per_byte, y = size)) + geom_bin2d(bins = 70) +
+           scale_fill_continuous(type = "viridis") + theme_bw()
+    })
+    # Cluster center table
+    output$centerTable <- renderTable({
+      data.table(kc$centers)
+    })
+    # within sum of squares table
+    output$withinTable <- renderTable({
+      data.table(kc$withinss)
+    })
+    # original cluster plot
+    output$cPlot <- renderPlot({
+      clusplot(tx_fee_dataset, kc$cluster,
+               color = TRUE, shade = TRUE, labels = 4, lines = 0)
+    })
+    # Between SS / Total SS
+    output$ssText <- renderText({
+      kc$betweenss / kc$totss
+    })
+    # Analitiko Height
+    output$heightText <- renderText({
+      max(tx_fee_dataset$height)
+    })
 }
 # Run the application
 shinyApp(ui = ui, server = server)
