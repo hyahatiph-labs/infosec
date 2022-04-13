@@ -19,7 +19,13 @@ const run = async (): Promise<void> => {
             await Utilities.extractBlocks();
         }
 }
-run();
-const daemonCheck = setInterval(async () => {
+run().catch(() => {
+    log(`Unkown application failure restarting`, LogLevel.ERROR);
     run();
+})
+const daemonCheck = setInterval(async () => {
+    run().catch(() => {
+        log(`Unkown application failure restarting`, LogLevel.ERROR);
+        run();
+    })
 }, Configuration.DAEMON_SYNC_CHECK_INTERVAL); // keep waiting for daemon to sync first
