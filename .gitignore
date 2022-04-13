@@ -125,5 +125,4 @@ lib/
 .RData
 .Rhistory
 infosec.Rproj
-analytics/scripts/xmr-ring-output-indices.html
-analitiko/scripts/xmr-ring-output-indices.html
+Rpackages/

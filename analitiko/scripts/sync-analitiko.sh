@@ -23,7 +23,4 @@ cd /infosec/analitiko && node /infosec/analitiko/dist/analitiko.js -u $2 -c $3 -
 -l ERROR,INFO,PERF --num-blocks $6 --daemon-host $7 &
 sleep 5
 echo "Deploying $MODEL_PATH..."
-Rscript $MODEL_PATH/app.R
-
-# DEBUG
-sleep 100000000
+cd $MODEL_PATH && Rscript app.R

@@ -1,7 +1,7 @@
 # This is the image for analitiko automated model deployment
 # Uses fedora:35 image and node.js 16.x.x+, podman version 3.4.4
 # Command to build:
-# podman build --network host -t analitiko:v0.1.0 .
+# podman build --network host -t analitiko:vx.x.x .
 # Command to run:
 # > podman run --rm -P -p 127.0.0.1:4242:4242 --name analitiko \
 # > analitiko:v0.1.0 /bin/bash -c "sh sync-analitiko.sh <MODEL_DIR> \
@@ -28,5 +28,5 @@ COPY ./deploy.sh .
 RUN chmod +x /deploy.sh
 COPY ./sync-analitiko.sh .
 RUN chmod +x sync-analitiko.sh
-COPY packages.R .
-RUN Rscript packages.R
+# Manually build the library
+COPY Rpackages /usr/lib64/R/library/
