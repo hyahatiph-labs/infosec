@@ -10,22 +10,21 @@ import * as Configuration from './config';
 const run = async (): Promise<void> => {
         const isDaemonSynced = await Utilities.isDaemonSynced();
         log(
-            isDaemonSynced ? "verified monero daemon sync" : "daemon not sync", LogLevel.INFO
+            isDaemonSynced ? "verified monero daemon sync" : "daemon not synced", LogLevel.INFO
         );
         if (isDaemonSynced) {
             clearInterval(daemonCheck);
             log("executing analytics daemon sync, this may take a while...", LogLevel.INFO)
             await Utilities.testDbConnection();
-            await Utilities.extractBlocks();
+            try {
+                await Utilities.extractBlocks();
+            } catch {
+                log(`unknown error while extracting blocks, restarting`, LogLevel.ERROR);
+                run();
+            }
         }
 }
-run().catch(() => {
-    log(`Unkown application failure restarting`, LogLevel.ERROR);
-    run();
-})
+run();
 const daemonCheck = setInterval(async () => {
-    run().catch(() => {
-        log(`Unkown application failure restarting`, LogLevel.ERROR);
-        run();
-    })
+    run();
 }, Configuration.DAEMON_SYNC_CHECK_INTERVAL); // keep waiting for daemon to sync first
