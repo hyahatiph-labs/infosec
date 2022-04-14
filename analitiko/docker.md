@@ -3,7 +3,7 @@
 ## Automated Model Deployment
 
 Below is a recipe for spinning up a PostgreSQL docker image followed by the Analitiko
-docker image. Feel free to create your own scripts. (Default password is `postgres`)
+docker image. Feel free to create your own scripts.
 
 1. Pull the official PostgreSQL and Analitiko docker images
 
