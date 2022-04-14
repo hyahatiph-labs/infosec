@@ -96,7 +96,11 @@ export const extractBlocks = async (): Promise<void> => {
             }
             const lBlock = { ...block.toJson(), hex: null } // trim full hex
             const minerTxOutputAmount = lBlock.minerTx.outputs[0].amount; // all we want from MinerTx
-            Models.Block.create({ ...lBlock, minerTxOutputAmount });
+            try {
+                await sequelize.transaction(async (t) => {
+                    await Models.Block.create({ ...lBlock, minerTxOutputAmount }, { transaction: t });
+                });
+              } catch (error) { log(`${error}`, LogLevel.POSTGRESQL); }
             if (block.getTxHashes().length > 0) {
                 block.getTxHashes().forEach(async (hash: string) => {
                     const tx = await daemon.getTx(hash);
@@ -116,7 +120,12 @@ export const extractBlocks = async (): Promise<void> => {
                     const size = rctSigFee / await calculateFeePerKb(block.getReward());
                     const height = block.toJson().height;
                     const lTx = {  ...jTx, fullHex: null, rctSigPrunable: null, ringOutputIndices };
-                    Models.Tx.create({ ...lTx,  numInputs, numOutputs, rctSigFee, size, rctSigType, height });
+                    try {
+                        await sequelize.transaction(async (t) => {
+                            await Models.Tx.create({ ...lTx,  numInputs, numOutputs, rctSigFee, size, rctSigType, height },
+                                { transaction: t });
+                        });
+                      } catch (error) { log(`${error}`, LogLevel.POSTGRESQL); }
                 })
             }
             updateSizeContainer(block.getSize());
