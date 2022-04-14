@@ -16,9 +16,8 @@ RUN dnf -y update
 RUN dnf install -y wget curl git gnupg cmake postgresql-odbc.x86_64 R.x86_64 \
     g++ libjpeg-turbo.x86_64 libjpeg-turbo-devel.x86_64 openjpeg2.x86_64 R-RODBC.x86_64 \
     unixODBC.x86_64 unixODBC-devel.x86_64 postgresql postgresql-server nodejs.x86_64 bzip2
-# Install and build analitiko from source
-RUN git clone https://github.com/hyahatiph-labs/infosec.git \
-    && cd infosec/analitiko && npm i && npm run build
+# Clone Analitiko source code
+RUN git clone https://github.com/hyahatiph-labs/infosec.git && cd infosec/analitiko && npm i
 # Install monero
 RUN mkdir xmr
 RUN cd xmr && wget https://downloads.getmonero.org/cli/monero-linux-x64-v0.17.3.0.tar.bz2
@@ -30,3 +29,5 @@ COPY ./sync-analitiko.sh .
 RUN chmod +x sync-analitiko.sh
 # Manually build the library
 COPY Rpackages /usr/lib64/R/library/
+# Install Process Manager 2 for fault tolerance
+RUN npm i pm2 -g

@@ -16,12 +16,7 @@ const run = async (): Promise<void> => {
             clearInterval(daemonCheck);
             log("executing analytics daemon sync, this may take a while...", LogLevel.INFO)
             await Utilities.testDbConnection();
-            try {
-                await Utilities.extractBlocks();
-            } catch {
-                log(`unknown error while extracting blocks, restarting`, LogLevel.ERROR);
-                run();
-            }
+            await Utilities.extractBlocks();
         }
 }
 run();

@@ -124,14 +124,7 @@ export const extractBlocks = async (): Promise<void> => {
     }
     // recursively call block extraction on par with monero block time
     setTimeout(async () => {
-        if (await isDaemonSynced()) { 
-            try {
-                await extractBlocks();
-            } catch {
-                log(`unknown error while extracting blocks, restarting`, LogLevel.ERROR);
-                await extractBlocks();
-            }
-        }
+        if (await isDaemonSynced()) { await extractBlocks(); }
     },  c.MONERO_ESTIMATED_BLOCK_TIME);
 }
 
