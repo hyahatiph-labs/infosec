@@ -16,6 +16,8 @@ library(factoextra)
 # Some tools for exploratory data analysis
 library(psych)
 library(party)
+library(ggplot2)
+library(reshape2)
 # Create an /infosec/analitiko/.Renviron file with
 # DEV_ENV=<local or docker>
 # PG_USER=<postgresql username>
@@ -32,7 +34,6 @@ pg_db_name <- Sys.getenv("PG_DB_NAME")
 con <- dbConnect(odbc::odbc(), driver = "PostgreSQL", Server = pg_host,
                  Database = pg_db_name, UID = pg_user, PWD = pg_cred,
                  Port = 5432)
-
 block_time <- 120000
 second_std <- .977
 # Set outlier threshold
@@ -42,7 +43,6 @@ etl <- function() {
   # Transaction Fee Dataset
   qTxs <- dbSendQuery(con, 'SELECT * FROM "Txes" t1')
   rTxs <- dbFetch(qTxs)
-
   kb <- 1024
   pico <- 1000000000000
   tx_fee_dataset <- data.table(
@@ -59,17 +59,6 @@ etl <- function() {
   summary(tx_fee_dataset)
   # Dataset structure
   str(tx_fee_dataset)
-  # Class variable distribution
-  plot(tx_fee_dataset$fee)
-  # Create correlation matrix with heatmap
-  cormat <- round(cor(tx_fee_dataset[1:6]),2)
-  head(cormat)
-  library(reshape2)
-  melted_cormat <- melt(cormat)
-  head(melted_cormat)
-  library(ggplot2)
-  ggplot(data = melted_cormat, aes(x = Var1, y = Var2, fill = value)) +
-    geom_tile()
   priority_level <- NULL
   unimportant <- 0.00000005
   low <- 0.00000015
@@ -115,18 +104,6 @@ etl <- function() {
   fee_outlier_threshold <- oth(mean(tx_fee_dataset2$fee), second_std)
   final_data_set <-
     subset(tx_fee_dataset2, tx_fee_dataset2$size < size_outlier_threshold)
-  # K-means method with k= 4
-  kc <- kmeans(final_data_set, 4, iter.max = 40)
-  clusplot(final_data_set, kc$cluster,
-    color = TRUE, shade = TRUE, labels = 4, lines = 0)
-  # Bubble data visualization via r-graph-gallery
-  # https://r-graph-gallery.com/2d-density-chart.html
-
-  # Bin size control + color palette
-  ggplot(final_data_set, aes(x = fee_per_byte, y = size)) +
-    geom_bin2d(bins = 70) +
-    scale_fill_continuous(type = "viridis") +
-    theme_bw()
   # Strip away outliers
   final_data_set
 }
@@ -154,7 +131,11 @@ ui <- fluidPage(
       h3("Within Sum of Squares"),
       tableOutput("withinTable"),
       h3("Between SS / Total SS"),
-      textOutput("ssText")
+      textOutput("ssText"),
+      h3("Correlation Matrix"),
+      plotOutput("heatPlot"),
+      h3("Cluster Selection - Elbow Method"),
+      plotOutput("elbowPlot")
     ),
     # Show a plot of the transaction fee per byte versus size
     mainPanel(
@@ -163,19 +144,23 @@ ui <- fluidPage(
       ),
       plotOutput(
         "cPlot", width = "100%", height = "700px"
+      ),
+      plotOutput(
+        "c2Plot", width = "100%", height = "700px"
       )
     )
   )
-
 # Define server logic required to draw a plot
 server <- function(input, output, session) {
   # Initial Extract, Transfer and Load
   tx_fee_dataset <<- etl()
   kc <<- kmeans(tx_fee_dataset, 4, iter.max = 40)
+  kc2 <<- kmeans(tx_fee_dataset, 2, iter.max = 20)
   observe({
     invalidateLater(block_time, session)
     tx_fee_dataset <<- etl()
     kc <<- kmeans(tx_fee_dataset, 4, iter.max = 40)
+    kc2 <<- kmeans(tx_fee_dataset, 2, iter.max = 20)
   })
   # outlier-free plot
   output$sPlot <- renderPlot({
@@ -205,6 +190,41 @@ server <- function(input, output, session) {
     # Analitiko Height
     output$heightText <- renderText({
       max(tx_fee_dataset$height)
+    })
+    # Verify cluster selection with the elbow method, within groups sum of squares
+    # Take a rolling sample to speed up UI
+    output$elbowPlot <- renderPlot({
+      mod_tx_fee_dataset <- tx_fee_dataset
+      mod_tx_fee_dataset$height <- NULL
+      mod_tx_fee_dataset$size <- NULL
+      mod_tx_fee_dataset$num_inputs <- NULL
+      mod_tx_fee_dataset$num_outputs <- NULL
+      sample_size <- length(mod_tx_fee_dataset$fee_per_byte) * 0.1
+      sample_dataset <- mod_tx_fee_dataset[
+        sample(nrow(mod_tx_fee_dataset), floor(sample_size),
+               replace = FALSE, prob = NULL),]
+      fviz_nbclust(sample_dataset, kmeans, method = "wss") +
+        geom_vline(xintercept = 2, linetype = 2)+
+        labs(subtitle = "Elbow method")
+    })
+    # Modified Cluster plot with two clusters and subset to fee_per_byte
+    output$c2Plot <- renderPlot({
+      mod_tx_fee_dataset <- tx_fee_dataset
+      mod_tx_fee_dataset$height <- NULL
+      mod_tx_fee_dataset$size <- NULL
+      mod_tx_fee_dataset$num_inputs <- NULL
+      mod_tx_fee_dataset$num_outputs <- NULL
+      clusplot(mod_tx_fee_dataset, kc2$cluster,
+               color = TRUE, shade = TRUE, labels = 2, lines = 0)
+    })
+    # Create correlation matrix with heatmap
+    cormat <- round(cor(tx_fee_dataset[1:6]),2)
+    head(cormat)
+    melted_cormat <- melt(cormat)
+    head(melted_cormat)
+    output$heatPlot <- renderPlot({
+      ggplot(data = melted_cormat, aes(x = Var1, y = Var2, fill = value)) +
+        geom_tile()
     })
 }
 # Run the application
