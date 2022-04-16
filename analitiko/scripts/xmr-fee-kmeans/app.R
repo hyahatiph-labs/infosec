@@ -19,18 +19,18 @@ library(party)
 library(ggplot2)
 library(reshape2)
 # Create an /infosec/analitiko/.Renviron file with
-# DEV_ENV=<local or docker>
 # PG_USER=<postgresql username>
 # PG_CRED=<postgresql password>
 # PG_DB_NAME=<database_name>
+# PG_HOST=<host of postgresql server>
 # SHINY_PORT=<port to run shiny server>
 # when adding new variable to .Renviron
 # close and re-open if using RStudio
 pg_user <- Sys.getenv("PG_USER")
 pg_cred <- Sys.getenv("PG_CRED")
 pg_host <- Sys.getenv("PG_HOST")
-shiny_port <- Sys.getenv("SHINY_PORT")
 pg_db_name <- Sys.getenv("PG_DB_NAME")
+shiny_port <- Sys.getenv("SHINY_PORT")
 con <- dbConnect(odbc::odbc(), driver = "PostgreSQL", Server = pg_host,
                  Database = pg_db_name, UID = pg_user, PWD = pg_cred,
                  Port = 5432)
@@ -191,20 +191,26 @@ server <- function(input, output, session) {
     output$heightText <- renderText({
       max(tx_fee_dataset$height)
     })
-    # Verify cluster selection with the elbow method, within groups sum of squares
-    # Take a rolling sample to speed up UI
+    # Verify cluster selection with the elbow method,
+    # within groups sum of squares.
+    # Take a 1% rolling sample to speed up UI
     output$elbowPlot <- renderPlot({
       mod_tx_fee_dataset <- tx_fee_dataset
       mod_tx_fee_dataset$height <- NULL
-      mod_tx_fee_dataset$size <- NULL
+      mod_tx_fee_dataset$fee <- NULL
       mod_tx_fee_dataset$num_inputs <- NULL
       mod_tx_fee_dataset$num_outputs <- NULL
-      sample_size <- length(mod_tx_fee_dataset$fee_per_byte) * 0.1
+      data <- length(mod_tx_fee_dataset$fee_per_byte)
+      multiplier <- 1
+      if (data > 10000) {
+        multiplier <- 0.01
+      }
+      sample_size <- data * multiplier
       sample_dataset <- mod_tx_fee_dataset[
         sample(nrow(mod_tx_fee_dataset), floor(sample_size),
-               replace = FALSE, prob = NULL),]
+               replace = FALSE, prob = NULL), ]
       fviz_nbclust(sample_dataset, kmeans, method = "wss") +
-        geom_vline(xintercept = 2, linetype = 2)+
+        geom_vline(xintercept = 2, linetype = 2) +
         labs(subtitle = "Elbow method")
     })
     # Modified Cluster plot with two clusters and subset to fee_per_byte
@@ -218,7 +224,7 @@ server <- function(input, output, session) {
                color = TRUE, shade = TRUE, labels = 2, lines = 0)
     })
     # Create correlation matrix with heatmap
-    cormat <- round(cor(tx_fee_dataset[1:6]),2)
+    cormat <- round(cor(tx_fee_dataset[1:6]), 2)
     head(cormat)
     melted_cormat <- melt(cormat)
     head(melted_cormat)

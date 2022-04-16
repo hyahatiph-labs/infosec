@@ -8,10 +8,10 @@ library(DBI)
 library(RODBCDBI)
 library(readr)
 # create an /infosec/analitiko/.Renviron file with
-# DEV_ENV=<local or docker>
 # PG_USER=<postgresql username>
 # PG_CRED=<postgresql password>
 # PG_DB_NAME=<database_name>
+# PG_HOST=<host of postgresql server>
 # SHINY_PORT=<port to run shiny server>
 # when adding new variable to .Renviron
 # close and re-open if using RStudio
