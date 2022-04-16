@@ -22,12 +22,11 @@ RUN git clone https://github.com/hyahatiph-labs/infosec.git && cd infosec/analit
 RUN mkdir xmr
 RUN cd xmr && wget https://downloads.getmonero.org/cli/monero-linux-x64-v0.17.3.0.tar.bz2
 RUN cd xmr && tar xvf monero-linux-x64*.tar.bz2
-# bake in the deployment bash scripts
-COPY ./deploy.sh .
-RUN chmod +x /deploy.sh
-COPY ./sync-analitiko.sh .
-RUN chmod +x sync-analitiko.sh
-# Manually build the library
-COPY Rpackages /usr/lib64/R/library/
+# Manually build the R library
+COPY Rpackages/ /usr/lib64/R/library/
 # Install Process Manager 2 for fault tolerance
 RUN npm i pm2 -g
+# Bake in the deployment bash scripts
+COPY ./deploy.sh .
+COPY ./sync-analitiko.sh .
+RUN chmod +x sync-analitiko.sh && chmod +x /deploy.sh
