@@ -126,3 +126,4 @@ lib/
 .Rhistory
 infosec.Rproj
 Rpackages/
+app_cache/

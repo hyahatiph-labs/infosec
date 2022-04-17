@@ -116,6 +116,8 @@ etl <- function() {
 #    http://shiny.rstudio.com/
 #
 library(shiny)
+# see https://shiny.rstudio.com/articles/caching.html
+shinyOptions(cache = cachem::cache_disk("./app_cache/cache/"))
 port <- readr::parse_integer(shiny_port)
 options(shiny.port = port, shiny.host = "0.0.0.0")
 # Define UI for application that draws a histogram
@@ -151,25 +153,23 @@ ui <- fluidPage(
     )
   )
 # Define server logic required to draw a plot
-server <- function(input, output, session) {
-  # Initial Extract, Transfer and Load
-  tx_fee_dataset <<- etl()
-  kc <<- kmeans(tx_fee_dataset, 4, iter.max = 40)
-  kc2 <<- kmeans(tx_fee_dataset, 2, iter.max = 20)
+server <- function(input, output) {
   observe({
-    invalidateLater(block_time, session)
     tx_fee_dataset <<- etl()
     kc <<- kmeans(tx_fee_dataset, 4, iter.max = 40)
     kc2 <<- kmeans(tx_fee_dataset, 2, iter.max = 20)
+    invalidateLater(block_time)
   })
   # outlier-free plot
-  output$sPlot <- renderPlot({
-    # Draw the plot with the specified number of transactions
-    # Bin size control + color palette
-    ggplot(tx_fee_dataset,
-           aes(x=fee_per_byte, y = size)) + geom_bin2d(bins = 70) +
-           scale_fill_continuous(type = "viridis") + theme_bw()
+  output$sPlot <- shiny::bindCache({
+    renderPlot({
+      # Draw the plot with the specified number of transactions
+      # Bin size control + color palette
+      ggplot(tx_fee_dataset,
+             aes(x=fee_per_byte, y = size)) + geom_bin2d(bins = 70) +
+        scale_fill_continuous(type = "viridis") + theme_bw()
     })
+  })
     # Cluster center table
     output$centerTable <- renderTable({
       data.table(kc$centers)
@@ -179,9 +179,11 @@ server <- function(input, output, session) {
       data.table(kc$withinss)
     })
     # original cluster plot
-    output$cPlot <- renderPlot({
-      clusplot(tx_fee_dataset, kc$cluster,
-               color = TRUE, shade = TRUE, labels = 4, lines = 0)
+    output$cPlot <- shiny::bindCache({
+      renderPlot({
+        clusplot(tx_fee_dataset, kc$cluster,
+                 color = TRUE, shade = TRUE, labels = 4, lines = 0)
+      })
     })
     # Between SS / Total SS
     output$ssText <- renderText({
@@ -194,43 +196,49 @@ server <- function(input, output, session) {
     # Verify cluster selection with the elbow method,
     # within groups sum of squares.
     # Take a 1% rolling sample to speed up UI
-    output$elbowPlot <- renderPlot({
-      mod_tx_fee_dataset <- tx_fee_dataset
-      mod_tx_fee_dataset$height <- NULL
-      mod_tx_fee_dataset$fee <- NULL
-      mod_tx_fee_dataset$num_inputs <- NULL
-      mod_tx_fee_dataset$num_outputs <- NULL
-      data <- length(mod_tx_fee_dataset$fee_per_byte)
-      multiplier <- 1
-      if (data > 10000) {
-        multiplier <- 0.01
-      }
-      sample_size <- data * multiplier
-      sample_dataset <- mod_tx_fee_dataset[
-        sample(nrow(mod_tx_fee_dataset), floor(sample_size),
-               replace = FALSE, prob = NULL), ]
-      fviz_nbclust(sample_dataset, kmeans, method = "wss") +
-        geom_vline(xintercept = 2, linetype = 2) +
-        labs(subtitle = "Elbow method")
+    output$elbowPlot <- shiny::bindCache({
+      renderPlot({
+        mod_tx_fee_dataset <- tx_fee_dataset
+        mod_tx_fee_dataset$height <- NULL
+        mod_tx_fee_dataset$fee <- NULL
+        mod_tx_fee_dataset$num_inputs <- NULL
+        mod_tx_fee_dataset$num_outputs <- NULL
+        data <- length(mod_tx_fee_dataset$fee_per_byte)
+        multiplier <- 1
+        if (data > 10000) {
+          multiplier <- 0.01
+        }
+        sample_size <- data * multiplier
+        sample_dataset <- mod_tx_fee_dataset[
+          sample(nrow(mod_tx_fee_dataset), floor(sample_size),
+                 replace = FALSE, prob = NULL), ]
+        fviz_nbclust(sample_dataset, kmeans, method = "wss") +
+          geom_vline(xintercept = 2, linetype = 2) +
+          labs(subtitle = "Elbow method")
+      })
     })
     # Modified Cluster plot with two clusters and subset to fee_per_byte
-    output$c2Plot <- renderPlot({
-      mod_tx_fee_dataset <- tx_fee_dataset
-      mod_tx_fee_dataset$height <- NULL
-      mod_tx_fee_dataset$size <- NULL
-      mod_tx_fee_dataset$num_inputs <- NULL
-      mod_tx_fee_dataset$num_outputs <- NULL
-      clusplot(mod_tx_fee_dataset, kc2$cluster,
-               color = TRUE, shade = TRUE, labels = 2, lines = 0)
-    })
+    output$c2Plot <- shiny::bindCache({
+      renderPlot({
+        mod_tx_fee_dataset <- tx_fee_dataset
+        mod_tx_fee_dataset$height <- NULL
+        mod_tx_fee_dataset$size <- NULL
+        mod_tx_fee_dataset$num_inputs <- NULL
+        mod_tx_fee_dataset$num_outputs <- NULL
+        clusplot(mod_tx_fee_dataset, kc2$cluster,
+                 color = TRUE, shade = TRUE, labels = 2, lines = 0)
+      })
+    }) 
     # Create correlation matrix with heatmap
     cormat <- round(cor(tx_fee_dataset[1:6]), 2)
     head(cormat)
     melted_cormat <- melt(cormat)
     head(melted_cormat)
-    output$heatPlot <- renderPlot({
-      ggplot(data = melted_cormat, aes(x = Var1, y = Var2, fill = value)) +
-        geom_tile()
+    output$heatPlot <- shiny::bindCache({
+      renderPlot({
+        ggplot(data = melted_cormat, aes(x = Var1, y = Var2, fill = value)) +
+          geom_tile()
+      })
     })
 }
 # Run the application
