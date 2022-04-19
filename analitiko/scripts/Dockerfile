@@ -3,7 +3,7 @@
 # Command to build:
 # podman build --network host -t analitiko:vx.x.x .
 # Command to run:
-# > podman run --rm -P -p 127.0.0.1:4242:4242 --name analitiko \
+# > podman run --rm -P -p 127.0.0.1:<SHINY_PORT>:<SHINY_PORT> --name analitiko \
 # > analitiko:v0.1.0 /bin/bash -c "sh sync-analitiko.sh <MODEL_DIR> \
 # > <PG_USERNAME> <PG_PASSWORD> <DEVICE_IP> <DB_NAME> \ 
 # > <NUM_BLOCKS> http://<DEVICE_IP>:38081 <SHINY_PORT>"

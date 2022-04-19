@@ -20,7 +20,7 @@ docker run --rm -P -p <DEVICE_IP>:5432:5432 -e POSTGRES_PASSWORD="<PASSWORD>" --
 3. Start Analitiko image
 
 ```bash
-docker run --rm -P -p 127.0.0.1:4242:4242 --name analitiko analitiko:latest \
+docker run --rm -P -p 127.0.0.1:<SHINY_PORT>:<SHINY_PORT> --name analitiko analitiko:latest \
 /bin/bash -c "sh deploy.sh <MODEL_DIR> <PGDB_USERNAME> <PGDB_PASSWORD> \
 <DEVICE_IP> <DB_NAME> <NUM_BLOCKS> http://<MONERO_RPC_HOST:PORT> <SHINY_PORT>"
 ```
@@ -28,7 +28,7 @@ docker run --rm -P -p 127.0.0.1:4242:4242 --name analitiko analitiko:latest \
 OR if you already have a monero node running
 
 ```bash
-docker run --rm -P -p 127.0.0.1:4242:4242 --name analitiko analitiko:latest \
+docker run --rm -P -p 127.0.0.1:<SHINY_PORT>:<SHINY_PORT> --name analitiko analitiko:latest \
 /bin/bash -c "sh sync-analitiko.sh <MODEL_DIR> <PGDB_USERNAME> <PGDB_PASSWORD> \
 <DEVICE_IP> <DB_NAME> <NUM_BLOCKS> http://<MONERO_RPC_HOST:PORT> <SHINY_PORT>"
 ```
@@ -66,7 +66,7 @@ docker run --rm -P -p <DEVICE_IP>:5432:5432 \
 
 ```bash
 docker volume create shiny-cache
-docker run --rm -P -p 127.0.0.1:4242:4242 --name analitiko analitiko:latest /bin/bash \
+docker run --rm -P -p 127.0.0.1:<SHINY_PORT>:<SHINY_PORT> --name analitiko analitiko:latest /bin/bash \
 -v shiny-cache:/infosec/analitiko/scripts/<MODEL_DIR>/app-cache \
 -c "sh sync-analitiko.sh <MODEL_DIR> <PGDB_USERNAME> <PGDB_PASSWORD> \
 <DEVICE_IP> <DB_NAME> <NUM_BLOCKS> http://<MONERO_RPC_HOST:PORT> <SHINY_PORT>"
