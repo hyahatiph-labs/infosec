@@ -10,6 +10,7 @@ export const HIMITSU_RPC_HOST = 'HIMITSU_RPC_HOST';
 export const HIMITSU_MONEROD_HOST = 'HIMITSU_MONEROD_HOST';
 export const IS_DEV = process.env.REACT_APP_HIMITSU_DEV === 'DEV'
   || process.env.REACT_APP_HIMITSU_DEV === 'ANDROID';
+export const IS_RELAY = process.env.REACT_APP_RELAY === 'RELAY';
 export const I2P_PROXY = { host: 'localhost', port: 4444 };
 export const JSON_RPC = '/json_rpc';
 

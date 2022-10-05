@@ -58,6 +58,12 @@ export interface SettingsState {
   rpcHost: string;
 }
 
+export interface RelayState {
+  host: string;
+  serviceProvider: string;
+  txBlob: string;
+}
+
 export interface UnlockState {
   walletName: string;
   password: string;

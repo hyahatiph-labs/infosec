@@ -24,6 +24,7 @@ import ContactsComponent from '../Contacts/ContactsComponent';
 import * as Constants from '../../Config/constants';
 import WalletComponent from '../Wallet/WalletComponent';
 import * as Interfaces from '../../Config/interfaces';
+import RelayComponent from '../Relay/RelayComponent';
 
 const MainComponent: React.FC = (): ReactElement => {
   const [gInit] = useGlobalState('init');
@@ -103,7 +104,7 @@ const MainComponent: React.FC = (): ReactElement => {
             />
           </button>
           <Typography variant="h6" noWrap>
-            himitsu v0.1.0-experimental
+            himitsu v0.1.0-relay
           </Typography>
         </Toolbar>
       </AppBar>
@@ -149,9 +150,11 @@ const MainComponent: React.FC = (): ReactElement => {
         )}
       <main className={classes.content}>
         <Toolbar />
-        {(!gInit.isWalletInitialized) && !Constants.IS_DEV && <WalletInitComponent />}
+        {(!gInit.isWalletInitialized) && !Constants.IS_DEV
+          && !Constants.IS_RELAY && <WalletInitComponent />}
+        {isWalletInitialized && Constants.IS_RELAY && <RelayComponent />}
         {isWalletInitialized && isViewingContacts && <ContactsComponent />}
-        {isWalletInitialized && isViewingWallet && <WalletComponent />}
+        {isWalletInitialized && !Constants.IS_RELAY && isViewingWallet && <WalletComponent />}
         {isWalletInitialized && isViewingTxs && <TransactionsComponent />}
         {isWalletInitialized && isViewingSettings && <SettingsComponent />}
       </main>
