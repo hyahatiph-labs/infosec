@@ -3,15 +3,12 @@ import * as MUI from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import { UpdateRounded } from '@material-ui/icons';
 import clsx from 'clsx';
+import axios from 'axios';
 import { useStyles } from './styles';
 import * as Interfaces from '../../Config/interfaces';
-import * as AxiosClients from '../../Axios/Clients';
+import * as Constants from '../../Config/constants';
 
-
-/* 
-   TODO:
-        * clean up input formatting, fluid / fill screen
-        * build relay server with xmrbc-rs
+/* TODO:
         * set default relay server i2p address
         * and advanced switch
         * set easy mode to tx blob only
@@ -20,10 +17,8 @@ import * as AxiosClients from '../../Axios/Clients';
 const RelayComponent: React.FC = (): ReactElement => {
   const classes = useStyles();
   const [invalidHost, setInvalidHost] = useState(false);
-  const [isUpdatedHost, setUpdatedHost] = useState(false);
+  const [relayAttempted, setRelayAttempt] = useState(false);
   const [values, setValues] = React.useState<Interfaces.RelayState>({
-    host: '',
-    serviceProvider: '',
     txBlob: '',
   });
 
@@ -33,40 +28,24 @@ const RelayComponent: React.FC = (): ReactElement => {
   };
 
   const handleInvalidHost = (): void => { setInvalidHost(!invalidHost); };
-
-  const handleUpdateHostSuccess = (): void => { setUpdatedHost(!isUpdatedHost); };
+  const handleRelayAttempt = (): void => { setRelayAttempt(!relayAttempted); };
 
   const relay = async (): Promise<void> => {
-    const host = `http://${values.host}`;
+    const headers = { proxy: Constants.I2P_PROXY };
+    const host = 'xaqc5oui6ehdlmu756lqi4lbxy7kd7yaxxywf3xdqz2o5pckfjxq.b32.i2p';
     try {
-      const result = await AxiosClients.RELAY.get(host);
-      console.log(result.statusText);
+      const result = await axios.get(
+        `http://${host}/relay?tx=${values.txBlob}`,
+        headers,
+      );
+      setRelayAttempt(result.status === 200);
     } catch {
       handleInvalidHost();
     }
   };
 
   return (
-    <div className={clsx(classes.settings, 'container-fluid col')}>
-      <MUI.TextField
-        label="relay host.b32.i2p"
-        id="standard-start-adornment"
-        className={classes.paper}
-        onChange={handleChange('host')}
-        InputProps={
-
-        {
-          startAdornment: <MUI.InputAdornment position="start">http://</MUI.InputAdornment>,
-        }
-
-      }
-      />
-      <MUI.TextField
-        label="service provider"
-        id="standard-start-adornment"
-        className={classes.paper}
-        onChange={handleChange('serviceProvider')}
-      />
+    <div className={clsx(classes.settings, 'container-fluid')}>
       <MUI.TextField
         label="tx blob"
         id="standard-start-adornment"
@@ -86,27 +65,15 @@ const RelayComponent: React.FC = (): ReactElement => {
       </MUI.Button>
       {/* Snacks! */}
       <MUI.Snackbar
-        open={isUpdatedHost}
+        open={relayAttempted}
         autoHideDuration={2000}
-        onClose={handleUpdateHostSuccess}
+        onClose={handleRelayAttempt}
       >
         <Alert
-          onClose={handleUpdateHostSuccess}
+          onClose={handleRelayAttempt}
           severity="success"
         >
-          {`${values.host} is now connected.`}
-        </Alert>
-      </MUI.Snackbar>
-      <MUI.Snackbar
-        open={invalidHost}
-        autoHideDuration={2000}
-        onClose={handleInvalidHost}
-      >
-        <Alert
-          onClose={handleInvalidHost}
-          severity="error"
-        >
-          {`${values.host} is not valid`}
+          attempted to relay
         </Alert>
       </MUI.Snackbar>
     </div>

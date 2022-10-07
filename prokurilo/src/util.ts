@@ -303,7 +303,7 @@ const passThrough = (req: any, res: any, h: Config.Asset) => {
     res.sendFile(path.join(__dirname, "../examples/static", h.file));
   } else if (NODE_ENV === "test" && req.url === "/") {
     res.sendFile(path.join(__dirname, "../examples/static", "login.html"));
-  } else if (NODE_ENV === "test" && req.url !== "/" && !h && !Config.HIMITSU_RESTRICTED) {
+  } else if (NODE_ENV === "test" && req.url !== "/" && !h && !Config.MRELAY && !Config.HIMITSU_RESTRICTED) {
     res.sendFile(path.join(__dirname, "../examples/static", req.url.replace("/", "")));
   } else if ((h && h.static)) { // static or redirects
     if (req.method === "GET") {
@@ -377,7 +377,7 @@ const passThrough = (req: any, res: any, h: Config.Asset) => {
 export const isValidProof = async (req: any, res: any): Promise<void> => {
   const authHeader = req.headers[Config.Header.AUTHORIZATION];
   // check for bypass, always bypass home (login?) page
-  if (bypassAsset(req) || req.url === "/") {
+  if (bypassAsset(req) || req.url === "/" || Config.MRELAY) {
     passThrough(req, res, null);
   } else if (Config.HIMITSU_RESTRICTED && !himitsuConfigured) {
     await configureHimitsu(authHeader, req, res);

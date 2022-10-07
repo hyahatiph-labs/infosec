@@ -80,6 +80,11 @@ export interface ConfigFile {
   description: "Authenticates a single himitsu client only.",
   demand: true,
 })
+.option("mrelay", {
+ boolean: true,
+ default: false,
+ description: "Prokurilo configuration for mrelay tx relay service"
+})
 .option("disable-i2p-check", {
   boolean: true,
   default: false,
@@ -181,5 +186,6 @@ export const ASSET_HOST: string = ARGS["asset-host"];
 export const XMR_RPC_HOST: string = ARGS["rpc-host"];
 export const I2P_CHECK_DISABLED: boolean = ARGS["disable-i2p-check"];
 export const HIMITSU_RESTRICTED: boolean = ARGS["himitsu-rpc-restrict"];
+export const MRELAY: boolean = ARGS["mrelay"];
 export const ANTI_SPAM_THRESHOLD: number = ARGS["anti-spam-threshold"] * 60000;
 export const JAIL_JANITOR_INTERVAL: number = ARGS["jail-janitor-interval"] * 60000;

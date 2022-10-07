@@ -59,8 +59,6 @@ export interface SettingsState {
 }
 
 export interface RelayState {
-  host: string;
-  serviceProvider: string;
   txBlob: string;
 }
 

@@ -14,13 +14,13 @@ const NODE_ENV = process.env.NODE_ENV || "";
 
 const APP = express();
 
-if (Config.HIMITSU_RESTRICTED) {
+if (Config.HIMITSU_RESTRICTED || NODE_ENV === "test") {
   const corsOptions = {
     origin: "*",
     exposedHeaders: [
       "www-authenticate", "authorization"
     ], // we need this to expose challenge to himitsu client
-    method: ["OPTIONS","POST"],
+    method: ["OPTIONS","POST", "GET"],
     optionsSuccessStatus: 200
   };
   APP.use(cors({ ...corsOptions, credentials: true}));
