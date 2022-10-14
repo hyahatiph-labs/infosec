@@ -29,11 +29,12 @@ library(reshape2)
 pg_user <- Sys.getenv("PG_USER")
 pg_cred <- Sys.getenv("PG_CRED")
 pg_host <- Sys.getenv("PG_HOST")
+pg_port <- Sys.getenv("PG_PORT")
 pg_db_name <- Sys.getenv("PG_DB_NAME")
 shiny_port <- Sys.getenv("SHINY_PORT")
 con <- dbConnect(odbc::odbc(), driver = "PostgreSQL", Server = pg_host,
                  Database = pg_db_name, UID = pg_user, PWD = pg_cred,
-                 Port = 5432)
+                 Port = pg_port)
 block_time <- 120000
 second_std <- .977
 # Set outlier threshold

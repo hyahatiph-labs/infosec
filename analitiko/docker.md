@@ -14,7 +14,7 @@ docker pull postgres && docker pull hiahatf/analitiko
 2. Start the PostgreSQL image
 
 ```bash
-docker run --rm -P -p <DEVICE_IP>:5432:5432 -e POSTGRES_PASSWORD="<PASSWORD>" --name pg postgres:latest
+docker run --rm -P -p <DEVICE_IP>:5432:<PGDB_PORT> -e POSTGRES_PASSWORD="<PASSWORD>" --name pg postgres:latest
 ```
 
 3. Start Analitiko image
@@ -22,7 +22,7 @@ docker run --rm -P -p <DEVICE_IP>:5432:5432 -e POSTGRES_PASSWORD="<PASSWORD>" --
 ```bash
 docker run --rm -P -p 127.0.0.1:<SHINY_PORT>:<SHINY_PORT> --name analitiko analitiko:latest \
 /bin/bash -c "sh deploy.sh <MODEL_DIR> <PGDB_USERNAME> <PGDB_PASSWORD> \
-<DEVICE_IP> <DB_NAME> <NUM_BLOCKS> http://<MONERO_RPC_HOST:PORT> <SHINY_PORT>"
+<DEVICE_IP> <DB_NAME> <NUM_BLOCKS> http://<MONERO_RPC_HOST:PORT> <SHINY_PORT> <PGDB_PORT>"
 ```
 
 OR if you already have a monero node running
@@ -30,7 +30,7 @@ OR if you already have a monero node running
 ```bash
 docker run --rm -P -p 127.0.0.1:<SHINY_PORT>:<SHINY_PORT> --name analitiko analitiko:latest \
 /bin/bash -c "sh sync-analitiko.sh <MODEL_DIR> <PGDB_USERNAME> <PGDB_PASSWORD> \
-<DEVICE_IP> <DB_NAME> <NUM_BLOCKS> http://<MONERO_RPC_HOST:PORT> <SHINY_PORT>"
+<DEVICE_IP> <DB_NAME> <NUM_BLOCKS> http://<MONERO_RPC_HOST:PORT> <SHINY_PORT> <PGDB_PORT>"
 ```
 
 ### Extra Flavor - TOR
@@ -57,7 +57,7 @@ sudo cat /var/lib/tor/shiny/hostname
 
 ```bash
 docker volume create postgres-vol
-docker run --rm -P -p <DEVICE_IP>:5432:5432 \
+docker run --rm -P -p <DEVICE_IP>:<PGDB_PORT:PGDB_PORT> \
 -v postgres-vol:/var/lib/postgresql/data \
 -e POSTGRES_PASSWORD="<PASSWORD>" --name pg postgres:latest
 ```
@@ -69,9 +69,9 @@ docker volume create shiny-cache
 docker run --rm -P -p 127.0.0.1:<SHINY_PORT>:<SHINY_PORT> --name analitiko analitiko:latest /bin/bash \
 -v shiny-cache:/infosec/analitiko/scripts/<MODEL_DIR>/app-cache \
 -c "sh sync-analitiko.sh <MODEL_DIR> <PGDB_USERNAME> <PGDB_PASSWORD> \
-<DEVICE_IP> <DB_NAME> <NUM_BLOCKS> http://<MONERO_RPC_HOST:PORT> <SHINY_PORT>"
+<DEVICE_IP> <DB_NAME> <NUM_BLOCKS> http://<MONERO_RPC_HOST:PORT> <SHINY_PORT> <PGDB_PORT>"
 ```
 
 That's pretty much it. Sit back and wait for the blockchain and analytics middleware to sync up.
-The model should be available at port 4242 in this example. Then you can do some cool stuff such as
+The model should be available at port "SHINY_PORT" in this example. Then you can do some cool stuff such as
 running the interactive models with changes on user input. Or put them behind prokurilo and monetize them.

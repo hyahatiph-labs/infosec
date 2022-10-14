@@ -15,13 +15,14 @@ echo "PG_CRED=$3" >> $MODEL_PATH/.Renviron
 echo "PG_HOST=$4" >> $MODEL_PATH/.Renviron
 echo "PG_DB_NAME=$5" >> $MODEL_PATH/.Renviron
 echo "SHINY_PORT=$8" >> $MODEL_PATH/.Renviron
+echo "PG_PORT=$9" >> $MODEL_PATH/.Renviron
 sleep 5
 echo "Updating analitiko"
 cd /infosec/analitiko && git pull && npm run clean && npm run build
 sleep 5
 echo "Starting analitko..."
 cd /infosec/analitiko && pm2 start /infosec/analitiko/dist/analitiko.js \
-    -i $PM2_PROCESSES -- -u $2 -c $3 -h $4 -p 5432 -n $5 \
+    -i $PM2_PROCESSES -- -u $2 -c $3 -h $4 -p $9 -n $5 \
     -l ERROR,INFO,PERF --num-blocks $6 --daemon-host $7
 pm2 stop all && pm2 start 0 && pm2 list && pm2 describe 0 && pm2 logs analitiko & 
 echo "Deploying $MODEL_PATH..."
