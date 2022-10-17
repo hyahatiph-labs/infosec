@@ -27,4 +27,4 @@ cd /infosec/analitiko && pm2 start /infosec/analitiko/dist/analitiko.js \
 pm2 stop all && pm2 start 0 && pm2 list && pm2 describe 0 && pm2 logs analitiko &
 echo "Deploying $MODEL_PATH..."
 sleep 120
-cd $MODEL_PATH && Rscript packages.R && Rscript app.R
+cd $MODEL_PATH && Rscript app.R

@@ -27,7 +27,8 @@ RUN npm i pm2 -g
 # Bake in the deployment bash scripts
 COPY ./deploy.sh .
 COPY ./sync-analitiko.sh .
-COPY ./packages.R .
 # Configure R dependencies
+COPY ./packages.R .
+RUN mkdir -p /usr/share/doc/R/html
 RUN Rscript packages.R
 RUN chmod +x sync-analitiko.sh && chmod +x /deploy.sh
