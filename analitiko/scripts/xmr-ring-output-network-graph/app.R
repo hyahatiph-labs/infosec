@@ -5,7 +5,7 @@
 
 # Connect to the analytics database
 library(DBI)
-library(RODBCDBI)
+library(RODBC)
 library(readr)
 # create an /infosec/analitiko/.Renviron file with
 # PG_USER=<postgresql username>

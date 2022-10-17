@@ -6,7 +6,7 @@
 
 # Connect to the analytics database
 library(DBI)
-library(RODBCDBI)
+library(RODBC)
 library(readr)
 library(data.table)
 # Initialize library for kmeans clustering and elbow method
