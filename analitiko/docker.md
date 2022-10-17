@@ -14,7 +14,7 @@ docker pull postgres && docker pull hiahatf/analitiko
 2. Start the PostgreSQL image
 
 ```bash
-docker run --rm -P -p <DEVICE_IP>:5432:<PGDB_PORT> -e POSTGRES_PASSWORD="<PASSWORD>" --name pg postgres:latest
+docker run --rm -P -p <DEVICE_IP>:<PGDB_PORT>:5432 -e POSTGRES_PASSWORD="<PASSWORD>" --name pg postgres:latest
 ```
 
 3. Start Analitiko image
@@ -57,7 +57,7 @@ sudo cat /var/lib/tor/shiny/hostname
 
 ```bash
 docker volume create postgres-vol
-docker run --rm -P -p <DEVICE_IP>:<PGDB_PORT:PGDB_PORT> \
+docker run --rm -P -p <DEVICE_IP>:<PGDB_PORT:5432> \
 -v postgres-vol:/var/lib/postgresql/data \
 -e POSTGRES_PASSWORD="<PASSWORD>" --name pg postgres:latest
 ```
